@@ -1,11 +1,11 @@
-# infra
+# stayledger-infra
 
 Central Kubernetes infrastructure repository for the StayLedger platform. All manifests for every project are organised here by project, with shared cluster-wide components in `stayledger-shared/`.
 
 ## Structure
 
 ```text
-infra/
+stayledger-infra/
 ├── stayledger-shared/
 │   ├── argocd/                     # ArgoCD installation + staging Application manifests
 │   │   ├── install/                # ArgoCD install scripts and params (cluster-wide)
@@ -38,7 +38,7 @@ infra/
 │   └── staging/
 │
 └── stayledger-ai-assistant/        # StayLedger AI Assistant (hotel chatbot)
-    ├── base/                       # Kustomize root → kubectl apply -k infra/stayledger-ai-assistant/base/
+    ├── base/                       # Kustomize root → kubectl apply -k stayledger-ai-assistant/base/
     │   ├── app/                    # API, frontend, workers, alembic job
     │   ├── datastores/             # PostgreSQL, Redis, PgBouncer, NATS (app-dedicated)
     │   ├── scaling/                # HPAs, PDB
@@ -70,37 +70,37 @@ infra/
 ### 0. Install ArgoCD (once per cluster)
 
 ```powershell
-cd infra/stayledger-shared/argocd/install
+cd stayledger-shared/argocd/install
 .\install.ps1      # or: bash install.sh on Linux/macOS
 kubectl apply -f argocd-params.yaml
 kubectl apply -f argocd-nodeport.yaml
 
 # Staging Application manifests
-kubectl apply -f infra/stayledger-shared/argocd/staging/
+kubectl apply -f stayledger-shared/argocd/staging/
 ```
 
 ### 1. Shared observability (once per cluster)
 
 ```powershell
-cd infra/stayledger-shared/observability
+cd stayledger-shared/observability
 .\install.ps1
 
-kubectl apply -f infra/stayledger-shared/observability/namespace.yaml
-kubectl apply -f infra/stayledger-shared/observability/rbac.yaml
-kubectl apply -f infra/stayledger-shared/observability/storage-pvs.yaml
-kubectl apply -f infra/stayledger-shared/observability/resource-quotas.yaml
-kubectl apply -f infra/stayledger-shared/observability/pod-disruption-budgets.yaml
-kubectl apply -f infra/stayledger-shared/observability/exporters/
-kubectl apply -f infra/stayledger-shared/observability/otel-collector/
-kubectl apply -f infra/stayledger-shared/observability/alerting/
-kubectl apply -f infra/stayledger-shared/observability/grafana/dashboards/
+kubectl apply -f stayledger-shared/observability/namespace.yaml
+kubectl apply -f stayledger-shared/observability/rbac.yaml
+kubectl apply -f stayledger-shared/observability/storage-pvs.yaml
+kubectl apply -f stayledger-shared/observability/resource-quotas.yaml
+kubectl apply -f stayledger-shared/observability/pod-disruption-budgets.yaml
+kubectl apply -f stayledger-shared/observability/exporters/
+kubectl apply -f stayledger-shared/observability/otel-collector/
+kubectl apply -f stayledger-shared/observability/alerting/
+kubectl apply -f stayledger-shared/observability/grafana/dashboards/
 ```
 
 ### 2. Shared datastores
 
 ```powershell
 # Copy secret templates → fill in real values → apply (gitignored)
-kubectl apply -f infra/stayledger-shared/datastores/prd/
+kubectl apply -f stayledger-shared/datastores/prd/
 ```
 
 ### 3. Per-project workloads
@@ -108,40 +108,40 @@ kubectl apply -f infra/stayledger-shared/datastores/prd/
 **stayledger-api / stayledger-admin-web:**
 
 ```powershell
-kubectl apply -f infra/stayledger-api/prd/
-kubectl apply -f infra/stayledger-admin-web/prd/
+kubectl apply -f stayledger-api/prd/
+kubectl apply -f stayledger-admin-web/prd/
 ```
 
 **stayledger-ai-assistant (Kustomize):**
 
 ```powershell
 # Apply secrets first
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/redis-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/redis-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
 
 # Apply stack
-kubectl apply -k infra/stayledger-ai-assistant/base/
+kubectl apply -k stayledger-ai-assistant/base/
 
 # App-specific observability
-kubectl apply -f infra/stayledger-ai-assistant/observability/servicemonitors/
-kubectl apply -f infra/stayledger-ai-assistant/observability/alerts/
-kubectl apply -f infra/stayledger-ai-assistant/observability/recording-rules/
-kubectl apply -f infra/stayledger-ai-assistant/observability/dashboards/
+kubectl apply -f stayledger-ai-assistant/observability/servicemonitors/
+kubectl apply -f stayledger-ai-assistant/observability/alerts/
+kubectl apply -f stayledger-ai-assistant/observability/recording-rules/
+kubectl apply -f stayledger-ai-assistant/observability/dashboards/
 ```
 
 ### 4. GitOps (ArgoCD manages stayledger-ai-assistant automatically)
 
 ```powershell
-kubectl apply -f infra/stayledger-ai-assistant/argocd/project.yaml
-kubectl apply -f infra/stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
+kubectl apply -f stayledger-ai-assistant/argocd/project.yaml
+kubectl apply -f stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
 ```
 
 ## Adding a new project
 
-1. Create `infra/<project-name>/` with `prd/` and `staging/` subdirectories.
+1. Create `<project-name>/` with `prd/` and `staging/` subdirectories inside this repo.
 2. If the project needs dedicated datastores, add them there or reuse `stayledger-shared/datastores/`.
 3. If the project has its own alert rules or Grafana dashboards, add an `observability/` subfolder.
 4. Shared cluster tooling (Prometheus, Loki, Tempo, ArgoCD) stays in `stayledger-shared/` — do not duplicate.
@@ -150,7 +150,7 @@ kubectl apply -f infra/stayledger-ai-assistant/argocd/hotel-assistant-applicatio
 
 | Project | Application repo | Infra folder |
 | --- | --- | --- |
-| StayLedger API | `stayledger-api/` | `infra/stayledger-api/` |
-| StayLedger Admin Web | `stayledger-admin-web/` | `infra/stayledger-admin-web/` |
-| StayLedger AI Assistant | `stayledger-ai-assistant/` | `infra/stayledger-ai-assistant/` |
-| Shared cluster infra | `stayledger-shared/` | `infra/stayledger-shared/` |
+| StayLedger API | `stayledger-api/` | `stayledger-api/` |
+| StayLedger Admin Web | `stayledger-admin-web/` | `stayledger-admin-web/` |
+| StayLedger AI Assistant | `stayledger-ai-assistant/` | `stayledger-ai-assistant/` |
+| Shared cluster infra | `stayledger-shared/` | `stayledger-shared/` |

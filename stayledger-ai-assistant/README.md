@@ -1,10 +1,10 @@
-# infra/stayledger-ai-assistant/
+# stayledger-ai-assistant/
 
 Kubernetes manifests for the StayLedger AI Assistant. Organised into three sub-trees:
 
 | Folder | Purpose |
 | --- | --- |
-| [base/](base/) | Kustomize root — deploy with `kubectl apply -k infra/stayledger-ai-assistant/base/` |
+| [base/](base/) | Kustomize root — deploy with `kubectl apply -k stayledger-ai-assistant/base/` |
 | [argocd/](argocd/) | GitOps — ArgoCD Application targeting this path |
 | [observability/](observability/) | App-specific alerts, dashboards, recording rules, servicemonitors |
 
@@ -52,50 +52,50 @@ base/
 
 ```powershell
 # 1. Apply secrets from templates (gitignored)
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/redis-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
-kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/redis-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
 
 # 2. Run schema migration job (before API pods)
-kubectl apply -f infra/stayledger-ai-assistant/base/app/alembic-upgrade-job.yaml
+kubectl apply -f stayledger-ai-assistant/base/app/alembic-upgrade-job.yaml
 
 # 3. Apply everything else via Kustomize
-kubectl apply -k infra/stayledger-ai-assistant/base/
+kubectl apply -k stayledger-ai-assistant/base/
 ```
 
 On a fresh cluster, also run the one-time bootstrap job:
 
 ```powershell
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml
 # DO NOT re-run on an existing cluster — Jobs are immutable
 ```
 
 For direct DB access (DBeaver, psql):
 
 ```powershell
-kubectl apply -f infra/stayledger-ai-assistant/base/datastores/postgres-service-nodeport.yaml
+kubectl apply -f stayledger-ai-assistant/base/datastores/postgres-service-nodeport.yaml
 ```
 
 ## argocd/
 
-ArgoCD Application pointing at `infra/stayledger-ai-assistant/base/` in this repo. Apply once; ArgoCD handles all subsequent syncs automatically.
+ArgoCD Application pointing at `stayledger-ai-assistant/base/` in this repo. Apply once; ArgoCD handles all subsequent syncs automatically.
 
 ```powershell
-kubectl apply -f infra/stayledger-ai-assistant/argocd/project.yaml
-kubectl apply -f infra/stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
+kubectl apply -f stayledger-ai-assistant/argocd/project.yaml
+kubectl apply -f stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
 ```
 
 ## observability/
 
-App-specific observability resources — install after the shared observability stack from `infra/shared/observability/` is running.
+App-specific observability resources — install after the shared observability stack from `stayledger-shared/observability/` is running.
 
 ```powershell
-kubectl apply -f infra/stayledger-ai-assistant/observability/servicemonitors/
-kubectl apply -f infra/stayledger-ai-assistant/observability/alerts/
-kubectl apply -f infra/stayledger-ai-assistant/observability/recording-rules/
-kubectl apply -f infra/stayledger-ai-assistant/observability/dashboards/
+kubectl apply -f stayledger-ai-assistant/observability/servicemonitors/
+kubectl apply -f stayledger-ai-assistant/observability/alerts/
+kubectl apply -f stayledger-ai-assistant/observability/recording-rules/
+kubectl apply -f stayledger-ai-assistant/observability/dashboards/
 ```
 
 ## Image tags
@@ -104,6 +104,6 @@ Image names and tags are managed in `base/kustomization.yaml` under the `images:
 
 ## See Also
 
-- [infra/README.md](../README.md) — top-level infra overview
-- [infra/shared/observability/](../shared/observability/) — cluster-wide observability stack
-- [docs/KUBERNETES.md](../../docs/KUBERNETES.md) — full Kubernetes deployment guide
+- [README.md](../README.md) — top-level stayledger-infra overview
+- [stayledger-shared/observability/](../stayledger-shared/observability/) — cluster-wide observability stack
+- [docs/KUBERNETES.md](../../stayledger-ai-assistant/docs/KUBERNETES.md) — full Kubernetes deployment guide

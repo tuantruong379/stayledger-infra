@@ -26,7 +26,7 @@ These dashboards are split by incident workflow. Prefer starting from **Executiv
 
 ## Alert coverage
 
-Current PMS alerts live in `infra/stayledger-shared/observability/alerting/stayledger-rules.yaml` and cover:
+Current PMS alerts live in `stayledger-shared/observability/alerting/stayledger-rules.yaml` and cover:
 
 | Alert | Dashboard to open | Meaning |
 |-------|-------------------|---------|
