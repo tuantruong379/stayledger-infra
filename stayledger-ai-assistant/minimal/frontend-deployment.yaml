@@ -1,0 +1,133 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-hotel-assistant-frontend
+  namespace: stayledger
+  labels:
+    app: ai-hotel-assistant-frontend
+    component: frontend
+    app.kubernetes.io/name: ai-hotel-assistant-frontend
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: ai-hotel-assistant-frontend
+      component: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ai-hotel-assistant-frontend
+        component: frontend
+    spec:
+      terminationGracePeriodSeconds: 30
+
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels:
+            app: ai-hotel-assistant-frontend
+            component: frontend
+
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+      - name: frontend
+        image: putin111/ai-hotel-assistant-frontend:latest   # pin to SHA in CI
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 3000
+          protocol: TCP
+
+        env:
+        - name: NEXT_PUBLIC_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: ai-hotel-assistant-frontend-config
+              key: NEXT_PUBLIC_API_BASE_URL
+        - name: NODE_ENV
+          value: "production"
+
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+        securityContext:
+          runAsUser: 1001
+          runAsGroup: 1001
+          runAsNonRoot: true
+          # readOnlyRootFilesystem cannot be true: docker-entrypoint.sh performs
+          # in-place sed on .next/static and .next/server at container startup to
+          # inject NEXT_PUBLIC_API_BASE_URL. To enable read-only rootfs, switch to
+          # Next.js App Router runtime env or mount .next/ as an emptyDir with an
+          # init container that copies and patches the files.
+          readOnlyRootFilesystem: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: [ALL]
+
+        startupProbe:
+          httpGet:
+            path: /
+            port: http
+          failureThreshold: 12
+          periodSeconds: 5
+          timeoutSeconds: 5
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-hotel-assistant-frontend
+  namespace: stayledger
+  labels:
+    app: ai-hotel-assistant-frontend
+    component: frontend
+spec:
+  selector:
+    app: ai-hotel-assistant-frontend
+    component: frontend
+  ports:
+  - name: http
+    port: 80
+    targetPort: http
+    protocol: TCP
+  type: ClusterIP
+
+---
+# Required keys in ai-hotel-assistant-frontend-config ConfigMap:
+#   NEXT_PUBLIC_API_BASE_URL: https://hotel-assistant.tekcent.com

@@ -102,6 +102,17 @@ data:
   PRICING_REJECT_PAST_DATES: "1"
   PRICING_WEBHOOK_HEALTH_PROBE: "0"
 
+  # --- PMS connector gates ---
+  # Deployment gates only. Per-property provider/capabilities live in pms_connections.
+  PMS_CONNECTOR_ENABLED: "1"
+  PMS_PROVIDER_DEFAULT: "local"
+  PMS_STAYLEDGER_ENABLED: "0"
+  PMS_DRAFT_BOOKING_ENABLED: "0"
+  PMS_CONVERSATION_SYNC_ENABLED: "0"
+  PMS_READ_FALLBACK_MODE: "fail_closed"
+  PMS_OUTBOX_WORKER_ENABLED: "0"
+  PMS_OUTBOX_WORKER_POLL_SECONDS: "15"
+
   # --- LLM in-process cache (llm_cache.py) ---
   LLM_CACHE_TTL_S: "300"
   LLM_CACHE_MAX_ENTRIES: "512"
