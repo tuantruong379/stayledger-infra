@@ -1,0 +1,232 @@
+# Grafana — Golden Signals dashboard for stayledger-ai-api.
+# Picked up automatically by the Grafana sidecar (label grafana_dashboard: "1").
+#
+# Reasoning: Week 4/C8 — RED method (Rate, Errors, Duration) plus saturation
+# (CPU/memory) and a dependency strip. Stat panels at the top give a 10-second
+# read of system health.
+# Reasoning: 4xx row — webhook auth (401), validation (400), rate limits (429) are excluded from 5xx error rate.
+# Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
+# tenant-scoped PromQL selectors, configurable alert threshold constants, and a
+# Tenant comparison row (throughput/error-rate/p95 latency ranking).
+# Recommended thresholds by tier: standard -> alert_threshold_5xx=0.01,
+# alert_threshold_p95=2.0; premium -> alert_threshold_5xx=0.005,
+# alert_threshold_p95=1.0. Override per tenant in Grafana provisioning.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-golden-signals
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger AI"
+data:
+  golden-signals.json: |-
+    {
+      "title": "StayLedger AI — Golden Signals",
+      "uid": "hotel-golden",
+      "schemaVersion": 39,
+      "version": 4,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "tags": ["stayledger-ai", "slo", "red"],
+      "templating": {
+        "list": [
+          {
+            "name": "tenant_id",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_requests_total, tenant_id)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "route",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_requests_total{tenant_id=~\"$tenant_id\"}, route)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "alert_threshold_5xx",
+            "type": "constant",
+            "label": "Alert threshold 5xx ratio",
+            "query": "0.01",
+            "current": { "text": "0.01", "value": "0.01" },
+            "options": [{ "text": "0.01", "value": "0.01", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_p95",
+            "type": "constant",
+            "label": "Alert threshold p95 seconds",
+            "query": "2",
+            "current": { "text": "2", "value": "2" },
+            "options": [{ "text": "2", "value": "2", "selected": true }]
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Throughput (rps, 5m)",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "sum(rate(http_requests_total{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+        },
+        {
+          "id": 2, "type": "stat", "title": "Error rate (5xx, 5m)",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "(sum(rate(http_requests_total{tenant_id=~\"$tenant_id\",route=~\"$route\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m])), 1e-9)) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] } } }
+        },
+        {
+          "id": 3, "type": "stat", "title": "p95 latency (5m)",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m]))) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 2 }] } } }
+        },
+        {
+          "id": 4, "type": "stat", "title": "CPU usage (cores, 5m)",
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"stayledger-ai\",pod=~\"stayledger-ai-api-.*\",container!=\"\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 2 } }
+        },
+        {
+          "id": 10, "type": "timeseries", "title": "Request rate by route",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (route) (rate(http_requests_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ route }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 11, "type": "timeseries", "title": "Status mix by code",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (status) (rate(http_requests_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ status }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 20, "type": "timeseries", "title": "Latency p50/p95/p99 by route",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m])))", "legendFormat": "p50", "refId": "A" },
+            { "expr": "histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m])))", "legendFormat": "p95", "refId": "B" },
+            { "expr": "histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\",route=~\"$route\"}[5m])))", "legendFormat": "p99", "refId": "C" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "id": 21, "type": "timeseries", "title": "Pod CPU usage",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"stayledger-ai\",pod=~\"stayledger-ai-api-.*\",container!=\"\"}[5m]))", "legendFormat": "{{ pod }}", "refId": "A" }
+          ]
+        },
+        {
+          "id": 22, "type": "timeseries", "title": "Pod memory working set",
+          "gridPos": { "x": 0, "y": 20, "w": 12, "h": 6 },
+          "targets": [
+            { "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"stayledger-ai\",pod=~\"stayledger-ai-api-.*\",container!=\"\"})", "legendFormat": "{{ pod }}", "refId": "A" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" } }
+        },
+        {
+          "id": 30, "type": "timeseries", "title": "Dependency: Circuit breaker state (0=closed,1=half,2=open)",
+          "gridPos": { "x": 12, "y": 20, "w": 12, "h": 6 },
+          "targets": [{ "expr": "max by (target) (circuit_breaker_state)", "legendFormat": "{{ target }}", "refId": "A" }]
+        },
+        {
+          "id": 31, "type": "timeseries", "title": "Dependency: webhook call duration p95",
+          "gridPos": { "x": 0, "y": 26, "w": 12, "h": 6 },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, workflow) (rate(webhook_call_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))", "legendFormat": "{{ workflow }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "id": 32, "type": "timeseries", "title": "Client / auth / rate-limit (4xx by status)",
+          "gridPos": { "x": 12, "y": 26, "w": 12, "h": 6 },
+          "targets": [{ "expr": "sum by (status) (rate(http_requests_total{tenant_id=~\"$tenant_id\",route=~\"$route\",status=~\"4..\"}[5m]))", "legendFormat": "{{ status }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 33,
+          "type": "row",
+          "title": "Frontend Web Vitals",
+          "gridPos": { "x": 0, "y": 32, "w": 24, "h": 1 },
+          "collapsed": false,
+          "panels": []
+        },
+        {
+          "id": 34,
+          "type": "timeseries",
+          "title": "Admin Web Vitals p75 by route",
+          "gridPos": { "x": 0, "y": 33, "w": 16, "h": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.75, sum by (le, name, route) (rate(web_vital_value_bucket{route=~\"/admin.*\"}[15m])))",
+              "legendFormat": "p75 {{ name }} {{ route }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 2 } }
+        },
+        {
+          "id": 35,
+          "type": "stat",
+          "title": "Poor Web Vitals ratio (15m)",
+          "gridPos": { "x": 16, "y": 33, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "(sum(rate(web_vital_events_total{route=~\"/admin.*\",rating=\"poor\"}[15m])) / clamp_min(sum(rate(web_vital_events_total{route=~\"/admin.*\"}[15m])), 1e-9)) or vector(0)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 0.2 }] } } }
+        },
+        {
+          "id": 40,
+          "type": "row",
+          "title": "Tenant comparison",
+          "gridPos": { "x": 0, "y": 42, "w": 24, "h": 1 },
+          "collapsed": false,
+          "panels": []
+        },
+        {
+          "id": 41,
+          "type": "bargauge",
+          "title": "Tenant throughput (rps, 5m)",
+          "gridPos": { "x": 0, "y": 43, "w": 8, "h": 8 },
+          "targets": [
+            { "expr": "sum by (tenant_id) (rate(http_requests_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ tenant_id }}", "refId": "A" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+        },
+        {
+          "id": 42,
+          "type": "heatmap",
+          "title": "Tenant error rate heatmap (5xx, 5m)",
+          "gridPos": { "x": 8, "y": 43, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "100 * (sum by (tenant_id) (rate(http_requests_total{tenant_id=~\"$tenant_id\",status=~\"5..\"}[5m])) / clamp_min(sum by (tenant_id) (rate(http_requests_total{tenant_id=~\"$tenant_id\"}[5m])), 1e-9))",
+              "legendFormat": "{{ tenant_id }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 43,
+          "type": "timeseries",
+          "title": "Tenant p95 latency top 10 (5m)",
+          "gridPos": { "x": 16, "y": 43, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "topk(10, histogram_quantile(0.95, sum by (tenant_id, le) (rate(http_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m]))))",
+              "legendFormat": "{{ tenant_id }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 2 } }
+        }
+      ]
+    }

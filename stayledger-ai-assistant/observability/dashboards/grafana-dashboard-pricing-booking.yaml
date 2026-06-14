@@ -1,0 +1,138 @@
+# Grafana — Pricing & Booking funnel.
+#
+# Reasoning: Week 4/C8 — ties business outcomes (bookings_confirmed) back to the
+# pricing pipeline (cache vs n8n vs fallback) and n8n call health. Useful when the
+# question is "did pricing tank revenue?" instead of "did the SLO breach?".
+# Reasoning: ``booking_workflow`` constant matches app metric label ``hotel_booking_webhook`` (see app/observability/n8n_workflows.py).
+# Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
+# tenant-scoped PromQL selectors across funnel metrics, and configurable alert
+# threshold constants per tenant tier.
+# Recommended thresholds by tier: standard -> alert_threshold_5xx=0.01,
+# alert_threshold_p95=2.0; premium -> alert_threshold_5xx=0.005,
+# alert_threshold_p95=1.0.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-pricing-booking
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger AI"
+data:
+  pricing-booking.json: |-
+    {
+      "title": "StayLedger AI — Pricing & Booking Funnel",
+      "uid": "hotel-pricing-booking",
+      "schemaVersion": 39,
+      "version": 4,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "refresh": "30s",
+      "time": { "from": "now-6h", "to": "now" },
+      "tags": ["stayledger-ai", "pricing", "booking"],
+      "templating": {
+        "list": [
+          {
+            "name": "tenant_id",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_requests_total, tenant_id)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "booking_workflow",
+            "type": "constant",
+            "label": "Booking workflow (metric label)",
+            "query": "hotel_booking_webhook",
+            "current": { "text": "hotel_booking_webhook", "value": "hotel_booking_webhook" },
+            "options": [{ "text": "hotel_booking_webhook", "value": "hotel_booking_webhook", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_5xx",
+            "type": "constant",
+            "label": "Alert threshold 5xx ratio",
+            "query": "0.01",
+            "current": { "text": "0.01", "value": "0.01" },
+            "options": [{ "text": "0.01", "value": "0.01", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_p95",
+            "type": "constant",
+            "label": "Alert threshold p95 seconds",
+            "query": "2",
+            "current": { "text": "2", "value": "2" },
+            "options": [{ "text": "2", "value": "2", "selected": true }]
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Pricing requests / sec (5m)",
+          "gridPos": { "x": 0, "y": 0, "w": 5, "h": 4 },
+          "targets": [{ "expr": "sum(rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+        },
+        {
+          "id": 2, "type": "stat", "title": "Pricing cache hit-rate (5m)",
+          "gridPos": { "x": 5, "y": 0, "w": 5, "h": 4 },
+          "targets": [{ "expr": "(sum(rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\",source=\"cache\"}[5m])) / clamp_min(sum(rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\"}[5m])), 1e-9)) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "green", "value": 0.7 }] } } }
+        },
+        {
+          "id": 3, "type": "stat", "title": "Estimate share (5m)",
+          "gridPos": { "x": 10, "y": 0, "w": 4, "h": 4 },
+          "targets": [{ "expr": "(sum(rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\",source=\"estimate\"}[5m])) / clamp_min(sum(rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\"}[5m])), 1e-9)) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "red", "value": 0.6 }] } } }
+        },
+        {
+          "id": 4, "type": "stat", "title": "Bookings confirmed (1h)",
+          "gridPos": { "x": 14, "y": 0, "w": 5, "h": 4 },
+          "targets": [{ "expr": "sum(increase(bookings_confirmed_total{tenant_id=~\"$tenant_id\"}[1h])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } }
+        },
+        {
+          "id": 5, "type": "stat", "title": "webhook booking success ratio (5m)",
+          "gridPos": { "x": 19, "y": 0, "w": 5, "h": 4 },
+          "targets": [{ "expr": "sum(rate(webhook_calls_total{tenant_id=~\"$tenant_id\",workflow=\"$booking_workflow\",outcome=\"success\"}[5m])) / clamp_min(sum(rate(webhook_calls_total{tenant_id=~\"$tenant_id\",workflow=\"$booking_workflow\"}[5m])), 1e-9)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.95 }, { "color": "green", "value": 0.99 }] } } }
+        },
+        {
+          "id": 10, "type": "timeseries", "title": "Pricing source breakdown",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (source) (rate(pricing_quote_source_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ source }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 11, "type": "timeseries", "title": "webhook outcomes by workflow",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (workflow, outcome) (rate(webhook_calls_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ workflow }} / {{ outcome }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 20, "type": "timeseries", "title": "Chat turns by branch / source",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (branch, source) (rate(chat_turns_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ branch }}/{{ source }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 21, "type": "timeseries", "title": "Bookings confirmed (rate / 5m)",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(bookings_confirmed_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "bookings/sec", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "ops" } }
+        },
+        {
+          "id": 22, "type": "timeseries", "title": "webhook failure modes (error + circuit_open, 5m)",
+          "gridPos": { "x": 0, "y": 20, "w": 12, "h": 6 },
+          "targets": [{ "expr": "sum by (workflow, outcome) (rate(webhook_calls_total{tenant_id=~\"$tenant_id\",outcome=~\"error|circuit_open\"}[5m]))", "legendFormat": "{{ workflow }} / {{ outcome }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "reqps" } }
+        },
+        {
+          "id": 23, "type": "timeseries", "title": "webhook call duration p95",
+          "gridPos": { "x": 12, "y": 20, "w": 12, "h": 6 },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le, workflow) (rate(webhook_call_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))", "legendFormat": "{{ workflow }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 2 } }
+        }
+      ]
+    }

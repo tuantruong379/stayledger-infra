@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  capacity:
+    storage: 10Gi
+  local:
+    path: /mnt/hotel-assistant/postgres
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: postgres-sc
+  volumeMode: Filesystem
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - hkk8s-hub-master
+

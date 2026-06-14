@@ -1,0 +1,85 @@
+# Deploy: kubectl apply -k infra/stayledger-ai-assistant/base/
+# TLS at the edge is temporarily disabled (manifests live under disabled/tls-edge/).
+# When re-enabled, copy them here and see that folder's README.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: hotel-assistant
+
+resources:
+  - namespace.yaml
+  - serviceaccounts.yaml
+
+  # --- Datastores ---
+  # Phase C: API container is stateless and DB-backed; no PVC for /data.
+  - datastores/postgres-sc.yaml
+  - datastores/redis-sc.yaml
+  - datastores/postgres-pv.yaml
+  - datastores/postgres-backup-pv.yaml
+  - datastores/redis-pv.yaml
+  - datastores/postgres-pvc.yaml
+  - datastores/redis-pvc.yaml
+  - datastores/redis-tuning-configmap.yaml
+  - datastores/redis-deployment.yaml
+  - datastores/postgres-init-configmap.yaml
+  - datastores/postgres-tuning-configmap.yaml
+  - datastores/postgres-tenant-data-configmap.yaml
+  - datastores/postgres-deployment.yaml
+  # postgres-bootstrap-job.yaml is applied ONCE manually on fresh cluster setup:
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml
+  # DO NOT include here — Kubernetes Jobs are immutable after creation.
+  - datastores/postgres-backup-cronjob.yaml
+  # postgres-service-nodeport.yaml is applied separately for direct DB access (DBeaver, psql):
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/datastores/postgres-service-nodeport.yaml
+  - datastores/pgbouncer-deployment.yaml
+  - datastores/nats.yaml
+  - datastores/postgres-exporter.yaml
+  - datastores/redis-exporter.yaml
+
+  # --- App workloads ---
+  - app/hotel-assistant-api-configmap.yaml
+  - app/hotel-assistant-smtp-configmap.yaml
+  - app/hotel-assistant-tenant-email-routing-configmap.yaml
+  - app/hotel-assistant-api.yaml
+  - app/hotel-assistant-channel-worker.yaml
+  # Optional: enable when WEBHOOK_ASYNC_QUEUE=1 and you run a dedicated webhook worker pool.
+  - app/hotel-assistant-webhook-worker.yaml
+  - app/hotel-assistant-metrics-aggregator.yaml
+  # --- Frontend (Next.js admin dashboard) ---
+  - app/hotel-assistant-frontend-configmap.yaml
+  - app/hotel-assistant-frontend.yaml
+
+  # --- Scaling ---
+  - scaling/api-hpa.yaml
+  - scaling/channel-worker-hpa.yaml
+  - scaling/webhook-worker-hpa.yaml
+  - scaling/frontend-hpa.yaml
+  - scaling/pdb.yaml
+
+  # --- Security ---
+  # Ingress will be enabled later (keep NodePort for now).
+  - security/network-policies
+
+  # Apply secrets separately (do not commit real secrets). Templates:
+  #   app/hotel-assistant-api-secret.example.yaml       → hotel-assistant-api-secret.yaml (gitignored)
+  #   app/hotel-assistant-smtp-secret.example.yaml      → hotel-assistant-smtp-secret.yaml (gitignored)
+  #   app/hotel-assistant-frontend-secret.example.yaml  → hotel-assistant-frontend-secret.yaml (gitignored)
+  #   datastores/redis-secret.example.yaml              → redis-secret.yaml (gitignored)
+  #   datastores/pgbouncer-secret.example.yaml          → pgbouncer-secret.yaml (gitignored)
+  # Per-tenant Facebook/Zalo credentials are stored in PostgreSQL tenant_channel_secrets
+  # and managed from Admin → Tenant → Config.
+  # Apply order:
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/datastores/redis-secret.yaml
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
+  #   kubectl apply -f infra/stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
+  #   kubectl apply -k infra/stayledger-ai-assistant/base/
+
+images:
+  - name: putin111/ai-hotel-assistant
+    newName: putin111/stayledger-ai-assistant
+    newTag: "latest"
+  - name: putin111/hotel-assistant-frontend
+    newName: putin111/stayledger-ai-assistant-frontend
+    newTag: "latest"

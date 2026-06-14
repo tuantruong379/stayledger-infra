@@ -1,0 +1,349 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-tenant-data
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+data:
+  vertex-suites-hanoi.sql: |
+    CREATE TABLE IF NOT EXISTS tenants (
+        tenant_id VARCHAR(64) PRIMARY KEY,
+        display_name VARCHAR(128) NOT NULL,
+        active BOOLEAN NOT NULL DEFAULT TRUE
+    );
+
+    -- Phase 5 registry columns (align with Alembic initial tenant schema).
+    -- Idempotent for clusters that already ran a newer bootstrap.
+    ALTER TABLE tenants
+        ADD COLUMN IF NOT EXISTS slug VARCHAR(64),
+        ADD COLUMN IF NOT EXISTS facebook_page_ids TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+        ADD COLUMN IF NOT EXISTS zalo_oa_ids TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[];
+
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_tenants_slug
+        ON tenants (slug) WHERE slug IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_tenants_fb_page_ids
+        ON tenants USING GIN (facebook_page_ids);
+    CREATE INDEX IF NOT EXISTS idx_tenants_zalo_oa_ids
+        ON tenants USING GIN (zalo_oa_ids);
+
+    CREATE TABLE IF NOT EXISTS branches (
+        branch_id VARCHAR(32) PRIMARY KEY,
+        tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(tenant_id),
+        display_name VARCHAR(128) NOT NULL,
+        timezone VARCHAR(64) NOT NULL DEFAULT 'Asia/Ho_Chi_Minh',
+        active BOOLEAN NOT NULL DEFAULT TRUE
+    );
+
+    CREATE TABLE IF NOT EXISTS room_config (
+        id BIGSERIAL PRIMARY KEY,
+        tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(tenant_id),
+        room_type VARCHAR(32) NOT NULL,
+        label_vi VARCHAR(128),
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        UNIQUE (tenant_id, room_type)
+    );
+
+    CREATE TABLE IF NOT EXISTS pricing_rows (
+        id BIGSERIAL PRIMARY KEY,
+        tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(tenant_id),
+        branch_id VARCHAR(32) NOT NULL REFERENCES branches(branch_id),
+        room_type VARCHAR(32) NOT NULL,
+        hour_block VARCHAR(16) NOT NULL,
+        price_vnd NUMERIC(12, 0) NOT NULL CHECK (price_vnd >= 0),
+        currency VARCHAR(8) NOT NULL DEFAULT 'VND',
+        stay_date DATE,
+        day_type VARCHAR(16),
+        duration_min INT,
+        CONSTRAINT pricing_rows_date_xor_day CHECK (
+            (stay_date IS NOT NULL AND day_type IS NULL)
+            OR (stay_date IS NULL AND day_type IN ('weekday', 'weekend'))
+        )
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_pricing_lookup ON pricing_rows (tenant_id, branch_id, room_type, hour_block, stay_date);
+    CREATE INDEX IF NOT EXISTS idx_pricing_fallback ON pricing_rows (tenant_id, branch_id, room_type, hour_block, day_type);
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_exact ON pricing_rows (tenant_id, branch_id, room_type, hour_block, stay_date) WHERE stay_date IS NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_pricing_fallback ON pricing_rows (tenant_id, branch_id, room_type, hour_block, day_type) WHERE stay_date IS NULL;
+
+    CREATE TABLE IF NOT EXISTS promotions (
+        id BIGSERIAL PRIMARY KEY,
+        tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(tenant_id),
+        promo_id VARCHAR(64) NOT NULL,
+        description TEXT,
+        discount_percent NUMERIC(5, 2) NOT NULL CHECK (discount_percent >= 0 AND discount_percent <= 100),
+        valid_from DATE NOT NULL,
+        valid_to DATE NOT NULL,
+        applies_to_day_type VARCHAR(16) NOT NULL DEFAULT 'any',
+        branch_scope TEXT,
+        active BOOLEAN NOT NULL DEFAULT TRUE,
+        UNIQUE (tenant_id, promo_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS bookings (
+        id BIGSERIAL PRIMARY KEY,
+        tenant_id VARCHAR(64) NOT NULL REFERENCES tenants(tenant_id),
+        request_id UUID NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        branch_id VARCHAR(32) NOT NULL REFERENCES branches(branch_id),
+        location_label VARCHAR(128),
+        guest_name VARCHAR(256) NOT NULL,
+        guest_phone VARCHAR(32) NOT NULL,
+        checkin_date DATE NOT NULL,
+        room_type VARCHAR(32) NOT NULL,
+        guests INT NOT NULL CHECK (guests > 0),
+        stay_type VARCHAR(16),
+        hours INT,
+        nights INT,
+        raw_payload JSONB,
+        UNIQUE (tenant_id, request_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_bookings_checkin ON bookings (tenant_id, checkin_date);
+    CREATE INDEX IF NOT EXISTS idx_bookings_branch ON bookings (tenant_id, branch_id);
+
+    INSERT INTO tenants (tenant_id, display_name, active)
+    VALUES
+      ('vertex_suites_hanoi', 'Vertex Suites Hanoi', TRUE)
+    ON CONFLICT (tenant_id) DO UPDATE
+    SET display_name = EXCLUDED.display_name,
+        active = EXCLUDED.active;
+
+    UPDATE tenants
+    SET slug = lower(replace(tenant_id, '_', '-'))
+    WHERE tenant_id = 'vertex_suites_hanoi'
+      AND (slug IS NULL OR btrim(slug::text) = '');
+
+    INSERT INTO branches (branch_id, tenant_id, display_name, timezone, active)
+    VALUES
+      ('han_hoankiem', 'vertex_suites_hanoi', 'Vertex Suites Hoàn Kiếm', 'Asia/Ho_Chi_Minh', TRUE),
+      ('han_lieugiai', 'vertex_suites_hanoi', 'Vertex Suites Liễu Giai', 'Asia/Ho_Chi_Minh', TRUE)
+    ON CONFLICT (branch_id) DO UPDATE
+    SET tenant_id = EXCLUDED.tenant_id,
+        display_name = EXCLUDED.display_name,
+        timezone = EXCLUDED.timezone,
+        active = EXCLUDED.active;
+
+    INSERT INTO room_config (tenant_id, room_type, label_vi, active)
+    VALUES
+      ('vertex_suites_hanoi', 'standard', 'Standard', TRUE),
+      ('vertex_suites_hanoi', 'deluxe', 'Deluxe', TRUE),
+      ('vertex_suites_hanoi', 'vip', 'VIP', TRUE)
+    ON CONFLICT (tenant_id, room_type) DO UPDATE
+    SET label_vi = EXCLUDED.label_vi,
+        active = EXCLUDED.active;
+
+    INSERT INTO pricing_rows (tenant_id, branch_id, stay_date, day_type, hour_block, duration_min, room_type, price_vnd, currency)
+    VALUES
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '2h', 120, 'standard', 290000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '2h', 120, 'deluxe', 390000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '2h', 120, 'vip', 560000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '4h', 240, 'standard', 470000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '4h', 240, 'deluxe', 660000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', '4h', 240, 'vip', 940000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', 'overnight', 600, 'standard', 890000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', 'overnight', 600, 'deluxe', 1130000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekday', 'overnight', 600, 'vip', 1490000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '2h', 120, 'standard', 320000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '2h', 120, 'deluxe', 430000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '2h', 120, 'vip', 610000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '4h', 240, 'standard', 510000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '4h', 240, 'deluxe', 710000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', '4h', 240, 'vip', 1020000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', 'overnight', 600, 'standard', 960000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', 'overnight', 600, 'deluxe', 1210000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', NULL, 'weekend', 'overnight', 600, 'vip', 1580000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '2h', 120, 'standard', 310000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '2h', 120, 'deluxe', 420000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '2h', 120, 'vip', 590000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '4h', 240, 'standard', 490000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '4h', 240, 'deluxe', 690000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', '4h', 240, 'vip', 980000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', 'overnight', 600, 'standard', 930000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', 'overnight', 600, 'deluxe', 1180000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekday', 'overnight', 600, 'vip', 1540000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '2h', 120, 'standard', 340000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '2h', 120, 'deluxe', 460000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '2h', 120, 'vip', 640000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '4h', 240, 'standard', 540000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '4h', 240, 'deluxe', 740000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', '4h', 240, 'vip', 1060000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', 'overnight', 600, 'standard', 990000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', 'overnight', 600, 'deluxe', 1250000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', NULL, 'weekend', 'overnight', 600, 'vip', 1630000, 'VND'),
+      ('vertex_suites_hanoi', 'han_hoankiem', DATE '2026-05-15', NULL, 'overnight', 600, 'deluxe', 1090000, 'VND'),
+      ('vertex_suites_hanoi', 'han_lieugiai', DATE '2026-05-16', NULL, 'overnight', 600, 'vip', 1690000, 'VND')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO promotions (tenant_id, promo_id, description, discount_percent, valid_from, valid_to, applies_to_day_type, branch_scope, active)
+    VALUES
+      ('vertex_suites_hanoi', 'PROMO10', 'Giảm 10% ngày trong tuần', 10, DATE '2026-04-01', DATE '2026-12-31', 'weekday', NULL, TRUE),
+      ('vertex_suites_hanoi', 'WEEKEND5', 'Giảm 5% cuối tuần', 5, DATE '2026-04-01', DATE '2026-12-31', 'weekend', NULL, TRUE),
+      ('vertex_suites_hanoi', 'SPRINGALL', 'Giảm 3% mọi chi nhánh', 3, DATE '2026-04-01', DATE '2026-12-31', 'any', NULL, TRUE),
+      ('vertex_suites_hanoi', 'HKBUSINESS', 'Giảm 7% Hoàn Kiếm ngày thường', 7, DATE '2026-04-01', DATE '2026-12-31', 'weekday', 'han_hoankiem', TRUE)
+    ON CONFLICT (tenant_id, promo_id) DO UPDATE
+    SET description = EXCLUDED.description,
+        discount_percent = EXCLUDED.discount_percent,
+        valid_from = EXCLUDED.valid_from,
+        valid_to = EXCLUDED.valid_to,
+        applies_to_day_type = EXCLUDED.applies_to_day_type,
+        branch_scope = EXCLUDED.branch_scope,
+        active = EXCLUDED.active;
+
+    INSERT INTO bookings (tenant_id, request_id, created_at, branch_id, location_label, guest_name, guest_phone, checkin_date, room_type, guests, stay_type, hours, nights, raw_payload)
+    VALUES
+      ('vertex_suites_hanoi', '11111111-1111-4111-8111-111111111111', TIMESTAMPTZ '2026-05-01T08:00:00Z', 'han_hoankiem', 'Hoàn Kiếm', 'Lan', '0909123456', DATE '2026-05-20', 'deluxe', 2, 'overnight', NULL, 1, '{"tenant_id":"vertex_suites_hanoi","branch":"han_hoankiem","location":"Hoàn Kiếm","name":"Lan","phone":"0909123456","checkin_date":"2026-05-20","room_type":"deluxe","stay_type":"overnight","nights":1,"guests":2}'::jsonb),
+      ('vertex_suites_hanoi', '22222222-2222-4222-8222-222222222222', TIMESTAMPTZ '2026-05-02T09:30:00Z', 'han_lieugiai', 'Liễu Giai', 'Minh', '0909000111', DATE '2026-05-18', 'standard', 1, 'hourly', 2, NULL, '{"tenant_id":"vertex_suites_hanoi","branch":"han_lieugiai","location":"Liễu Giai","name":"Minh","phone":"0909000111","checkin_date":"2026-05-18","room_type":"standard","stay_type":"hourly","hours":2,"guests":1}'::jsonb),
+      ('vertex_suites_hanoi', '33333333-3333-4333-8333-333333333333', TIMESTAMPTZ '2026-05-03T11:45:00Z', 'han_hoankiem', 'Hoàn Kiếm', 'Trang', '0911222333', DATE '2026-06-01', 'vip', 2, 'overnight', NULL, 1, '{"tenant_id":"vertex_suites_hanoi","branch":"han_hoankiem","location":"Hoàn Kiếm","name":"Trang","phone":"0911222333","checkin_date":"2026-06-01","room_type":"vip","stay_type":"overnight","nights":1,"guests":2,"notes":"Late arrival after 21:00"}'::jsonb)
+    ON CONFLICT (tenant_id, request_id) DO NOTHING;
+
+  azure-bay-danang.sql: |
+    -- ─── azure_bay_danang ────────────────────────────────────────────────────
+    -- Single-resort tenant on Mỹ Khê beach, Da Nang.
+    -- Pricing is managed via website/hotline (no pricing_rows rows needed for
+    -- the initial seed). Add rows to pricing_rows later if the hotel adopts the
+    -- DB pricing flow.
+
+    INSERT INTO tenants (tenant_id, display_name, active)
+    VALUES ('azure_bay_danang', 'Azure Bay Da Nang', TRUE)
+    ON CONFLICT (tenant_id) DO UPDATE
+    SET display_name = EXCLUDED.display_name,
+        active = EXCLUDED.active;
+
+    UPDATE tenants
+    SET slug = 'azure-bay-danang'
+    WHERE tenant_id = 'azure_bay_danang'
+      AND (slug IS NULL OR btrim(slug::text) = '');
+
+    INSERT INTO branches (branch_id, tenant_id, display_name, timezone, active)
+    VALUES ('dng_mykh', 'azure_bay_danang', 'Azure Bay Resort & Spa', 'Asia/Ho_Chi_Minh', TRUE)
+    ON CONFLICT (branch_id) DO UPDATE
+    SET tenant_id    = EXCLUDED.tenant_id,
+        display_name = EXCLUDED.display_name,
+        timezone     = EXCLUDED.timezone,
+        active       = EXCLUDED.active;
+
+    -- No room_config / pricing_rows / promotions for initial seed.
+    -- Azure Bay pricing is quote-based via website/hotline.
+
+  cupid-hotel.sql: |
+    -- ─── cupid_hotel ─────────────────────────────────────────────────────────
+    -- Couple-focused themed hotel, 3 branches in HCMC.
+    -- branch_ids: hcm_q1, hcm_phunhuan, hcm_trungson
+    -- room_types: standard, deluxe, vip
+    -- hour_blocks: 2h, 4h, overnight
+    --
+    -- Price figures below are illustrative seed values taken from KB §5.
+    -- Update via psql or admin API as actuals are confirmed.
+
+    INSERT INTO tenants (tenant_id, display_name, active)
+    VALUES ('cupid_hotel', 'Cupid Hotel', TRUE)
+    ON CONFLICT (tenant_id) DO UPDATE
+    SET display_name = EXCLUDED.display_name,
+        active = EXCLUDED.active;
+
+    UPDATE tenants
+    SET slug = 'cupid-hotel'
+    WHERE tenant_id = 'cupid_hotel'
+      AND (slug IS NULL OR btrim(slug::text) = '');
+
+    INSERT INTO branches (branch_id, tenant_id, display_name, timezone, active)
+    VALUES
+      ('hcm_q1',       'cupid_hotel', 'Cupid Hotel Quận 1',   'Asia/Ho_Chi_Minh', TRUE),
+      ('hcm_phunhuan', 'cupid_hotel', 'Cupid Hotel Phú Nhuận', 'Asia/Ho_Chi_Minh', TRUE),
+      ('hcm_trungson', 'cupid_hotel', 'Cupid Hotel Trung Sơn', 'Asia/Ho_Chi_Minh', TRUE)
+    ON CONFLICT (branch_id) DO UPDATE
+    SET tenant_id    = EXCLUDED.tenant_id,
+        display_name = EXCLUDED.display_name,
+        timezone     = EXCLUDED.timezone,
+        active       = EXCLUDED.active;
+
+    INSERT INTO room_config (tenant_id, room_type, label_vi, active)
+    VALUES
+      ('cupid_hotel', 'standard', 'Standard', TRUE),
+      ('cupid_hotel', 'deluxe',   'Deluxe',   TRUE),
+      ('cupid_hotel', 'vip',      'VIP',       TRUE)
+    ON CONFLICT (tenant_id, room_type) DO UPDATE
+    SET label_vi = EXCLUDED.label_vi,
+        active   = EXCLUDED.active;
+
+    -- Pricing rows (illustrative seed — weekday/weekend fallback per branch).
+    -- Source: KB §5 example figures. Update when ops confirms actuals.
+    INSERT INTO pricing_rows (tenant_id, branch_id, stay_date, day_type, hour_block, duration_min, room_type, price_vnd, currency)
+    VALUES
+      -- hcm_q1 weekday
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '2h',        120, 'standard',  280000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '2h',        120, 'deluxe',    380000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '2h',        120, 'vip',       520000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '4h',        240, 'standard',  450000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '4h',        240, 'deluxe',    620000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', '4h',        240, 'vip',       860000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', 'overnight', 600, 'standard',  650000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', 'overnight', 600, 'deluxe',    750000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekday', 'overnight', 600, 'vip',      1050000, 'VND'),
+      -- hcm_q1 weekend
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '2h',        120, 'standard',  320000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '2h',        120, 'deluxe',    430000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '2h',        120, 'vip',       590000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '4h',        240, 'standard',  510000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '4h',        240, 'deluxe',    700000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', '4h',        240, 'vip',       970000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', 'overnight', 600, 'standard',  750000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', 'overnight', 600, 'deluxe',    880000, 'VND'),
+      ('cupid_hotel', 'hcm_q1', NULL, 'weekend', 'overnight', 600, 'vip',      1200000, 'VND'),
+      -- hcm_phunhuan weekday
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '2h',        120, 'standard',  260000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '2h',        120, 'deluxe',    360000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '2h',        120, 'vip',       490000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '4h',        240, 'standard',  420000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '4h',        240, 'deluxe',    580000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', '4h',        240, 'vip',       810000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', 'overnight', 600, 'standard',  610000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', 'overnight', 600, 'deluxe',    710000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekday', 'overnight', 600, 'vip',      1000000, 'VND'),
+      -- hcm_phunhuan weekend
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '2h',        120, 'standard',  300000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '2h',        120, 'deluxe',    400000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '2h',        120, 'vip',       550000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '4h',        240, 'standard',  480000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '4h',        240, 'deluxe',    660000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', '4h',        240, 'vip',       920000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', 'overnight', 600, 'standard',  710000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', 'overnight', 600, 'deluxe',    830000, 'VND'),
+      ('cupid_hotel', 'hcm_phunhuan', NULL, 'weekend', 'overnight', 600, 'vip',      1130000, 'VND'),
+      -- hcm_trungson weekday
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '2h',        120, 'standard',  250000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '2h',        120, 'deluxe',    340000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '2h',        120, 'vip',       460000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '4h',        240, 'standard',  400000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '4h',        240, 'deluxe',    550000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', '4h',        240, 'vip',       770000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', 'overnight', 600, 'standard',  580000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', 'overnight', 600, 'deluxe',    680000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekday', 'overnight', 600, 'vip',       950000, 'VND'),
+      -- hcm_trungson weekend
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '2h',        120, 'standard',  290000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '2h',        120, 'deluxe',    390000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '2h',        120, 'vip',       520000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '4h',        240, 'standard',  460000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '4h',        240, 'vip',       870000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', '4h',        240, 'deluxe',    630000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', 'overnight', 600, 'standard',  680000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', 'overnight', 600, 'deluxe',    790000, 'VND'),
+      ('cupid_hotel', 'hcm_trungson', NULL, 'weekend', 'overnight', 600, 'vip',      1080000, 'VND')
+    ON CONFLICT DO NOTHING;
+
+    INSERT INTO promotions (tenant_id, promo_id, description, discount_percent, valid_from, valid_to, applies_to_day_type, branch_scope, active)
+    VALUES
+      ('cupid_hotel', 'CUPID10',  'Giảm 10% ngày trong tuần', 10, DATE '2026-04-01', DATE '2026-12-31', 'weekday', NULL, TRUE),
+      ('cupid_hotel', 'WEEKEND8', 'Giảm 8% cuối tuần',         8, DATE '2026-04-01', DATE '2026-12-31', 'weekend', NULL, TRUE)
+    ON CONFLICT (tenant_id, promo_id) DO UPDATE
+    SET description         = EXCLUDED.description,
+        discount_percent    = EXCLUDED.discount_percent,
+        valid_from          = EXCLUDED.valid_from,
+        valid_to            = EXCLUDED.valid_to,
+        applies_to_day_type = EXCLUDED.applies_to_day_type,
+        branch_scope        = EXCLUDED.branch_scope,
+        active              = EXCLUDED.active;

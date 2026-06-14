@@ -1,0 +1,57 @@
+# Optional HPA metrics — apply ONLY when prometheus-adapter (or equivalent) exposes
+# hotel_assistant_queue_depth from /metrics/prom on the API or workers.
+#
+# Prerequisite: ServiceMonitor or Prometheus scrape + adapter rule mapping e.g.
+#   hotel_assistant_queue_depth{queue="webhook_ready"} → custom.metrics.k8s.io
+#   hotel_assistant_queue_oldest_age_seconds{queue="webhook_ready"} → custom.metrics.k8s.io
+#
+# Not included in kustomization.yaml by default (cluster-specific).
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-webhook-worker-queue
+  namespace: hotel-assistant
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hotel-assistant-webhook-worker
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+    - type: Pods
+      pods:
+        metric:
+          name: hotel_assistant_queue_depth
+        target:
+          type: AverageValue
+          averageValue: "25"
+    - type: Pods
+      pods:
+        metric:
+          name: hotel_assistant_queue_oldest_age_seconds
+        target:
+          type: AverageValue
+          averageValue: "60"
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 180
+      selectPolicy: Min

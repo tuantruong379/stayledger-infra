@@ -1,0 +1,277 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-alerts
+  namespace: observability
+  labels:
+    # Keep this aligned with the kube-prometheus-stack Helm release name.
+    release: kps
+spec:
+  groups:
+    - name: stayledger.api
+      interval: 30s
+      rules:
+        - alert: ApiScrapeDown
+          expr: up{job="stayledger-api"} == 0
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "StayLedger API metrics scrape is down"
+            description: "Prometheus cannot scrape stayledger-api /api/metrics. The API may be down or metrics endpoint/networking is broken."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiScrapeDown"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-executive"
+
+        - alert: ApiErrorRateHigh
+          expr: |
+            (
+              sum(rate(http_requests_total{job="stayledger-api",status=~"5.."}[5m]))
+              / clamp_min(sum(rate(http_requests_total{job="stayledger-api"}[5m])), 0.001)
+              > 0.01
+            )
+            and sum(rate(http_requests_total{job="stayledger-api"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "API 5xx error rate above 1%"
+            description: "Current rate: {{ $value | humanizePercentage }}. Check recent deploys and application logs."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiErrorRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+        - alert: ApiReadP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api",method="GET"}[5m])) by (le)
+            ) > 800
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API read p95 latency above 800ms"
+            description: "Current p95: {{ $value }}ms. Check DB connections and slow queries."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
+
+        - alert: ApiWriteP99LatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api",method="POST"}[5m])) by (le)
+            ) > 4000
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "API write p99 latency above 4000ms"
+            description: "Current p99: {{ $value }}ms. Possible overload — check DB locks and PgBouncer pool."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+        - alert: AuthLatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api",route="/api/auth/login"}[5m])) by (le)
+            ) > 1000
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Auth /login p95 latency above 1000ms"
+            description: "Current p95: {{ $value }}ms. BCrypt or DB issue."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AuthLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+    - name: stayledger.booking
+      interval: 30s
+      rules:
+        - alert: BookingFailureRateHigh
+          expr: |
+            (
+              sum(rate(booking_errors_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(booking_operations_total{job="stayledger-api",operation="created"}[5m])), 0.001)
+              > 0.02
+            )
+            and sum(rate(booking_operations_total{job="stayledger-api"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Booking failure rate above 2%"
+            description: "Error rate: {{ $value | humanizePercentage }}. Search Loki for booking errors."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingFailureRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+        - alert: PaymentFailureRateHigh
+          expr: |
+            (
+              sum(rate(payment_errors_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(payment_operations_total{job="stayledger-api"}[5m])), 0.001)
+              > 0.02
+            )
+            and sum(rate(payment_operations_total{job="stayledger-api"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Payment failure rate above 2%"
+            description: "Error rate: {{ $value | humanizePercentage }}. Check payment service logs."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/PaymentFailureRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+    - name: stayledger.ai
+      interval: 60s
+      rules:
+        - alert: AiErrorRateHigh
+          expr: |
+            (
+              sum(rate(ai_errors_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(ai_requests_total{job="stayledger-api"}[5m])), 0.001)
+              > 0.03
+            )
+            and sum(rate(ai_requests_total{job="stayledger-api"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI error rate above 3%"
+            description: "Error rate: {{ $value | humanizePercentage }}. Check Azure OpenAI quota/status."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiErrorRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(ai_request_duration_ms_bucket{job="stayledger-api"}[5m])) by (le)
+            ) > 5000
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI request p95 latency above 5s"
+            description: "Current p95: {{ $value }}ms. Check OpenAI load and retry settings."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiTokenQuotaWarning
+          expr: max(ai_quota_usage_percent{job="stayledger-api"}) > 80
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI token quota above 80%"
+            description: "Max quota across properties: {{ $value }}%. Notify account team."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiTokenQuotaCritical
+          expr: max(ai_quota_usage_percent{job="stayledger-api"}) > 95
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "AI token quota above 95% — approaching limit"
+            description: "Max quota: {{ $value }}%. Throttle heavy users and notify stakeholders immediately."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+    - name: stayledger.database
+      interval: 30s
+      rules:
+        - alert: PostgresConnectionHigh
+          expr: |
+            sum(pg_stat_activity_count{job="postgres-exporter",datname="stayledger"})
+            / clamp_min(max(pg_settings_max_connections{job="postgres-exporter"}), 1)
+            > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "PostgreSQL connection usage above 80%"
+            description: "{{ $value | humanizePercentage }} of max connections used. Check PgBouncer pool and long-running queries."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/PostgresConnectionHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
+
+        - alert: PgBouncerClientsWaiting
+          expr: sum(pgbouncer_pools_cl_waiting{job="pgbouncer-exporter"}) > 10
+          for: 2m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "PgBouncer has more than 10 clients waiting"
+            description: "{{ $value }} clients waiting for a server connection. Increase pool or scale API."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/PgBouncerSaturated"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
+
+        - alert: RedisMemoryHigh
+          expr: redis_memory_max_bytes{job="redis-exporter"} > 0 and redis_memory_used_bytes{job="redis-exporter"} / redis_memory_max_bytes{job="redis-exporter"} > 0.85
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Redis memory usage above 85%"
+            description: "{{ $value | humanizePercentage }} of maxmemory used. Check TTL settings and eviction policy."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/RedisMemoryHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-k8s"
+
+    - name: stayledger.kubernetes
+      interval: 30s
+      rules:
+        - alert: PodCrashLooping
+          expr: |
+            rate(
+              kube_pod_container_status_restarts_total{namespace="stayledger-staging"}[15m]
+            ) > 0.2
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} is crash-looping"
+            description: "Container {{ $labels.container }} restarting rapidly. Check logs immediately."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/PodCrashLooping"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-k8s"
+
+        - alert: PodOOMKilled
+          expr: |
+            kube_pod_container_status_last_terminated_reason{
+              reason="OOMKilled",
+              namespace="stayledger-staging"
+            } == 1
+          for: 1m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} was OOMKilled"
+            description: "Container {{ $labels.container }} exceeded memory limit. Increase memory limit."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/PodOOMKilled"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-k8s"
+
+        - alert: NodeDiskHigh
+          expr: |
+            (node_filesystem_size_bytes - node_filesystem_free_bytes)
+            / node_filesystem_size_bytes
+            > 0.80
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Node disk usage above 80%"
+            description: "Disk usage: {{ $value | humanizePercentage }}. Clean old data or expand PersistentVolumes."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/NodeDiskHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-k8s"

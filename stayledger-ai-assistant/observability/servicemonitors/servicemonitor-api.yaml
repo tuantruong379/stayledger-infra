@@ -1,0 +1,29 @@
+# Tell Prometheus to scrape the API's /metrics/prom endpoint.
+#
+# Reasoning: Week 4/C6 — the Phase C1 endpoint exposes typed Counters/Histograms/
+# Gauges. We give it an explicit interval (15s) and a low scrapeTimeout so a single
+# slow pod can't block the operator's reconciler.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: hotel-assistant-api
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/part-of: hotel-assistant
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hotel-assistant-api
+  namespaceSelector:
+    matchNames: [hotel-assistant]
+  endpoints:
+    - port: http
+      path: /metrics/prom
+      interval: 15s
+      scrapeTimeout: 5s
+      honorLabels: true
+      # Strip pod-instance noise from the route label so dashboards stay aggregable.
+      metricRelabelings:
+        - action: labeldrop
+          regex: 'pod|container|endpoint'

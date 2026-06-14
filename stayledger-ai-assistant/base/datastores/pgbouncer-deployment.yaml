@@ -1,0 +1,157 @@
+# PgBouncer — connection pooler in transaction mode sitting between the API and Postgres.
+#
+# Why transaction mode: asyncpg never holds a connection between requests, so transaction
+# pooling is safe and gives the highest multiplexing ratio (many API connections → few
+# Postgres server connections).
+#
+# HOTEL_OPS_DSN change required after applying:
+#   Before: postgresql://hotelassistant:<pw>@postgres:5432/hotel_ops
+#   After:  postgresql://hotelassistant:<pw>@pgbouncer:5432/hotel_ops
+#
+# The pgbouncer-secret (see pgbouncer-secret.example.yaml) must be applied first:
+#   kubectl apply -f k8s/onprem/pgbouncer-secret.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pgbouncer-config
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+data:
+  pgbouncer.ini: |
+    [databases]
+    hotel_ops = host=postgres port=5432 dbname=hotel_ops
+
+    [pgbouncer]
+    listen_addr = 0.0.0.0
+    listen_port = 5432
+    ; plain: client sends cleartext, pgbouncer hashes for pg. Safe in-cluster (NetworkPolicy + no external exposure).
+    auth_type = plain
+    auth_file = /etc/pgbouncer/userlist.txt
+
+    ; transaction mode — safe for asyncpg (never holds idle connections between requests)
+    pool_mode = transaction
+
+    ; max server-side connections to real Postgres
+    max_client_conn = 200
+    default_pool_size = 50
+    min_pool_size = 5
+    reserve_pool_size = 10
+    reserve_pool_timeout = 3
+
+    ; close idle server connections after 10 min to prevent Postgres connection buildup
+    server_idle_timeout = 600
+
+    ; log slow queries at warning level
+    log_stats = 1
+    stats_period = 60
+
+    ; forward client TLS to Postgres (off — both run in-cluster)
+    server_tls_sslmode = disable
+    client_tls_sslmode = disable
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pgbouncer
+        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/component: database
+    spec:
+      serviceAccountName: postgres-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pgbouncer
+          image: edoburu/pgbouncer:v1.23.1-p3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          ports:
+            - name: pgbouncer
+              containerPort: 5432
+          env:
+            - name: PGBOUNCER_AUTH_FILE
+              value: /etc/pgbouncer/userlist.txt
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer/pgbouncer.ini
+              subPath: pgbouncer.ini
+              readOnly: true
+            - name: userlist
+              mountPath: /etc/pgbouncer/userlist.txt
+              subPath: userlist.txt
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: "500m"
+              memory: 128Mi
+              ephemeral-storage: 64Mi
+          livenessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            tcpSocket:
+              port: pgbouncer
+            initialDelaySeconds: 3
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: pgbouncer-config
+        - name: userlist
+          secret:
+            secretName: pgbouncer-secret
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  type: ClusterIP
+  ports:
+    - name: pgbouncer
+      port: 5432
+      targetPort: pgbouncer
+  selector:
+    app.kubernetes.io/name: pgbouncer

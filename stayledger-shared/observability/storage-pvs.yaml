@@ -1,0 +1,166 @@
+# Local-PV scheme for the observability stack.
+#
+# Reasoning: Week 4/C6 — the cluster has no default StorageClass and uses
+# pre-provisioned local PVs (api-sc/n8n-sc/postgres-sc/redis-sc pattern). The
+# Helm charts request PVCs with no storageClassName, so we (a) define one
+# observability-sc, (b) create five PVs sized to match each chart's request
+# (Prometheus 25G, Loki 20G, Tempo 20G, Grafana 5G, Alertmanager 5G), and
+# (c) re-render the Helm releases with `storageClassName: observability-sc`
+# so the operator-managed claim templates pick up these volumes.
+#
+# Bootstrap on the node first (one-time):
+#   sudo mkdir -p /mnt/hotel-assistant/observability/{prometheus,alertmanager,grafana,loki,tempo}
+#   sudo chown -R 65534:65534 /mnt/stayledger-staging/observability
+#
+# After this file is applied, run:
+#   helm upgrade kps   ... --set 'prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName=observability-sc'
+#   helm upgrade kps   ... --set 'alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName=observability-sc'
+#   helm upgrade kps   ... --set grafana.persistence.storageClassName=observability-sc
+#   helm upgrade loki  ... --set loki.persistence.storageClassName=observability-sc
+#   helm upgrade tempo ... --set persistence.storageClassName=observability-sc
+# (these flags are also encoded in the *-values.yaml files for idempotency.)
+
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: observability-sc
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-prometheus-pv
+  labels:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  capacity:
+    storage: 25Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  claimRef:
+    namespace: observability
+    name: prometheus-kps-prometheus-db-prometheus-kps-prometheus-0
+  local:
+    path: /mnt/hotel-assistant/observability/prometheus
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [hkk8s-hub-master]
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-alertmanager-pv
+  labels:
+    app.kubernetes.io/component: alertmanager
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  claimRef:
+    namespace: observability
+    name: alertmanager-kps-alertmanager-db-alertmanager-kps-alertmanager-0
+  local:
+    path: /mnt/hotel-assistant/observability/alertmanager
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [hkk8s-hub-master]
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-grafana-pv
+  labels:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  claimRef:
+    namespace: observability
+    name: kps-grafana
+  local:
+    path: /mnt/hotel-assistant/observability/grafana
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [hkk8s-hub-master]
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-loki-pv
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  claimRef:
+    namespace: observability
+    name: storage-loki-0
+  local:
+    path: /mnt/hotel-assistant/observability/loki
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [hkk8s-hub-master]
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-tempo-pv
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  claimRef:
+    namespace: observability
+    name: storage-tempo-0
+  local:
+    path: /mnt/hotel-assistant/observability/tempo
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [hkk8s-hub-master]

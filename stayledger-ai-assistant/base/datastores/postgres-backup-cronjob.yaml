@@ -1,0 +1,170 @@
+# pg_dump backup CronJob — runs daily at 02:00 Asia/Ho_Chi_Minh (UTC+7 = 19:00 UTC).
+# Dumps hotel_ops database into a timestamped file on the backup PVC, then prunes
+# files older than 7 days (daily) and keeps one weekly (Sunday) up to 4 weeks.
+#
+# Apply: included in kustomization.yaml
+# Restore test: kubectl exec -it <pod> -- pg_restore -h postgres -U $POSTGRES_USER -d hotel_ops_restore /backup/hotel_ops_YYYY-MM-DD.dump
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-backup-script
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    BACKUP_DIR="/backup"
+    DB_HOST="postgres"
+    DB_PORT="5432"
+    DB_NAME="hotel_ops"
+    TIMESTAMP=$(date +%Y-%m-%d)
+    DOW=$(date +%u)   # 1=Monday … 7=Sunday
+    DUMP_FILE="${BACKUP_DIR}/hotel_ops_${TIMESTAMP}.dump"
+
+    echo "[backup] Starting pg_dump for ${DB_NAME} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    # Wait for Postgres to be ready (in case of concurrent pod restart).
+    for i in $(seq 1 30); do
+      pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" && break
+      echo "[backup] Waiting for Postgres… (${i}/30)"
+      sleep 2
+    done
+
+    export PGPASSWORD="${POSTGRES_PASSWORD}"
+    pg_dump \
+      -h "${DB_HOST}" \
+      -p "${DB_PORT}" \
+      -U "${POSTGRES_USER}" \
+      -d "${DB_NAME}" \
+      -Fc \
+      -f "${DUMP_FILE}"
+
+    echo "[backup] Dump written: ${DUMP_FILE} ($(du -sh "${DUMP_FILE}" | cut -f1))"
+
+    # --- Retention: keep 7 daily + 4 weekly (Sunday) backups ---
+    # Delete daily files older than 7 days, EXCEPT Sunday files.
+    find "${BACKUP_DIR}" -name "hotel_ops_*.dump" -mtime +7 | while read -r f; do
+      # Extract day-of-week from filename date.
+      fname=$(basename "$f" .dump)
+      fdate="${fname#hotel_ops_}"
+      fdow=$(date -d "${fdate}" +%u 2>/dev/null || echo "0")
+      if [ "${fdow}" != "7" ]; then
+        echo "[backup] Pruning daily: ${f}"
+        rm -f "${f}"
+      fi
+    done
+
+    # Delete weekly (Sunday) files older than 28 days.
+    find "${BACKUP_DIR}" -name "hotel_ops_*.dump" -mtime +28 | while read -r f; do
+      echo "[backup] Pruning weekly: ${f}"
+      rm -f "${f}"
+    done
+
+    echo "[backup] Retention cleanup done. Current backups:"
+    ls -lh "${BACKUP_DIR}"/hotel_ops_*.dump 2>/dev/null || echo "(none)"
+    echo "[backup] Finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  storageClassName: postgres-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  # 19:00 UTC = 02:00 Asia/Ho_Chi_Minh (UTC+7)
+  schedule: "0 19 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: postgres
+            app.kubernetes.io/part-of: hotel-assistant
+            app.kubernetes.io/component: database
+        spec:
+          restartPolicy: OnFailure
+          serviceAccountName: postgres-sa
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: postgres:16
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false   # needs to write dump file to /backup
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-secret
+                      key: POSTGRES_PASSWORD
+              command: ["/bin/bash", "/scripts/backup.sh"]
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+          volumes:
+            - name: backup-data
+              persistentVolumeClaim:
+                claimName: postgres-backup
+            - name: backup-script
+              configMap:
+                name: postgres-backup-script
+                defaultMode: 0755
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 32Mi

@@ -1,0 +1,17 @@
+# Non-sensitive env for hotel-assistant-frontend Deployment (envFrom).
+# NEXT_PUBLIC_* vars are baked in at build time — this configmap holds server-side runtime vars only.
+# Secrets (HOTEL_OPS_DSN for /api/db/ping): hotel-assistant-frontend-secrets.yaml (gitignored).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-frontend-config
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: hotel-assistant-frontend
+    app.kubernetes.io/part-of: hotel-assistant
+data:
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  NEXT_PUBLIC_API_BASE_URL: "https://hotel-assistant.tekcent.com"

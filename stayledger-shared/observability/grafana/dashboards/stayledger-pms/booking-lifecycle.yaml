@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-booking
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger PMS"
+data:
+  booking-lifecycle.json: |
+    {
+      "uid": "stayledger-booking",
+      "title": "StayLedger PMS — Booking Lifecycle",
+      "description": "Booking funnel, payment success, lifecycle duration, and failure breakdown by step and property",
+      "tags": ["stayledger", "booking", "payment"],
+      "schemaVersion": 38,
+      "refresh": "30s",
+      "time": { "from": "now-3h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "api_job", "type": "constant", "label": "API scrape job", "query": "stayledger-api", "current": { "text": "stayledger-api", "value": "stayledger-api" } },
+          { "name": "property", "type": "constant", "label": "Property regex", "query": ".*", "current": { "text": ".*", "value": ".*" } }
+        ]
+      },
+      "panels": [
+        {
+          "id": 100,
+          "title": "Metric Sources",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, and `payment_errors_total` are emitted by `stayledger-api`. Empty charts mean no matching booking/payment activity or metrics are disabled."
+          }
+        },
+        {
+          "id": 1,
+          "title": "Booking Creation Rate (per min)",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])) * 60) or vector(0)", "legendFormat": "bookings/min" }]
+        },
+        {
+          "id": 2,
+          "title": "Confirm Rate",
+          "type": "stat",
+          "gridPos": { "x": 4, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"confirmed\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
+            "legendFormat": "Confirm %"
+          }]
+        },
+        {
+          "id": 3,
+          "title": "Payment Success Rate",
+          "type": "stat",
+          "gridPos": { "x": 8, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",status=\"success\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
+            "legendFormat": "Payment %"
+          }]
+        },
+        {
+          "id": 4,
+          "title": "Booking Lifecycle p95 (ms)",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 3000, "color": "yellow" }, { "value": 8000, "color": "red" }] }
+            }
+          },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
+            "legendFormat": "p95 ms"
+          }]
+        },
+        {
+          "id": 5,
+          "title": "Booking Lifecycle Duration p50/p95/p99 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 7, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p99" }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Booking Operations by Status",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 7, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(booking_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, source)", "legendFormat": "{{operation}} / {{source}}" }]
+        },
+        {
+          "id": 7,
+          "title": "Booking Errors by Step",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (step, error_type)", "legendFormat": "{{step}} / {{error_type}}" }]
+        },
+        {
+          "id": 8,
+          "title": "Booking Errors by Property",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (property_id)", "legendFormat": "{{property_id}}" }]
+        },
+        {
+          "id": 9,
+          "title": "Payment Operations",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 23, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(payment_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status, method)", "legendFormat": "{{operation}} {{status}} {{method}}" }]
+        },
+        {
+          "id": 10,
+          "title": "Payment Errors by Type",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(payment_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (error_type, property_id)", "legendFormat": "{{error_type}} / {{property_id}}" }]
+        }
+      ]
+    }

@@ -1,0 +1,237 @@
+# Five SLO/operational alerts for hotel-assistant.
+#
+# Reasoning: Week 4/C7 — these expressions only reference metrics that already exist
+# (Phase C1 in app/observability/prom_client.py). Each alert pairs a `for:` clause
+# (sustain window) with a p1/p2/p3 `severity` label so Alertmanager can route distinctly.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-assistant-slo
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/part-of: hotel-assistant
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    - name: hotel-assistant.slo
+      interval: 30s
+      rules:
+        # --- SLO 1: Webhook latency p95 -------------------------------------
+        # Reasoning: histogram_quantile over 5m gives a stable p95; alert only when
+        # sustained for 5m to avoid paging on a single GC pause.
+        - alert: WebhookHighLatencyP95
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le, route) (
+                rate(http_request_duration_seconds_bucket{route="/webhook"}[5m])
+              )
+            ) > 2
+          for: 5m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: latency
+          annotations:
+            summary: "Webhook p95 latency > 2s ({{ $value | printf \"%.2f\" }}s)"
+            description: |
+              p95 of /webhook duration over the last 5m exceeded 2s for 5m.
+              Check: AOAI latency, n8n booking workflow, Redis ping, recent deploys.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhighlatencyp95"
+
+        # --- SLO 2: Webhook 5xx error rate ----------------------------------
+        # Reasoning: error budget = 1% over a rolling 5m window. We bucket by route
+        # so 4xx (rate-limit, validation) doesn't pollute the SLO.
+        - alert: WebhookHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{route="/webhook",status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(http_requests_total{route="/webhook"}[5m])), 1e-9)
+            ) > 0.01
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-assistant-api
+            slo: errors
+          annotations:
+            summary: "Webhook 5xx rate > 1% ({{ $value | humanizePercentage }})"
+            description: |
+              5xx error rate on /webhook exceeded 1% for 5m.
+              Check pod logs for trace_id, then jump to Tempo via Grafana derived field.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhigherrorrate"
+
+        # --- SLO 3: LLM token-cost spike ------------------------------------
+        # Reasoning: compare a fast (10m) rate against a slow (1h) baseline; >2x for
+        # sustained 30m is a strong signal of prompt regression, loop, or attack.
+        # The `and` clause adds an absolute floor (>5 tokens/sec ≈ 300 tok/min) so we
+        # don't page on cold-start where a tiny 10m rate over a near-zero 1h baseline
+        # produces a huge ratio that is not actually a cost incident.
+        - alert: LLMCostSpike
+          expr: |
+            (
+              (
+                sum(rate(llm_tokens_total{direction!="cached"}[10m]))
+                /
+                clamp_min(sum(rate(llm_tokens_total{direction!="cached"}[1h])), 1e-9)
+              ) > 2
+            )
+            and on()
+            (sum(rate(llm_tokens_total{direction!="cached"}[10m])) > 5)
+          for: 30m
+          labels:
+            severity: p3
+            service: hotel-assistant-api
+            slo: cost
+          annotations:
+            summary: "LLM token rate is >2x the 1h baseline"
+            description: |
+              Non-cached token throughput in the last 10m is more than twice the rolling
+              1h average. Inspect intent breakdown on the LLM Cost dashboard.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-llmcostspike"
+
+        # --- SLO 4: Redis dependency down -----------------------------------
+        # Reasoning: when Redis is down, /readyz returns 503 and pods fall out of
+        # the Service. Catch it before the LB completes draining all replicas.
+        - alert: RedisDown
+          expr: |
+            max_over_time(
+              (
+                sum(rate(http_requests_total{route="/readyz",status="503"}[2m]))
+                /
+                clamp_min(sum(rate(http_requests_total{route="/readyz"}[2m])), 1e-9)
+              )[2m:30s]
+            ) > 0.5
+          for: 2m
+          labels:
+            severity: p1
+            service: hotel-assistant-api
+            slo: dependency
+            dependency: redis
+          annotations:
+            summary: "Redis dependency degraded — /readyz failing >50% for 2m"
+            description: |
+              Half or more of /readyz probes returned 503 for 2m. Likely Redis is
+              unreachable. Check redis pod, NetworkPolicy, and REDIS_URL secret.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-redisdown"
+
+        # --- SLO 5: webhook circuit breaker open -----------------------------
+        # Reasoning: circuit_breaker_state is a Gauge (0=closed,1=half_open,2=open).
+        # Sustained open means booking/pricing webhook dependency is unhealthy.
+        - alert: WebhookCircuitOpen
+          expr: max by (target) (circuit_breaker_state{target=~"booking|pricing"}) == 2
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-assistant-api
+            slo: dependency
+            dependency: webhook
+          annotations:
+            summary: "webhook circuit breaker OPEN for 5m on {{ $labels.target }}"
+            description: |
+              The webhook circuit breaker has been OPEN for 5m. Pricing/booking calls are
+              short-circuited. Check downstream webhook health and auth.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookcircuitopen"
+
+        # --- Queue depth: channel worker backlog ----------------------------
+        - alert: ChannelQueueDepthHigh
+          expr: |
+            max(queue_depth{queue=~"channel_ready|channel_delayed"}) > 200
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: backlog
+            dependency: channel_worker
+          annotations:
+            summary: "Channel queue backlog > 200 for 10m"
+            description: |
+              Channel webhook processing backlog is building up (ready+delayed).
+              Check channel worker pods, Redis health, and downstream AOAI latency.
+
+        - alert: ChannelQueueOldestAgeHigh
+          expr: |
+            max(queue_oldest_age_seconds{queue=~"channel_ready|channel_delayed"}) > 120
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: backlog
+            dependency: channel_worker
+          annotations:
+            summary: "Channel queue oldest job age > 120s for 10m"
+            description: |
+              Jobs are waiting too long in the channel queue. This usually means the worker
+              is underprovisioned or downstream dependencies (AOAI/Redis/provider APIs) are slow.
+
+        # --- Queue depth: generic webhook async worker backlog ---------------
+        - alert: WebhookWorkerQueueDepthHigh
+          expr: |
+            max(queue_depth{queue=~"webhook_ready|webhook_delayed"}) > 200
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: backlog
+            dependency: webhook_worker
+          annotations:
+            summary: "Webhook worker queue backlog > 200 for 10m"
+            description: |
+              Generic async webhook jobs are building up. Check webhook worker pods,
+              Redis health, AOAI latency, and whether WEBHOOK_ASYNC_QUEUE is producing
+              faster than workers can consume.
+
+        - alert: WebhookWorkerQueueOldestAgeHigh
+          expr: |
+            max(queue_oldest_age_seconds{queue="webhook_ready"}) > 120
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: backlog
+            dependency: webhook_worker
+          annotations:
+            summary: "Webhook worker oldest job age > 120s for 10m"
+            description: |
+              Generic webhook jobs are waiting too long before processing. Scale the
+              webhook worker or inspect downstream latency before user-visible delays grow.
+
+        - alert: AdminWebVitalsPoor
+          expr: |
+            (
+              sum(rate(web_vital_events_total{route=~"/admin.*",rating="poor"}[15m]))
+              /
+              clamp_min(sum(rate(web_vital_events_total{route=~"/admin.*"}[15m])), 1e-9)
+            ) > 0.20
+          for: 30m
+          labels:
+            severity: p3
+            service: hotel-assistant-frontend
+            slo: frontend
+          annotations:
+            summary: "Admin Web Vitals poor ratio > 20% over 15m"
+            description: |
+              Frontend Web Vitals reports show sustained poor LCP/INP/CLS/FCP/TTFB
+              ratings on admin routes. Check the Golden Signals dashboard and recent
+              frontend deploys.
+
+        - alert: SMTPDeliveryFailureRateHigh
+          expr: |
+            (
+              sum(rate(smtp_send_total{outcome!="success"}[10m]))
+              /
+              clamp_min(sum(rate(smtp_send_total[10m])), 1e-9)
+            ) > 0.10
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-assistant-api
+            slo: dependency
+            dependency: smtp
+          annotations:
+            summary: "SMTP failure ratio > 10% over 10m"
+            description: |
+              Email delivery is failing for more than 10% of SMTP send attempts in the
+              last 10m. Check SMTP credentials, TLS settings, and network egress to mail relay.

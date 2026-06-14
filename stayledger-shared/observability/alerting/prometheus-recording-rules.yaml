@@ -1,0 +1,106 @@
+# Prometheus Recording Rules — Pre-aggregate common queries for dashboard performance
+# These recording rules run every 1 minute and cache expensive PromQL expressions
+#
+# Benefit: Dashboards query a single series instead of multi-step expressions → 10x faster
+# Created: May 2, 2026 (Production Review)
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-ai-recording-rules
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: stayledger-staging-api
+    app.kubernetes.io/part-of: stayledger-staging
+    prometheus: kube-prometheus
+    role: recording-rules
+spec:
+  groups:
+    - name: hotel-ai.performance.recording
+      interval: 1m
+      rules:
+        # ====== Application Metrics (RED method) ======
+        
+        - record: app:requests_total_5m
+          expr: sum(rate(http_requests_total[5m]))
+        
+        - record: app:error_ratio_5m
+          expr: |
+            sum(rate(http_requests_total{status=~"5.."}[5m])) 
+            / clamp_min(sum(rate(http_requests_total[5m])), 1e-9)
+        
+        - record: app:latency_p50_5m
+          expr: |
+            histogram_quantile(0.50, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+        
+        - record: app:latency_p95_5m
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+        
+        - record: app:latency_p99_5m
+          expr: |
+            histogram_quantile(0.99, sum by (le) (rate(http_request_duration_seconds_bucket[5m])))
+        
+        # ====== LLM Metrics ======
+        
+        - record: llm:tokens_prompt_rate_5m
+          expr: sum(rate(llm_tokens_total{direction="prompt"}[5m]))
+        
+        - record: llm:tokens_completion_rate_5m
+          expr: sum(rate(llm_tokens_total{direction="completion"}[5m]))
+        
+        - record: llm:tokens_cached_rate_5m
+          expr: sum(rate(llm_tokens_total{direction="cached"}[5m]))
+        
+        - record: llm:cache_hit_ratio_5m
+          expr: |
+            llm:tokens_cached_rate_5m
+            / clamp_min((llm:tokens_prompt_rate_5m + llm:tokens_completion_rate_5m + llm:tokens_cached_rate_5m), 1e-9)
+        
+        - record: llm:timeout_ratio_5m
+          expr: |
+            sum(rate(llm_call_outcome_total{outcome="timeout"}[5m])) 
+            / clamp_min(sum(rate(llm_call_outcome_total[5m])), 1e-9)
+        
+        - record: llm:latency_p95_5m
+          expr: |
+            histogram_quantile(0.95, sum by (le) (rate(llm_request_duration_seconds_bucket[5m])))
+        
+        # ====== Pricing Metrics ======
+        
+        - record: pricing:cache_hit_ratio_5m
+          expr: |
+            sum(rate(pricing_quote_source_total{source="cache"}[5m])) 
+            / clamp_min(sum(rate(pricing_quote_source_total[5m])), 1e-9)
+        
+        - record: pricing:estimate_ratio_5m
+          expr: |
+            sum(rate(pricing_quote_source_total{source="estimate"}[5m])) 
+            / clamp_min(sum(rate(pricing_quote_source_total[5m])), 1e-9)
+        
+        # ====== Webhook Workflow Metrics ======
+        
+        - record: webhook:success_ratio_5m
+          expr: |
+            sum(rate(webhook_calls_total{outcome="success"}[5m])) 
+            / clamp_min(sum(rate(webhook_calls_total[5m])), 1e-9)
+        
+        - record: webhook:latency_p95_5m
+          expr: |
+            histogram_quantile(0.95, sum by (le, workflow) (rate(webhook_call_duration_seconds_bucket[5m])))
+        
+        # ====== Cost Metrics (USD per hour estimate) ======
+        
+        - record: llm:cost_usd_per_hour_5m
+          expr: |
+            (llm:tokens_prompt_rate_5m * 3600 / 1000 * 0.00015)
+            + (llm:tokens_completion_rate_5m * 3600 / 1000 * 0.0006)
+            + (llm:tokens_cached_rate_5m * 3600 / 1000 * 0.000075)
+        
+        # ====== Booking & Revenue Metrics ======
+        
+        - record: bookings:confirmed_rate_5m
+          expr: sum(rate(bookings_confirmed_total[5m]))
+        
+        - record: chat:turns_rate_5m
+          expr: sum(rate(chat_turns_total[5m]))

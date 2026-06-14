@@ -1,0 +1,47 @@
+# PostgreSQL performance tuning parameters.
+# These are passed as -c flags to the postgres process in postgres-deployment.yaml.
+# Sized for a pod with 4Gi memory limit (requests: 1Gi).
+#
+# Baseline: 2Gi RAM allocation assumption (conservative for shared node).
+# Tune shared_buffers / effective_cache_size up if the node has dedicated RAM.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-tuning
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+data:
+  # --- Memory ---
+  shared_buffers: "512MB"
+  effective_cache_size: "1536MB"
+  work_mem: "16MB"
+  maintenance_work_mem: "128MB"
+
+  # --- WAL ---
+  wal_level: "replica"
+  max_wal_size: "1GB"
+  min_wal_size: "256MB"
+  checkpoint_completion_target: "0.9"
+  wal_compression: "on"
+
+  # --- Connections ---
+  max_connections: "100"
+
+  # --- Planner ---
+  random_page_cost: "1.1"         # SSD / local PV
+  effective_io_concurrency: "200"
+
+  # --- Observability ---
+  log_min_duration_statement: "500"
+  log_checkpoints: "on"
+  log_connections: "off"
+  log_disconnections: "off"
+  log_lock_waits: "on"
+  deadlock_timeout: "1s"
+
+  # --- Autovacuum ---
+  autovacuum_vacuum_scale_factor: "0.05"
+  autovacuum_analyze_scale_factor: "0.02"

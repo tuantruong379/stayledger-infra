@@ -1,0 +1,53 @@
+# Horizontal Pod Autoscaler for the channel worker.
+# Pre-req: metrics-server installed in the cluster (kubectl top pods must work).
+# Channel worker consumes Facebook/Zalo events from Redis queues; scale when queue depth rises.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: hotel-assistant-channel-worker
+    app.kubernetes.io/part-of: hotel-assistant
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: hotel-assistant-channel-worker
+  # Reasoning: channel worker is I/O bound (blocking BRPOP + HTTP to Meta/Zalo).
+  # Start with 1-2 replicas; scale up if queue wait times exceed SLA.
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # Reasoning: moderate scale-up — channel events arrive steadily, not in sharp spikes like HTTP.
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      # Reasoning: gradual scale-down — avoid thrashing when queues drain.
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 180
+      selectPolicy: Min

@@ -1,0 +1,23 @@
+# Legacy per-tenant booking-notification recipients (non-sensitive). Maps tenant_id -> ops inboxes.
+# Keep keys aligned with ``tenants.slug`` / runtime ``tenant_id`` used in bookings and outbox.
+#
+# Preferred source is tenant_runtime_config.notification_emails, managed from the Admin Tenant
+# config tab and embedded into each booking outbox payload. The app reads this env var only as
+# fallback routing when a tenant has no DB notification_emails.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-tenant-email-routing
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: notifications
+data:
+  # Legacy tenant-specific fallback only. Global fallback lives in SMTP_OPS_TO_EMAIL.
+  TENANT_EMAIL_ROUTING_JSON: |
+    {
+      "tenants": {
+        "default": {"recipients": ["truonglamtuan@gmail.com"]}
+      }
+    }

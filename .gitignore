@@ -1,0 +1,8 @@
+# Real Kubernetes secrets — never commit these
+# Safe counterparts are *.example.yaml in the same directories
+**/secrets.yaml
+**/pgbouncer-secret.yaml
+**/*-secret.yaml
+
+# Keep example/template files
+!**/*.example.yaml

@@ -1,0 +1,75 @@
+# PgBouncer metrics exporter for Prometheus
+# Exposes pgbouncer_pools_*, pgbouncer_stats_*, pgbouncer_databases_*
+# Image: spreaker/prometheus-pgbouncer-exporter
+#
+# Prerequisite: add a stats_user to pgbouncer.ini in pgbouncer-secret:
+#   [pgbouncer]
+#   stats_users = pgbouncer_exporter
+#
+# The exporter connects to PgBouncer's admin database using the stats user.
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-exporter
+  namespace: observability
+  labels:
+    app: pgbouncer-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-exporter
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9127"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: pgbouncer-exporter
+          image: spreaker/prometheus-pgbouncer-exporter:latest
+          env:
+            - name: PGBOUNCER_EXPORTER_HOST
+              value: stayledger-pgbouncer.stayledger-staging.svc.cluster.local
+            - name: PGBOUNCER_EXPORTER_PORT
+              value: "5432"
+            - name: PGBOUNCER_EXPORTER_USER
+              value: pgbouncer_exporter
+            - name: PGBOUNCER_EXPORTER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgbouncer-exporter-secret
+                  key: password
+            - name: PGBOUNCER_EXPORTER_DATABASE
+              value: pgbouncer
+          ports:
+            - containerPort: 9127
+              name: metrics
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-exporter
+  namespace: observability
+  labels:
+    app: pgbouncer-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: pgbouncer-exporter
+  ports:
+    - name: metrics
+      port: 9127
+      targetPort: 9127

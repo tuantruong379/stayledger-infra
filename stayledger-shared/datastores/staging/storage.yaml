@@ -1,0 +1,66 @@
+---
+# StorageClass for staging local storage on hkk8s-hub-master node
+# Reuses production node but separate paths and PV names
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage-hub-master-staging
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: false
+
+---
+# PersistentVolume for staging PostgreSQL data on hkk8s-hub-master
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-staging-postgres-pv
+  labels:
+    type: local
+    app: stayledger-postgres
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger-staging/postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master
+
+---
+# PersistentVolume for staging Redis data on hkk8s-hub-master
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-staging-redis-pv
+  labels:
+    type: local
+    app: stayledger-redis
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger-staging/redis
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master

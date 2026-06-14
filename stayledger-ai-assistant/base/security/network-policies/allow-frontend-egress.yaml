@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-egress
+  namespace: hotel-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: hotel-assistant-frontend
+  policyTypes:
+  - Egress
+  egress:
+  # Reach the FastAPI backend (in-cluster).
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-api
+    ports:
+    - protocol: TCP
+      port: 8000
+  # Reach Postgres for /api/db/ping health check (server-side Next.js route).
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres
+    ports:
+    - protocol: TCP
+      port: 5432

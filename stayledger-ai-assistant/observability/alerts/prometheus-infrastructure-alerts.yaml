@@ -1,0 +1,201 @@
+# Infrastructure & Observability Stack Alerts (NEW)
+# Kubernetes cluster health monitoring + observability platform health
+# Created: May 2, 2026 (Production Review)
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-ai-infrastructure-alerts
+  namespace: observability
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules
+spec:
+  groups:
+    # =========================================================================
+    # KUBERNETES INFRASTRUCTURE ALERTS
+    # =========================================================================
+    - name: hotel-ai.infrastructure
+      interval: 30s
+      rules:
+        - alert: NodeNotReady
+          expr: |
+            kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: p1
+            component: kubernetes
+          annotations:
+            summary: "🔴 Kubernetes node NOT READY"
+            description: |
+              Node {{ $labels.node }} is not ready.
+              Pods cannot be scheduled. Cluster capacity impacted.
+            dashboard_url: "/d/k8s-infra"
+
+        - alert: NodeDiskPressure
+          expr: |
+            kube_node_status_condition{condition="DiskPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: p1
+            component: kubernetes
+          annotations:
+            summary: "🔴 Node disk pressure detected"
+            description: |
+              Node {{ $labels.node }} has disk pressure.
+              Kubelet will evict pods. Clean up or expand disk.
+            dashboard_url: "/d/k8s-infra"
+
+        - alert: NodeMemoryPressure
+          expr: |
+            kube_node_status_condition{condition="MemoryPressure",status="true"} == 1
+          for: 5m
+          labels:
+            severity: p2
+            component: kubernetes
+          annotations:
+            summary: "⚠️ Node memory pressure detected"
+            description: |
+              Node {{ $labels.node }} has memory pressure. Pod evictions may occur.
+            dashboard_url: "/d/k8s-infra"
+
+        - alert: PodCrashLooping
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="hotel-assistant"}[15m]) > 0.1
+          for: 5m
+          labels:
+            severity: p2
+            component: kubernetes
+          annotations:
+            summary: "⚠️ Pod {{ $labels.pod }} is crash-looping"
+            description: |
+              Container restarting {{ $value | printf "%.1f" }} times/min.
+              Check pod logs and events.
+            dashboard_url: "/d/kubernetes-pods"
+
+        - alert: KubeletDown
+          expr: |
+            up{job="kubelet"} == 0
+          for: 5m
+          labels:
+            severity: p1
+            component: kubernetes
+          annotations:
+            summary: "🔴 Kubelet is down on {{ $labels.node }}"
+            description: |
+              Kubelet process is not responding. Pods cannot be managed.
+            dashboard_url: "/d/k8s-infra"
+
+        - alert: PodEvictions
+          expr: |
+            sum(increase(kube_pod_status_phase{phase="Failed"}[1h])) > 5
+          for: 10m
+          labels:
+            severity: p2
+            component: kubernetes
+          annotations:
+            summary: "⚠️ High pod eviction rate"
+            description: |
+              {{ $value }} pods failed/evicted in the last hour.
+              Check node disk/memory pressure and pod resource requests.
+            dashboard_url: "/d/k8s-infra"
+
+        - alert: PersistentVolumeFull
+          expr: |
+            kubelet_volume_stats_available_bytes / 1024 / 1024 / 1024 < 1
+          for: 5m
+          labels:
+            severity: p1
+            component: kubernetes
+          annotations:
+            summary: "🔴 PVC {{ $labels.persistentvolumeclaim }} has <1GB free"
+            description: |
+              PVC in namespace {{ $labels.namespace }} is almost full.
+              Data loss risk. Expand immediately.
+            dashboard_url: "/d/k8s-infra"
+
+    # =========================================================================
+    # OBSERVABILITY STACK HEALTH ALERTS
+    # =========================================================================
+    - name: hotel-ai.observability
+      interval: 1m
+      rules:
+        - alert: PrometheusScrapeFailing
+          expr: |
+            increase(prometheus_sd_scrapes_total{result="error"}[5m]) > 0
+          for: 15m
+          labels:
+            severity: p3
+            component: observability
+          annotations:
+            summary: "ℹ️ Prometheus scrape failures detected"
+            description: |
+              {{ $value }} targets failed in last 5m.
+              Check Prometheus logs and target availability.
+            dashboard_url: "/d/obs-health"
+
+        - alert: PrometheusTSDBIOError
+          expr: |
+            increase(prometheus_tsdb_io_retries_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: p2
+            component: observability
+          annotations:
+            summary: "⚠️ Prometheus TSDB I/O errors"
+            description: |
+              {{ $value }} I/O retries. Storage may be degraded.
+              Check disk health and PVC status.
+            dashboard_url: "/d/obs-health"
+
+        - alert: TempoTracesDropped
+          expr: |
+            increase(otelcol_receiver_dropped_spans[5m]) > 100
+          for: 5m
+          labels:
+            severity: p2
+            component: observability
+          annotations:
+            summary: "⚠️ Tempo dropping traces"
+            description: |
+              {{ $value }} spans dropped in last 5m. Adjust sampling or memory limits.
+            dashboard_url: "/d/obs-health"
+
+        - alert: LokiHighErrorRate
+          expr: |
+            rate(loki_distributor_errors_total[5m]) > 0.01
+          for: 10m
+          labels:
+            severity: p2
+            component: observability
+          annotations:
+            summary: "⚠️ Loki distributor errors > 1%"
+            description: |
+              Logs may be lost. Check Loki pod logs and ingestion rate.
+            dashboard_url: "/d/obs-health"
+
+        - alert: GrafanaPodDown
+          expr: |
+            up{job="grafana"} == 0
+          for: 5m
+          labels:
+            severity: p1
+            component: observability
+          annotations:
+            summary: "🔴 Grafana pod is down"
+            description: |
+              Grafana is unreachable. Cannot view dashboards.
+            dashboard_url: "/d/kubernetes-pods"
+
+        - alert: AlertmanagerPodDown
+          expr: |
+            up{job="alertmanager"} == 0
+          for: 5m
+          labels:
+            severity: p1
+            component: observability
+          annotations:
+            summary: "🔴 Alertmanager pod is down"
+            description: |
+              Alertmanager is unreachable. Alerts may not route.
+            dashboard_url: "/d/kubernetes-pods"

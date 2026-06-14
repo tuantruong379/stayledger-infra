@@ -1,0 +1,135 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-api-perf
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger PMS"
+data:
+  api-performance.json: |
+    {
+      "uid": "stayledger-api-perf",
+      "title": "StayLedger PMS — API Performance",
+      "description": "Per-route latency, error rates, and throughput. Use for incident response and performance tuning.",
+      "tags": ["stayledger", "api", "performance"],
+      "schemaVersion": 38,
+      "refresh": "30s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "api_job", "type": "constant", "label": "API scrape job", "query": "stayledger-api", "current": { "text": "stayledger-api", "value": "stayledger-api" } },
+          { "name": "route_filter", "type": "constant", "label": "Route regex", "query": ".*", "current": { "text": ".*", "value": ".*" } }
+        ]
+      },
+      "panels": [
+        {
+          "id": 100,
+          "title": "What to watch",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "Primary incident signals: API scrape `up`, total RPS, 5xx ratio, p95/p99 latency, and top slow routes. Set `route_filter` to narrow noisy route groups."
+          }
+        },
+        {
+          "id": 1,
+          "title": "Requests per Second (by route)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{ "expr": "topk(10, sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[1m])) by (route, method))", "legendFormat": "{{method}} {{route}}" }]
+        },
+        {
+          "id": 2,
+          "title": "p95 Latency by Route (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 3, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{ "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le)))", "legendFormat": "{{route}}" }]
+        },
+        {
+          "id": 3,
+          "title": "Top 10 Slowest Routes — p95 (ms)",
+          "type": "barchart",
+          "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "options": { "orientation": "horizontal" },
+          "targets": [{ "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le)))", "legendFormat": "{{route}}", "instant": true }]
+        },
+        {
+          "id": 4,
+          "title": "Error Rate by Route (5xx only — routes with traffic)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "(sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\",status=~\"5..\"}[5m])) by (route) / clamp_min(sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route), 0.001)) and sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route) > 0.1",
+            "legendFormat": "{{route}}"
+          }]
+        },
+        {
+          "id": 5,
+          "title": "Status Code Distribution",
+          "type": "piechart",
+          "gridPos": { "x": 0, "y": 19, "w": 6, "h": 8 },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (status)", "legendFormat": "{{status}}", "instant": true }]
+        },
+        {
+          "id": 6,
+          "title": "Rate Limit Events (429)",
+          "type": "stat",
+          "gridPos": { "x": 6, "y": 19, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 1, "color": "yellow" }, { "value": 10, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"$api_job\",status=\"429\"}[5m]))", "legendFormat": "429/s" }]
+        },
+        {
+          "id": 7,
+          "title": "Auth Login Latency (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 19, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=\"/api/auth/login\"}[5m])) by (le))", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=\"/api/auth/login\"}[5m])) by (le))", "legendFormat": "p95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=\"/api/auth/login\"}[5m])) by (le))", "legendFormat": "p99" }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Booking API Latency p95 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 27, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\".*bookings.*\"}[5m])) by (route, le))",
+            "legendFormat": "{{route}}"
+          }]
+        },
+        {
+          "id": 9,
+          "title": "AI Chat API Latency p95 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 27, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\".*ai.*chat.*\"}[5m])) by (route, le))",
+            "legendFormat": "{{route}}"
+          }]
+        },
+        {
+          "id": 10,
+          "title": "Route Table — RPS / p50 / p95 / Error Rate",
+          "type": "table",
+          "gridPos": { "x": 0, "y": 35, "w": 24, "h": 10 },
+          "options": { "sortBy": [{ "displayName": "p95 ms", "desc": true }] },
+          "targets": [
+            { "expr": "sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, method)", "legendFormat": "{{method}} {{route}}", "instant": true, "refId": "A" },
+            { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le))", "instant": true, "refId": "B" },
+            { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le))", "instant": true, "refId": "C" }
+          ]
+        }
+      ]
+    }

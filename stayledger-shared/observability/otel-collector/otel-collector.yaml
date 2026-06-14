@@ -1,0 +1,212 @@
+# OpenTelemetry Collector — OTLP traces from StayLedger API → Tempo with tail-based sampling.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc: { endpoint: 0.0.0.0:4317 }
+          http: { endpoint: 0.0.0.0:4318 }
+
+    processors:
+      k8sattributes:
+        auth_type: serviceAccount
+        extract:
+          metadata:
+            - k8s.namespace.name
+            - k8s.pod.name
+            - k8s.deployment.name
+            - k8s.node.name
+        pod_association:
+          - sources:
+              - from: resource_attribute
+                name: k8s.pod.ip
+          - sources:
+              - from: connection
+      batch:
+        send_batch_size: 1024
+        timeout: 5s
+      memory_limiter:
+        check_interval: 2s
+        limit_mib: 400
+        spike_limit_mib: 80
+      tail_sampling:
+        policies:
+          - name: error-traces
+            type: status_code
+            status_code:
+              status_codes: [ERROR]
+          - name: high-latency
+            type: latency
+            latency:
+              threshold_ms: 1000
+          - name: probabilistic-base
+            type: probabilistic
+            probabilistic:
+              sampling_percentage: 5
+      resource:
+        attributes:
+          - key: deployment.environment
+            value: staging
+            action: insert
+          - key: k8s.cluster.name
+            value: hkk8s-hub-master
+            action: insert
+
+    exporters:
+      otlphttp/tempo:
+        endpoint: http://tempo.observability.svc.cluster.local:4318
+        tls: { insecure: true }
+      debug:
+        verbosity: basic
+
+    extensions:
+      health_check: { endpoint: 0.0.0.0:13133 }
+
+    service:
+      extensions: [health_check]
+      telemetry:
+        metrics:
+          address: 0.0.0.0:8888
+      pipelines:
+        traces:
+          receivers:  [otlp]
+          processors: [memory_limiter, k8sattributes, tail_sampling, resource, batch]
+          exporters:  [otlphttp/tempo]
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: otel-collector
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: otel-collector-k8sattributes
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "namespaces"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["replicasets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: otel-collector-k8sattributes
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: otel-collector-k8sattributes
+subjects:
+  - kind: ServiceAccount
+    name: otel-collector
+    namespace: observability
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otel-collector
+    spec:
+      serviceAccountName: otel-collector
+      automountServiceAccountToken: true
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: otelcol
+          image: otel/opentelemetry-collector-contrib:0.120.0
+          imagePullPolicy: IfNotPresent
+          args: ["--config=/conf/config.yaml"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          ports:
+            - { name: otlp-grpc,  containerPort: 4317 }
+            - { name: otlp-http,  containerPort: 4318 }
+            - { name: metrics,    containerPort: 8888 }
+            - { name: healthz,    containerPort: 13133 }
+          resources:
+            requests: { cpu: 50m,  memory: 128Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          livenessProbe:
+            httpGet: { path: /, port: healthz }
+            periodSeconds: 30
+          readinessProbe:
+            httpGet: { path: /, port: healthz }
+            periodSeconds: 10
+          volumeMounts:
+            - { name: conf, mountPath: /conf }
+      volumes:
+        - name: conf
+          configMap: { name: otel-collector-config }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: otel-collector
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  type: ClusterIP
+  ports:
+    - { name: otlp-grpc, port: 4317, targetPort: otlp-grpc }
+    - { name: otlp-http, port: 4318, targetPort: otlp-http }
+    - { name: metrics,   port: 8888, targetPort: metrics }
+  selector:
+    app.kubernetes.io/name: otel-collector
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-collector
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: otel-collector
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  namespaceSelector:
+    matchNames: [observability]
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

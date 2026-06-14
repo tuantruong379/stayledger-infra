@@ -1,0 +1,196 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-ai-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: hotel-ai.slo.recording
+      interval: 30s
+      rules:
+        - record: slo:hotel_ai_chat:error_ratio_5m
+          expr: |
+            sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat",status=~"5.."}[5m]))
+            /
+            clamp_min(sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat"}[5m])), 1e-9)
+
+        - record: slo:hotel_ai_chat:error_ratio_30m
+          expr: |
+            sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat",status=~"5.."}[30m]))
+            /
+            clamp_min(sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat"}[30m])), 1e-9)
+
+        - record: slo:hotel_ai_chat:error_ratio_1h
+          expr: |
+            sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat",status=~"5.."}[1h]))
+            /
+            clamp_min(sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat"}[1h])), 1e-9)
+
+        - record: slo:hotel_ai_chat:error_ratio_6h
+          expr: |
+            sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat",status=~"5.."}[6h]))
+            /
+            clamp_min(sum by (tenant_id) (rate(http_requests_total{route="/api/v1/chat"}[6h])), 1e-9)
+
+        - record: slo:hotel_ai_chat:error_ratio_30d
+          expr: |
+            sum by (tenant_id) (increase(http_requests_total{route="/api/v1/chat",status=~"5.."}[30d]))
+            /
+            clamp_min(sum by (tenant_id) (increase(http_requests_total{route="/api/v1/chat"}[30d])), 1e-9)
+
+        - record: slo:hotel_ai_chat:error_budget_remaining_30d
+          expr: |
+            clamp_min(1 - (slo:hotel_ai_chat:error_ratio_30d / 0.005), 0)
+
+        - record: slo:hotel_ai_chat:good_latency_ratio_5m
+          expr: |
+            sum by (tenant_id) (rate(http_request_duration_seconds_bucket{route="/api/v1/chat",le="3"}[5m]))
+            /
+            clamp_min(sum by (tenant_id) (rate(http_request_duration_seconds_count{route="/api/v1/chat"}[5m])), 1e-9)
+
+        - record: slo:hotel_ai_webhook:success_ratio_15m
+          expr: |
+            sum by (tenant_id) (rate(webhook_calls_total{workflow=~"hotel_booking_webhook|hotel_room_service_webhook",outcome="success"}[15m]))
+            /
+            clamp_min(sum by (tenant_id) (rate(webhook_calls_total{workflow=~"hotel_booking_webhook|hotel_room_service_webhook"}[15m])), 1e-9)
+
+        - record: slo:hotel_ai_llm:timeout_ratio_5m
+          expr: |
+            sum by (tenant_id) (rate(llm_call_outcome_total{outcome="timeout"}[5m]))
+            /
+            clamp_min(sum by (tenant_id) (rate(llm_call_outcome_total[5m])), 1e-9)
+
+    - name: hotel-ai.slo
+      interval: 30s
+      rules:
+        - alert: HotelAIChatAvailabilityBurnRateP1
+          expr: |
+            (slo:hotel_ai_chat:error_ratio_5m / 0.005 > 14)
+            and
+            (slo:hotel_ai_chat:error_ratio_1h / 0.005 > 14)
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: availability
+          annotations:
+            summary: "P1: Guest chat availability error budget burn >14x"
+            description: "Guest chat availability is burning error budget at >14x in 1h (confirmed by 5m), risking rapid SLO exhaustion and visible failures to guests."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-slo/hotel-ai-slo?from=now-6h&to=now"
+
+        - alert: HotelAIChatAvailabilityBurnRateP2
+          expr: |
+            (slo:hotel_ai_chat:error_ratio_30m / 0.005 > 6)
+            and
+            (slo:hotel_ai_chat:error_ratio_6h / 0.005 > 6)
+          for: 15m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: availability
+          annotations:
+            summary: "P2: Guest chat availability error budget burn >6x"
+            description: "Guest chat availability is burning error budget at >6x in 6h (confirmed by 30m), indicating sustained degradation that can become guest-impacting."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-slo/hotel-ai-slo?from=now-24h&to=now"
+
+        - alert: HotelAIChatHighErrorRate
+          expr: |
+            slo:hotel_ai_chat:error_ratio_5m > 0.005
+          for: 5m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: availability
+          annotations:
+            summary: "Guest chat 5xx rate exceeds 0.5%"
+            description: "Error ratio for /api/v1/chat exceeded the 99.5% availability error budget for 5 minutes; guests may observe failed requests."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-golden/hotel-assistant-golden-signals?from=now-2h&to=now"
+
+        - alert: HotelAIChatLatencyHigh
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(http_request_duration_seconds_bucket{route="/api/v1/chat"}[5m]))
+            ) > 3
+          for: 5m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: latency
+          annotations:
+            summary: "Guest response latency p95 is above 3s"
+            description: "P95 latency for /api/v1/chat has remained above 3 seconds for over 5 minutes, causing slow responses for guests."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-slo/hotel-ai-slo?from=now-2h&to=now"
+
+        - alert: HotelAILLMTimeoutSpike
+          expr: |
+            slo:hotel_ai_llm:timeout_ratio_5m > 0.01
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: dependency
+            dependency: llm
+          annotations:
+            summary: "LLM timeout ratio exceeds 1%"
+            description: "LLM timeout ratio is above 1% for 5 minutes, increasing failed or delayed guest responses and fallback behavior."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-llm-cost/hotel-assistant-llm-cost?from=now-2h&to=now"
+
+        - alert: WebhookWorkflowFailureSpike
+          expr: |
+            slo:hotel_ai_webhook:success_ratio_15m < 0.99
+          for: 10m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: dependency
+            dependency: webhook
+          annotations:
+            summary: "Webhook booking/room-service workflow success below 99%"
+            description: "Critical webhook workflow success rate dropped below 99% over 15 minutes, impacting booking and room-service flows for guests."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-pricing-booking/hotel-assistant-pricing-booking?from=now-6h&to=now"
+
+        - alert: HotelAIPodCrashLooping
+          expr: |
+            max by (pod) (
+              increase(kube_pod_container_status_restarts_total{namespace="hotel-assistant"}[10m])
+            ) > 2
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: availability
+          annotations:
+            summary: "Hotel AI pod is crash-looping"
+            description: "One or more hotel-assistant pods restarted more than two times within 10 minutes, risking request failures and SLO burn."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/kubernetes-pods/kubernetes-pods?from=now-1h&to=now"
+
+        - alert: HotelAITokenBudgetBurn
+          expr: |
+            (
+              (
+                sum(rate(llm_tokens_total{direction!="cached"}[10m]))
+                /
+                clamp_min(sum(rate(llm_tokens_total{direction!="cached"}[1h])), 1e-9)
+              ) > 2
+            )
+            and on()
+            (sum(rate(llm_tokens_total{direction!="cached"}[10m])) > 5)
+          for: 30m
+          labels:
+            severity: p3
+            service: hotel-ai-assistant
+            slo: cost
+          annotations:
+            summary: "LLM token burn is anomalously high"
+            description: "Token consumption is more than 2x the 1h baseline for 30 minutes, suggesting prompt regression, abuse, or caching degradation."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
+            dashboard_url: "/d/hotel-llm-cost/hotel-assistant-llm-cost?from=now-24h&to=now"
+

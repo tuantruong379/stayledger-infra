@@ -1,0 +1,31 @@
+# PersistentVolume for pg_dump backup files.
+# Host path: /mnt/hotel-assistant/postgres-backup (separate from data volume).
+# Operator must create this directory on the node before applying:
+#   mkdir -p /mnt/hotel-assistant/postgres-backup
+#   chown 999:999 /mnt/hotel-assistant/postgres-backup
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-backup-pv
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  capacity:
+    storage: 10Gi
+  local:
+    path: /mnt/hotel-assistant/postgres-backup
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: postgres-sc
+  volumeMode: Filesystem
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - hkk8s-hub-master

@@ -1,0 +1,18 @@
+# Example Prometheus alerting rules — storage fallback rate
+# Apply via PrometheusRule CRD (kube-prometheus-stack) or equivalent.
+# Tune `for` and thresholds for your SLOs.
+
+groups:
+  - name: hotel-assistant-storage
+    rules:
+      - alert: HotelAssistantStorageFallbackSpike
+        expr: |
+          sum(rate(fallback_total[5m])) by (component, reason) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Storage fallback events for {{ $labels.component }} (reason={{ $labels.reason }})"
+          description: |
+            Non-zero sustained rate of fallback_total — Postgres or DB-first path may be unhealthy.
+            Check Postgres connectivity, migration completeness, and logs with event=fallback_triggered.

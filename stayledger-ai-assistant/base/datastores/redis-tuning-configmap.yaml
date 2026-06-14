@@ -1,0 +1,67 @@
+# Redis performance tuning configuration.
+# Mounted at /etc/redis/redis.conf in the redis container.
+# Password is injected at runtime via the REDIS_PASSWORD env var in redis-deployment.yaml
+# using the requirepass argument (kept in args to avoid hardcoding secrets here).
+#
+# Sized for 512Mi memory limit.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-tuning
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: cache
+data:
+  redis.conf: |
+    # --- Networking ---
+    bind 0.0.0.0
+    protected-mode no
+    port 6379
+    tcp-backlog 511
+    timeout 300
+    tcp-keepalive 60
+
+    # --- Memory & eviction ---
+    # 400MB leaves headroom under the 512Mi container limit.
+    maxmemory 400mb
+    # allkeys-lru: evict least recently used keys across all keyspaces when full.
+    # Safe for mixed cache+session workload; session keys are rewritten frequently
+    # so an LRU miss just means the user gets a fresh session rather than an error.
+    maxmemory-policy allkeys-lru
+    maxmemory-samples 10
+
+    # --- Persistence (AOF) ---
+    # AOF gives per-second durability; RDB snapshots cause periodic I/O spikes so disabled.
+    appendonly yes
+    appendfilename "appendonly.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite yes
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+    aof-use-rdb-preamble yes
+
+    # --- Disable RDB snapshots ---
+    save ""
+
+    # --- Clients ---
+    maxclients 500
+
+    # --- Slow log ---
+    # Log commands that take longer than 10ms.
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128
+
+    # --- Latency monitoring ---
+    latency-monitor-threshold 50
+    latency-tracking yes
+
+    # --- Lazy freeing (non-blocking DEL for large keys) ---
+    lazyfree-lazy-eviction yes
+    lazyfree-lazy-expire yes
+    lazyfree-lazy-server-del yes
+
+    # --- Logging ---
+    loglevel notice
+    logfile ""

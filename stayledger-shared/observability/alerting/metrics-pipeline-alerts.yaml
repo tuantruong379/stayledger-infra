@@ -1,0 +1,49 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-staging-metrics-pipeline
+  namespace: observability
+  labels:
+    release: kps
+    app.kubernetes.io/name: stayledger-staging-metrics-pipeline
+    app.kubernetes.io/part-of: stayledger-staging
+spec:
+  groups:
+    - name: stayledger-staging.metrics-pipeline
+      rules:
+        - alert: NATSDeploymentUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-staging", deployment="nats"} < 1
+          for: 3m
+          labels:
+            severity: p2
+            component: nats
+            category: metrics-pipeline
+          annotations:
+            summary: "NATS is unavailable"
+            description: "The real-time tenant metrics pipeline cannot accept per-turn events."
+
+        - alert: MetricsAggregatorUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-staging", deployment="stayledger-staging-metrics-aggregator"} < 1
+          for: 3m
+          labels:
+            severity: p2
+            component: metrics-aggregator
+            category: metrics-pipeline
+          annotations:
+            summary: "Metrics aggregator is unavailable"
+            description: "metrics_1m rows will stop updating until the aggregator is running again."
+
+        - alert: MetricsAggregatorCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{
+              namespace="stayledger-staging",
+              container="metrics-aggregator"
+            }[10m]) > 2
+          for: 5m
+          labels:
+            severity: p2
+            component: metrics-aggregator
+            category: metrics-pipeline
+          annotations:
+            summary: "Metrics aggregator is restarting repeatedly"
+            description: "Check NATS connectivity, HOTEL_OPS_DSN/DATABASE_URL, and metrics_1m migration status."

@@ -1,0 +1,58 @@
+# Kubernetes RBAC — Fine-grained access control for observability stack
+# Ensures only authorized components can read secrets and manage resources
+# Created: May 2, 2026 (Production Review)
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: observability-reader
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+rules:
+  # Allow reading sensitive secrets only for specific components
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["grafana-admin-credentials", "alertmanager-secrets"]
+    verbs: ["get"]
+  
+  # Allow reading ConfigMaps for configuration
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: grafana-secret-reader
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: observability-reader
+subjects:
+  - kind: ServiceAccount
+    name: kps-grafana
+    namespace: observability
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: alertmanager-secret-reader
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: observability-reader
+subjects:
+  - kind: ServiceAccount
+    name: kps-alertmanager
+    namespace: observability
+

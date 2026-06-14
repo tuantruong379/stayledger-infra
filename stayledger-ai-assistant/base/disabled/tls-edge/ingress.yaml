@@ -1,0 +1,43 @@
+# Phase C TLS edge — applied AFTER ``kubectl apply -k k8s/onprem/`` once
+# nginx-ingress (or your edge controller) is installed and ``letsencrypt-prod``
+# ClusterIssuer (see ``cert-manager-issuer.yaml`` in this folder) is reachable.
+#
+# When re-enabled at ``k8s/onprem/ingress.yaml``:
+#   kubectl apply -f k8s/onprem/cert-manager-issuer.yaml
+#   kubectl apply -f k8s/onprem/ingress.yaml
+#
+# The Ingress fronts the ``hotel-assistant-api`` Service (port 8000). Replace
+# ``hotel-assistant.tekcent.com`` with your real public host before applying.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hotel-assistant-api
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/part-of: hotel-assistant
+  annotations:
+    # Reasoning: ClusterIssuer name must match cert-manager-issuer.yaml below.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    # Reasoning: webhook + admin endpoints need slightly larger payloads.
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+    # Reasoning: chat turns can take ~30s when the LLM is slow; keep proxy timeout aligned with WEBHOOK_CHAT_TURN_TIMEOUT_S.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - hotel-assistant.tekcent.com
+      secretName: hotel-assistant-tls
+  rules:
+    - host: hotel-assistant.tekcent.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hotel-assistant-api
+                port:
+                  number: 8000

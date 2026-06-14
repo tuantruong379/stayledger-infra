@@ -1,0 +1,57 @@
+# Grafana Tempo Helm values for StayLedger staging
+# helm upgrade --install tempo grafana/tempo \
+#   -n observability -f helm/tempo-values.yaml
+
+tempo:
+  retention: 168h   # 7d staging
+  image:
+    tag: 2.9.8
+  memBallastSizeMbs: 64
+  search_enabled: true
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+  receivers:
+    otlp:
+      protocols:
+        grpc:
+          endpoint: 0.0.0.0:4317
+        http:
+          endpoint: 0.0.0.0:4318
+  # TraceQL metrics for Grafana Traces Drilldown (RED metrics via remote_write).
+  metricsGenerator:
+    enabled: true
+    remoteWriteUrl: http://kps-prometheus.observability.svc.cluster.local:9090/api/v1/write
+    registry:
+      collection_interval: 15s
+    storage:
+      path: /var/tempo/generator/wal
+      remote_write:
+        - url: http://kps-prometheus.observability.svc.cluster.local:9090/api/v1/write
+          send_exemplars: true
+    processor:
+      span_metrics: {}
+      service_graphs: {}
+      local_blocks: {}
+    traces_storage:
+      path: /var/tempo/wal
+  overrides:
+    defaults:
+      metrics_generator:
+        processors: [span-metrics, service-graphs, local-blocks]
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: "1",  memory: 1Gi }
+
+persistence:
+  enabled: true
+  storageClassName: observability-sc
+  size: 10Gi
+
+service:
+  type: ClusterIP
+
+tempoQuery:
+  enabled: true

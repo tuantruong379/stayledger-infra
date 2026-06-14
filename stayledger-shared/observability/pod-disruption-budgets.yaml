@@ -1,0 +1,78 @@
+# Pod Disruption Budgets (PDB) — HA preparation
+# Ensures at least 1 replica stays available during cluster maintenance/evictions
+# Created: May 2, 2026 (Production Review)
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: loki-pdb
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: loki
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: tempo-pdb
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tempo
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: prometheus-pdb
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: grafana-pdb
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: alertmanager-pdb
+  namespace: observability
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager

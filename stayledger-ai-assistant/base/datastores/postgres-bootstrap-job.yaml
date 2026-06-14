@@ -1,0 +1,146 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-bootstrap
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: database
+spec:
+  backoffLimit: 6
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: postgres-sa
+      automountServiceAccountToken: false
+      containers:
+        - name: bootstrap
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+              ephemeral-storage: 128Mi
+          env:
+            - name: PGHOST
+              value: postgres
+            - name: PGPORT
+              value: "5432"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              value: hotel_ops
+            - name: POSTGRES_NON_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_NON_ROOT_USER
+            - name: POSTGRES_NON_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_NON_ROOT_PASSWORD
+            - name: OPERATIONAL_DB
+              value: hotel_ops
+          command: ["bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              echo "Waiting for Postgres to be ready at ${PGHOST}:${PGPORT}..."
+              for i in $(seq 1 120); do
+                pg_isready -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" && break
+                sleep 1
+              done
+              export PGPASSWORD="${POSTGRES_PASSWORD}"
+
+              echo "Ensuring role and database exist..."
+              # Reasoning: avoid DO $$ blocks (shell/psql quoting pitfalls); use \gexec for idempotent role creation.
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 \
+                -v non_root_user="${POSTGRES_NON_ROOT_USER}" \
+                -v non_root_pass="${POSTGRES_NON_ROOT_PASSWORD}" <<'EOSQL'
+              SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'non_root_user', :'non_root_pass')
+              WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'non_root_user')
+              \gexec
+              EOSQL
+
+              # Create DB if missing, then grant + set owner.
+              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
+                createdb -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" "${POSTGRES_DB}"
+              fi
+
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${POSTGRES_DB}" -v ON_ERROR_STOP=1 <<EOSQL
+              GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DATABASE ${POSTGRES_DB} OWNER TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT USAGE, CREATE ON SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT pg_monitor TO "${POSTGRES_NON_ROOT_USER}";
+              EOSQL
+
+              echo "Ensuring shared operational database ${OPERATIONAL_DB} exists..."
+              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${OPERATIONAL_DB}'" | grep -q 1; then
+                createdb -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" "${OPERATIONAL_DB}"
+              fi
+
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${OPERATIONAL_DB}" -v ON_ERROR_STOP=1 <<EOSQL
+              GRANT ALL PRIVILEGES ON DATABASE ${OPERATIONAL_DB} TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DATABASE ${OPERATIONAL_DB} OWNER TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER SCHEMA public OWNER TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT USAGE, CREATE ON SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO "${POSTGRES_NON_ROOT_USER}";
+              ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO "${POSTGRES_NON_ROOT_USER}";
+              GRANT pg_monitor TO "${POSTGRES_NON_ROOT_USER}";
+              EOSQL
+
+              echo "Applying shared multi-tenant schema + seed..."
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${OPERATIONAL_DB}" -v ON_ERROR_STOP=1 -f /bootstrap/vertex-suites-hanoi.sql
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${OPERATIONAL_DB}" -v ON_ERROR_STOP=1 -f /bootstrap/azure-bay-danang.sql
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${OPERATIONAL_DB}" -v ON_ERROR_STOP=1 -f /bootstrap/cupid-hotel.sql
+
+              echo "Bootstrap complete."
+          volumeMounts:
+            - name: postgres-tenant-data
+              mountPath: /bootstrap/vertex-suites-hanoi.sql
+              subPath: vertex-suites-hanoi.sql
+              readOnly: true
+            - name: postgres-tenant-data
+              mountPath: /bootstrap/azure-bay-danang.sql
+              subPath: azure-bay-danang.sql
+              readOnly: true
+            - name: postgres-tenant-data
+              mountPath: /bootstrap/cupid-hotel.sql
+              subPath: cupid-hotel.sql
+              readOnly: true
+      volumes:
+        - name: postgres-tenant-data
+          configMap:
+            name: postgres-tenant-data
+            defaultMode: 0444
+

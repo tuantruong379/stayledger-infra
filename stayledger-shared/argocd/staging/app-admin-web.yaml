@@ -1,0 +1,41 @@
+---
+# ArgoCD Application — Staging Admin Web (Next.js)
+# Manages: ConfigMap, Deployment (with env-inject init container), NodePort Service
+#
+# Apply after app-api is healthy.
+#
+# Usage:
+#   kubectl apply -f argocd/staging/app-admin-web.yaml
+#
+# To trigger a new deployment after pushing a new image tag, update the image
+# in k8s/staging/deployment.yaml on the staging branch and push:
+#   sed -i "s|putin111/stayledger-admin-web:.*|putin111/stayledger-admin-web:<NEW_SHA>|g" \
+#     k8s/staging/deployment.yaml
+#   git commit -am "deploy: staging-<NEW_SHA>" && git push
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: stayledger-staging-admin-web
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: stayledger-staging
+    app.kubernetes.io/component: admin-web
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:tuantruong379/stayledger-admin-web.git
+    targetRevision: staging
+    path: k8s/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: stayledger-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - ServerSideApply=true

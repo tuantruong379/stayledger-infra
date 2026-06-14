@@ -1,0 +1,36 @@
+---
+# Exposes the ArgoCD UI on NodePort 30080 (HTTP, insecure mode).
+# Access: http://10.89.1.40:30080
+#
+# NodePort allocation on hkk8s-hub-master:
+#   30010  stayledger-admin-web
+#   30011  stayledger-api
+#   30030  grafana
+#   30080  hotel-assistant-api (already taken)
+#   30081  hotel-assistant-frontend
+#   30082  argocd-server HTTP  (this file)
+#   30443  argocd-server HTTPS (this file)
+apiVersion: v1
+kind: Service
+metadata:
+  name: argocd-server
+  namespace: argocd
+  labels:
+    app.kubernetes.io/component: server
+    app.kubernetes.io/name: argocd-server
+    app.kubernetes.io/part-of: argocd
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    nodePort: 30082
+    protocol: TCP
+  - name: https
+    port: 443
+    targetPort: 8080
+    nodePort: 30443
+    protocol: TCP
+  selector:
+    app.kubernetes.io/name: argocd-server

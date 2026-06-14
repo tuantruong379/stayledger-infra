@@ -1,0 +1,56 @@
+---
+# Allow the frontend pods to receive HTTP traffic from the NodePort service
+# (kube-proxy) and from any ingress controller in the cluster.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-admin-web-ingress
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-admin-web
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-admin-web
+  policyTypes:
+    - Ingress
+  ingress:
+    # NodePort traffic arrives from any node IP — allow from within the cluster.
+    - ports:
+        - protocol: TCP
+          port: 3000
+
+---
+# Allow the frontend to reach the API service and DNS only.
+# Next.js standalone server may make server-side fetch calls to the API
+# (via the /api-proxy rewrite destination). No other egress is required.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-admin-web-egress
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-admin-web
+    environment: staging
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-admin-web
+  policyTypes:
+    - Egress
+  egress:
+    # DNS resolution (CoreDNS)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # stayledger-api ClusterIP service (Next.js server-side proxy rewrites)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: stayledger-api
+      ports:
+        - protocol: TCP
+          port: 3001

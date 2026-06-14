@@ -1,0 +1,220 @@
+# Grafana — LLM Cost & Cache dashboard.
+#
+# Reasoning: Week 4/C8 — measures token throughput by direction (prompt/completion/
+# cached), cache hit-rate, and intent breakdown. Est $/hr uses dashboard constants
+# ``usd_per_1k_prompt`` and ``usd_per_1k_completion`` (edit in Grafana to match contract).
+# Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
+# tenant-scoped PromQL selectors, configurable alert threshold constants, and
+# Cost by tenant panel. Cost constants should be overridden per tenant via
+# Grafana provisioning or a variable datasource.
+# Recommended thresholds by tier: standard -> alert_threshold_5xx=0.01,
+# alert_threshold_p95=2.0; premium -> alert_threshold_5xx=0.005,
+# alert_threshold_p95=1.0.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-llm-cost
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger AI"
+data:
+  llm-cost.json: |-
+    {
+      "title": "StayLedger AI — LLM Cost & Cache",
+      "uid": "hotel-llm-cost",
+      "schemaVersion": 39,
+      "version": 4,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "refresh": "30s",
+      "time": { "from": "now-6h", "to": "now" },
+      "tags": ["stayledger-ai", "llm", "cost"],
+      "templating": {
+        "list": [
+          {
+            "name": "tenant_id",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_requests_total, tenant_id)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "usd_per_1k_prompt",
+            "type": "constant",
+            "label": "USD / 1k prompt",
+            "query": "0.002",
+            "current": { "text": "0.002", "value": "0.002" },
+            "options": [{ "text": "0.002", "value": "0.002", "selected": true }]
+          },
+          {
+            "name": "usd_per_1k_cached",
+            "type": "constant",
+            "label": "USD / 1k cached",
+            "query": "0.001",
+            "current": { "text": "0.001", "value": "0.001" },
+            "options": [{ "text": "0.001", "value": "0.001", "selected": true }]
+          },
+          {
+            "name": "usd_per_1k_completion",
+            "type": "constant",
+            "label": "USD / 1k completion",
+            "query": "0.002",
+            "current": { "text": "0.002", "value": "0.002" },
+            "options": [{ "text": "0.002", "value": "0.002", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_5xx",
+            "type": "constant",
+            "label": "Alert threshold 5xx ratio",
+            "query": "0.01",
+            "current": { "text": "0.01", "value": "0.01" },
+            "options": [{ "text": "0.01", "value": "0.01", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_p95",
+            "type": "constant",
+            "label": "Alert threshold p95 seconds",
+            "query": "2",
+            "current": { "text": "2", "value": "2" },
+            "options": [{ "text": "2", "value": "2", "selected": true }]
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1, "type": "stat", "title": "Prompt tokens / sec (5m)",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"prompt\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 2, "type": "stat", "title": "Completion tokens / sec (5m)",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"completion\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 3, "type": "stat", "title": "Cache hit ratio (5m)",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "(sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m])) / clamp_min(sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\"}[5m])), 1e-9)) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 1, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.4 }] } } }
+        },
+        {
+          "id": 4, "type": "stat", "title": "Est cost $/hr (5m)",
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 4 },
+          "targets": [{ "expr": "((sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"prompt\"}[5m])) * 3600 / 1000 * $usd_per_1k_prompt) + (sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m])) * 3600 / 1000 * $usd_per_1k_cached) + (sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"completion\"}[5m])) * 3600 / 1000 * $usd_per_1k_completion)) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+        },
+        {
+          "id": 10, "type": "timeseries", "title": "Tokens by direction",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (direction) (rate(llm_tokens_total{tenant_id=~\"$tenant_id\"}[5m]))", "legendFormat": "{{ direction }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 11, "type": "timeseries", "title": "Tokens by intent (non-cached)",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum by (intent) (rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction!=\"cached\"}[5m]))", "legendFormat": "{{ intent }}", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 12, "type": "stat", "title": "Cached tokens / sec (5m)",
+          "gridPos": { "x": 0, "y": 12, "w": 6, "h": 4 },
+          "targets": [{ "expr": "sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m])) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 13, "type": "stat", "title": "LLM p95 duration (5m)",
+          "gridPos": { "x": 6, "y": 12, "w": 6, "h": 4 },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum by (le) (rate(llm_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m]))) or vector(0)", "refId": "A" }],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 2 } }
+        },
+        {
+          "id": 20, "type": "timeseries", "title": "LLM duration p50/p95/p99 by source",
+          "gridPos": { "x": 0, "y": 16, "w": 24, "h": 8 },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum by (le, source) (rate(llm_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))", "legendFormat": "p50 {{ source }}", "refId": "A" },
+            { "expr": "histogram_quantile(0.95, sum by (le, source) (rate(llm_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))", "legendFormat": "p95 {{ source }}", "refId": "B" },
+            { "expr": "histogram_quantile(0.99, sum by (le, source) (rate(llm_request_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))", "legendFormat": "p99 {{ source }}", "refId": "C" }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s" } }
+        },
+        {
+          "id": 21,
+          "type": "timeseries",
+          "title": "Cost by tenant (USD/hr, 5m)",
+          "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (tenant_id) (((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"prompt\"}[5m]) * 3600 / 1000) * $usd_per_1k_prompt) + ((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m]) * 3600 / 1000) * $usd_per_1k_cached) + ((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"completion\"}[5m]) * 3600 / 1000) * $usd_per_1k_completion))",
+              "legendFormat": "{{ tenant_id }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+        },
+        {
+          "id": 30,
+          "type": "timeseries",
+          "title": "LLM operation p95 (rag/booking/pricing)",
+          "gridPos": { "x": 0, "y": 32, "w": 14, "h": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, intent) (rate(llm_call_duration_seconds_bucket{tenant_id=~\"$tenant_id\",intent=~\"rag_answer|rag_translate|booking_extract|pricing_extract|pricing_assist\"}[5m])))",
+              "legendFormat": "{{ intent }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "s", "decimals": 2 } }
+        },
+        {
+          "id": 31,
+          "type": "timeseries",
+          "title": "LLM outcomes by operation",
+          "gridPos": { "x": 14, "y": 32, "w": 10, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (intent, outcome) (rate(llm_call_outcome_total{tenant_id=~\"$tenant_id\",intent=~\"rag_answer|rag_translate|booking_extract|pricing_extract|pricing_assist\"}[5m]))",
+              "legendFormat": "{{ intent }} {{ outcome }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "ops", "decimals": 2 } }
+        },
+        {
+          "id": 32,
+          "type": "timeseries",
+          "title": "RAG retrieval p95 and selected context chars",
+          "gridPos": { "x": 0, "y": 40, "w": 14, "h": 8 },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, collection) (rate(rag_retrieval_duration_seconds_bucket{tenant_id=~\"$tenant_id\"}[5m])))",
+              "legendFormat": "retrieval p95 {{ collection }}",
+              "refId": "A"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum by (le, source) (rate(rag_context_chars_bucket{tenant_id=~\"$tenant_id\"}[5m])))",
+              "legendFormat": "context chars p95 {{ source }}",
+              "refId": "B"
+            }
+          ],
+          "fieldConfig": { "defaults": { "decimals": 2 } }
+        },
+        {
+          "id": 33,
+          "type": "stat",
+          "title": "RAG cache hit ratio (5m)",
+          "gridPos": { "x": 14, "y": 40, "w": 10, "h": 8 },
+          "targets": [
+            {
+              "expr": "(sum(rate(cache_events_total{tenant_id=~\"$tenant_id\",cache=~\"rag_answer|rag_embedding|rag_retrieval\",outcome=\"hit\"}[5m])) / clamp_min(sum(rate(cache_events_total{tenant_id=~\"$tenant_id\",cache=~\"rag_answer|rag_embedding|rag_retrieval\",outcome=~\"hit|miss\"}[5m])), 1e-9)) or vector(0)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.5 }] } } }
+        }
+      ]
+    }

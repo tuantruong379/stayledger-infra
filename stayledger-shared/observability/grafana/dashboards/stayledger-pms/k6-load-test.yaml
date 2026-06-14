@@ -1,0 +1,141 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-k6
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger PMS"
+data:
+  k6-load-test.json: |
+    {
+      "uid": "stayledger-k6",
+      "title": "StayLedger PMS — k6 Load Test",
+      "description": "k6 test results via Prometheus remote write. Run: k6 run --out experimental-prometheus-rw. Verify metric names first with {__name__=~\"k6_.*\"}",
+      "tags": ["stayledger", "k6", "loadtest"],
+      "schemaVersion": 38,
+      "refresh": "10s",
+      "time": { "from": "now-30m", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "title": "Virtual Users",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "k6_vus", "legendFormat": "VUs" }]
+        },
+        {
+          "id": 2,
+          "title": "HTTP Requests per Second",
+          "type": "timeseries",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{ "expr": "rate(k6_http_reqs_total[30s])", "legendFormat": "RPS" }]
+        },
+        {
+          "id": 3,
+          "title": "HTTP Error Rate",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.01, "color": "red" }] } } },
+          "targets": [{
+            "expr": "rate(k6_http_reqs_total{expected_response=\"false\"}[30s]) / rate(k6_http_reqs_total[30s])",
+            "legendFormat": "Error Rate"
+          }]
+        },
+        {
+          "id": 4,
+          "title": "Check Pass Rate",
+          "type": "stat",
+          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] } } },
+          "targets": [{
+            "expr": "rate(k6_checks_total{pass=\"true\"}[30s]) / rate(k6_checks_total[30s])",
+            "legendFormat": "Pass Rate"
+          }]
+        },
+        {
+          "id": 5,
+          "title": "HTTP Request Duration p50/p95/p99 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p99" }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Iteration Duration p50/p95/p99 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(k6_iteration_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(k6_iteration_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p95" }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "Booking Lifecycle Duration p95 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(k6_booking_lifecycle_ms_bucket[30s])) by (le))",
+            "legendFormat": "p95 lifecycle ms"
+          }]
+        },
+        {
+          "id": 8,
+          "title": "Bookings Created",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 14, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "increase(k6_bookings_created_total[1h])", "legendFormat": "Bookings" }]
+        },
+        {
+          "id": 9,
+          "title": "Write Error Rate",
+          "type": "stat",
+          "gridPos": { "x": 18, "y": 14, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.05, "color": "red" }] } } },
+          "targets": [{ "expr": "k6_write_error_rate", "legendFormat": "Write Error Rate" }]
+        },
+        {
+          "id": 10,
+          "title": "AI Chat Duration p95 (ms) — from ai-load.js",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(k6_ai_chat_duration_ms_bucket[30s])) by (le))",
+            "legendFormat": "AI p95 ms"
+          }]
+        },
+        {
+          "id": 11,
+          "title": "k6 Duration by Scenario (tag: type) (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_bucket[30s])) by (type, le)) * 1000", "legendFormat": "p95 {{type}}" }
+          ]
+        },
+        {
+          "id": 12,
+          "title": "IMPORTANT: Verify k6 metric names before using this dashboard",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 30, "w": 24, "h": 3 },
+          "options": {
+            "content": "**Verification step:** After the first k6 run with `--out experimental-prometheus-rw`, run this PromQL in Grafana Explore to see the actual k6 metric names:\n\n`{__name__=~\"k6_.*\"}`\n\nMetric names above may differ from actual k6 remote write output. Update panel queries to match real names.",
+            "mode": "markdown"
+          }
+        }
+      ]
+    }

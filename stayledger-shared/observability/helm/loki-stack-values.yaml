@@ -1,0 +1,9 @@
+# DEPRECATED — use helm/loki-values-v3.yaml + helm/promtail-values.yaml instead.
+#
+# The grafana/loki-stack chart bundles Loki 2.x with an outdated config schema.
+# The live cluster runs:
+#   helm upgrade --install loki    grafana/loki     -f helm/loki-values-v3.yaml
+#   helm upgrade --install promtail grafana/promtail -f helm/promtail-values.yaml
+#
+# This file is kept only for reference when comparing archived configs under
+# ai-hotel-assistant/docs/archive/observability/2026-05-19/.

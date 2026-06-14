@@ -1,0 +1,201 @@
+---
+# PersistentVolumeClaim for staging Redis data
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stayledger-redis-pvc
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-redis
+    component: cache
+    environment: staging
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-storage-hub-master-staging
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+# Base Redis config — no password here; requirepass is injected at pod start by the redis-init container
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-redis-config
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-redis
+    component: cache
+    environment: staging
+data:
+  redis.conf: |
+    bind 0.0.0.0
+    port 6379
+    protected-mode no
+    tcp-backlog 511
+    timeout 0
+    tcp-keepalive 300
+    hz 10
+
+    # Staging: lighter memory limit; noeviction keeps BullMQ jobs safe
+    maxmemory 512mb
+    maxmemory-policy noeviction
+
+    lazyfree-lazy-eviction yes
+    lazyfree-lazy-expire yes
+    lazyfree-lazy-server-del yes
+    lazyfree-lazy-user-del yes
+
+    appendonly yes
+    appendfilename "appendonly.aof"
+    appendfsync everysec
+    no-appendfsync-on-rewrite no
+    auto-aof-rewrite-percentage 100
+    auto-aof-rewrite-min-size 64mb
+
+    save 900 1
+    save 300 10
+    save 60 10000
+    dbfilename dump.rdb
+    dir /data
+
+    loglevel notice
+    maxclients 1000
+    slowlog-log-slower-than 10000
+    slowlog-max-len 128
+
+---
+# Deployment for staging Redis
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-redis
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-redis
+    component: cache
+    environment: staging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stayledger-redis
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: stayledger-redis
+        component: cache
+        environment: staging
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: hkk8s-hub-master
+      securityContext:
+        fsGroup: 999
+      initContainers:
+      - name: redis-init
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /data
+          chown -R 999:999 /data
+          cp /redis-base/redis.conf /redis-runtime/redis.conf
+          echo "requirepass $REDIS_PASSWORD" >> /redis-runtime/redis.conf
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stayledger-staging-secrets
+              key: redis-password
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config-base
+          mountPath: /redis-base
+        - name: redis-config-runtime
+          mountPath: /redis-runtime
+        securityContext:
+          runAsUser: 0
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 999
+          allowPrivilegeEscalation: false
+        ports:
+        - containerPort: 6379
+          name: redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: stayledger-staging-secrets
+              key: redis-password
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config-runtime
+          mountPath: /usr/local/etc/redis
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "150m"
+          limits:
+            memory: "768Mi"
+            cpu: "300m"
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep -q PONG'
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - 'REDISCLI_AUTH="$REDIS_PASSWORD" redis-cli ping | grep -q PONG'
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+      volumes:
+      - name: redis-data
+        persistentVolumeClaim:
+          claimName: stayledger-redis-pvc
+      - name: redis-config-base
+        configMap:
+          name: stayledger-redis-config
+      - name: redis-config-runtime
+        emptyDir: {}
+
+---
+# Service for staging Redis
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-redis
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-redis
+    component: cache
+    environment: staging
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    protocol: TCP
+    name: redis
+  selector:
+    app: stayledger-redis

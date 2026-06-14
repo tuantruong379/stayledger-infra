@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+  namespace: hotel-assistant
+  labels:
+    app.kubernetes.io/name: redis
+    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: redis-sc
+  volumeName: redis-pv
+  volumeMode: Filesystem
+

@@ -1,0 +1,186 @@
+# Grafana — KPI Cost / Errors / Logs (tokens → cost → 5xx rate + Loki logs)
+# Auto-loaded via grafana sidecar (label grafana_dashboard: "1").
+# Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
+# tenant-scoped PromQL selectors, configurable alert threshold constants, tenant-aware
+# Loki query/line format, and Cost by tenant panel. Cost constants should be overridden
+# per tenant via Grafana provisioning or a variable datasource.
+# Recommended thresholds by tier: standard -> alert_threshold_5xx=0.01,
+# alert_threshold_p95=2.0; premium -> alert_threshold_5xx=0.005,
+# alert_threshold_p95=1.0.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kpi-cost-errors-logs
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger AI"
+data:
+  kpi-cost-errors-logs.json: |-
+    {
+      "title": "StayLedger AI — Tokens, Cost, Errors & Logs",
+      "uid": "hotel-kpi-cost-errors-logs",
+      "schemaVersion": 39,
+      "version": 2,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "refresh": "30s",
+      "time": { "from": "now-6h", "to": "now" },
+      "tags": ["stayledger-ai", "tokens", "cost", "errors", "logs"],
+      "templating": {
+        "list": [
+          {
+            "name": "tenant_id",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(http_requests_total, tenant_id)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          },
+          {
+            "name": "usd_per_1k_prompt",
+            "type": "constant",
+            "label": "USD / 1k prompt",
+            "query": "0.00015",
+            "current": { "text": "0.00015", "value": "0.00015" },
+            "options": [{ "text": "0.00015", "value": "0.00015", "selected": true }]
+          },
+          {
+            "name": "usd_per_1k_cached",
+            "type": "constant",
+            "label": "USD / 1k cached",
+            "query": "0.000075",
+            "current": { "text": "0.000075", "value": "0.000075" },
+            "options": [{ "text": "0.000075", "value": "0.000075", "selected": true }]
+          },
+          {
+            "name": "usd_per_1k_completion",
+            "type": "constant",
+            "label": "USD / 1k completion",
+            "query": "0.0006",
+            "current": { "text": "0.0006", "value": "0.0006" },
+            "options": [{ "text": "0.0006", "value": "0.0006", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_5xx",
+            "type": "constant",
+            "label": "Alert threshold 5xx ratio",
+            "query": "0.01",
+            "current": { "text": "0.01", "value": "0.01" },
+            "options": [{ "text": "0.01", "value": "0.01", "selected": true }]
+          },
+          {
+            "name": "alert_threshold_p95",
+            "type": "constant",
+            "label": "Alert threshold p95 seconds",
+            "query": "2",
+            "current": { "text": "2", "value": "2" },
+            "options": [{ "text": "2", "value": "2", "selected": true }]
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Tokens (total) / sec (5m)",
+          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=~\"prompt|completion|cached\"}[5m])) or vector(0)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Est cost (USD) / hr (5m)",
+          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "((sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"prompt\"}[5m])) * 3600 / 1000) * $usd_per_1k_prompt) + ((sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m])) * 3600 / 1000) * $usd_per_1k_cached) + ((sum(rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"completion\"}[5m])) * 3600 / 1000) * $usd_per_1k_completion) or vector(0)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Error rate (5xx) % (5m)",
+          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "100 * sum(rate(http_requests_total{tenant_id=~\"$tenant_id\",status=~\"5..\"}[5m])) / clamp_min(sum(rate(http_requests_total{tenant_id=~\"$tenant_id\",status=~\".+\"}[5m])), 1e-9) or vector(0)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "red", "value": 1.0 }] } } }
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Token usage by direction",
+          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (direction) (rate(llm_tokens_total{tenant_id=~\"$tenant_id\"}[5m]))",
+              "legendFormat": "{{ direction }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "none", "decimals": 1 } }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "5xx requests by route",
+          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (route) (rate(http_requests_total{tenant_id=~\"$tenant_id\",status=~\"5..\"}[5m]))",
+              "legendFormat": "{{ route }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } }
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Cost by tenant (USD/hr, 5m)",
+          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (tenant_id) (((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"prompt\"}[5m]) * 3600 / 1000) * $usd_per_1k_prompt) + ((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"cached\"}[5m]) * 3600 / 1000) * $usd_per_1k_cached) + ((rate(llm_tokens_total{tenant_id=~\"$tenant_id\",direction=\"completion\"}[5m]) * 3600 / 1000) * $usd_per_1k_completion))",
+              "legendFormat": "{{ tenant_id }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+        },
+        {
+          "id": 20,
+          "type": "logs",
+          "title": "Logs: ERROR/WARN (Loki)",
+          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 10 },
+          "datasource": { "type": "loki", "uid": "loki" },
+          "targets": [
+            {
+              "expr": "{namespace=\"stayledger-ai\", tenant_id=~\"$tenant_id\", level=~\"ERROR|WARN\"} | line_format \"tenant={{.tenant_id}} level={{.level}} {{__line__}}\"",
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "sortOrder": "Descending",
+            "query": { "queryType": "range", "refId": "A" },
+            "dedupStrategy": "none"
+          },
+          "fieldConfig": { "defaults": {} }
+        }
+      ]
+    }

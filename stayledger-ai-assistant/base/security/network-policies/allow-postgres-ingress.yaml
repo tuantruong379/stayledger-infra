@@ -1,0 +1,34 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-ingress
+  namespace: hotel-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: pgbouncer
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres-exporter
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+    ports:
+    - protocol: TCP
+      port: 5432
+  - from:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 5432

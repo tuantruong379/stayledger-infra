@@ -1,0 +1,46 @@
+# Promtail DaemonSet — install after Loki (loki-values-v3.yaml).
+# Collects pod logs and pushes to Loki with trace_id/span_id structured metadata
+# so Grafana Loki→Tempo derived fields work.
+#
+# Install:
+#   helm upgrade --install promtail grafana/promtail \
+#     -n observability -f helm/promtail-values.yaml
+
+config:
+  clients:
+    - url: http://loki.observability.svc.cluster.local:3100/loki/api/v1/push
+  snippets:
+    pipelineStages:
+      - cri: {}
+      - json:
+          expressions:
+            tenant_id: tenant_id
+            level: level
+            service_name: service
+            trace_id: trace_id
+            span_id: span_id
+            request_id: request_id
+            correlation_id: correlation_id
+            event: event
+      - labels:
+          tenant_id:
+          level:
+          service_name:
+      # High-cardinality correlation fields stay queryable without label explosion.
+      - structured_metadata:
+          trace_id:
+          span_id:
+          request_id:
+          correlation_id:
+          event:
+
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits:   { cpu: 200m, memory: 256Mi }
+
+tolerations:
+  - operator: Exists
+
+serviceMonitor:
+  enabled: true
+  namespace: observability

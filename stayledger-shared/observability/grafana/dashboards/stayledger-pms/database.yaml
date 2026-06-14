@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-database
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger PMS"
+data:
+  database.json: |
+    {
+      "uid": "stayledger-database",
+      "title": "StayLedger PMS — Database & PgBouncer",
+      "description": "PostgreSQL connections, cache hit ratio, query performance, PgBouncer pool usage, table sizes",
+      "tags": ["stayledger", "database", "postgresql", "pgbouncer"],
+      "schemaVersion": 38,
+      "refresh": "30s",
+      "time": { "from": "now-3h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "db", "type": "constant", "label": "PostgreSQL database", "query": "stayledger", "current": { "text": "stayledger", "value": "stayledger" } },
+          { "name": "postgres_job", "type": "constant", "label": "Postgres exporter job", "query": "postgres-exporter", "current": { "text": "postgres-exporter", "value": "postgres-exporter" } },
+          { "name": "pgbouncer_job", "type": "constant", "label": "PgBouncer exporter job", "query": "pgbouncer-exporter", "current": { "text": "pgbouncer-exporter", "value": "pgbouncer-exporter" } }
+        ]
+      },
+      "panels": [
+        {
+          "id": 100,
+          "title": "Metric Sources",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "PostgreSQL panels require `postgres-exporter`. PgBouncer panels require `pgbouncer-exporter`; that scrape job is currently commented in `kube-prometheus-stack-values.yaml`, so PgBouncer panels stay empty until the exporter secret/deployment/scrape job are enabled."
+          }
+        },
+        {
+          "id": 1,
+          "title": "Active Connections",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(pg_stat_activity_count{job=\"$postgres_job\",datname=\"$db\"})", "legendFormat": "Active" }]
+        },
+        {
+          "id": 2,
+          "title": "Cache Hit Ratio",
+          "type": "gauge",
+          "gridPos": { "x": 4, "y": 3, "w": 4, "h": 4 },
+          "options": { "minValue": 0, "maxValue": 100 },
+          "fieldConfig": { "defaults": { "unit": "percent", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 90, "color": "yellow" }, { "value": 95, "color": "green" }] } } },
+          "targets": [{
+            "expr": "100 * sum(pg_stat_database_blks_hit{job=\"$postgres_job\",datname=\"$db\"}) / clamp_min(sum(pg_stat_database_blks_hit{job=\"$postgres_job\",datname=\"$db\"} + pg_stat_database_blks_read{job=\"$postgres_job\",datname=\"$db\"}), 1)",
+            "legendFormat": "Cache Hit %"
+          }]
+        },
+        {
+          "id": 3,
+          "title": "PgBouncer Waiting Clients",
+          "type": "stat",
+          "gridPos": { "x": 8, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 5, "color": "yellow" }, { "value": 10, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(pgbouncer_pools_cl_waiting{job=\"$pgbouncer_job\"})", "legendFormat": "Waiting" }]
+        },
+        {
+          "id": 4,
+          "title": "Deadlocks Rate",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 3, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.1, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(rate(pg_stat_database_deadlocks{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Deadlocks/s" }]
+        },
+        {
+          "id": 5,
+          "title": "Connections over Time",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 7, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [
+            { "expr": "sum(pg_stat_activity_count{job=\"$postgres_job\",datname=\"$db\"})", "legendFormat": "Postgres active" },
+            { "expr": "max(pg_settings_max_connections{job=\"$postgres_job\"})", "legendFormat": "Postgres max" },
+            { "expr": "sum(pgbouncer_pools_sv_active_connections{job=\"$pgbouncer_job\"})", "legendFormat": "PgBouncer active" },
+            { "expr": "sum(pgbouncer_pools_sv_idle_connections{job=\"$pgbouncer_job\"})", "legendFormat": "PgBouncer idle" }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Transaction Rate (commit/rollback)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 7, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "sum(rate(pg_stat_database_xact_commit{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Commits/s" },
+            { "expr": "sum(rate(pg_stat_database_xact_rollback{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Rollbacks/s" }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "Row Rates (insert/update/delete)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "sum(rate(pg_stat_database_tup_inserted{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Inserts/s" },
+            { "expr": "sum(rate(pg_stat_database_tup_updated{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Updates/s" },
+            { "expr": "sum(rate(pg_stat_database_tup_deleted{job=\"$postgres_job\",datname=\"$db\"}[5m]))", "legendFormat": "Deletes/s" }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Sequential Scan Rate (high = missing index)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "topk(10, rate(pg_stat_user_tables_seq_scan{job=\"$postgres_job\"}[5m]))", "legendFormat": "SeqScan {{relname}}" },
+            { "expr": "topk(10, rate(pg_stat_user_tables_idx_scan{job=\"$postgres_job\"}[5m]))", "legendFormat": "IdxScan {{relname}}" }
+          ]
+        },
+        {
+          "id": 9,
+          "title": "Table Sizes (bytes)",
+          "type": "barchart",
+          "gridPos": { "x": 0, "y": 23, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "targets": [{ "expr": "topk(15, pg_relation_size{job=\"$postgres_job\"})", "legendFormat": "{{relname}}", "instant": true }]
+        },
+        {
+          "id": 10,
+          "title": "PgBouncer Pool Detail",
+          "type": "table",
+          "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
+          "targets": [
+            { "expr": "pgbouncer_pools_sv_active_connections{job=\"$pgbouncer_job\"}", "legendFormat": "active", "instant": true },
+            { "expr": "pgbouncer_pools_sv_idle_connections{job=\"$pgbouncer_job\"}", "legendFormat": "idle", "instant": true },
+            { "expr": "pgbouncer_pools_cl_waiting{job=\"$pgbouncer_job\"}", "legendFormat": "waiting", "instant": true }
+          ]
+        }
+      ]
+    }

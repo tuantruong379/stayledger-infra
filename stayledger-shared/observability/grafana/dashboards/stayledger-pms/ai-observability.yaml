@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ai
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger PMS"
+data:
+  ai-observability.json: |
+    {
+      "uid": "stayledger-ai",
+      "title": "StayLedger PMS — AI Observability",
+      "description": "Azure OpenAI usage, latency, cost, token consumption, RAG quality, and AI feature health",
+      "tags": ["stayledger", "ai", "openai", "rag"],
+      "schemaVersion": 38,
+      "refresh": "60s",
+      "time": { "from": "now-6h", "to": "now" },
+      "templating": {
+        "list": [
+          { "name": "api_job", "type": "constant", "label": "API scrape job", "query": "stayledger-api", "current": { "text": "stayledger-api", "value": "stayledger-api" } },
+          { "name": "feature", "type": "constant", "label": "Feature regex", "query": ".*", "current": { "text": ".*", "value": ".*" } },
+          { "name": "provider", "type": "constant", "label": "Provider regex", "query": ".*", "current": { "text": ".*", "value": ".*" } }
+        ]
+      },
+      "panels": [
+        {
+          "id": 100,
+          "title": "Metric Sources",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "AI metrics are emitted by `stayledger-api`: chat, RAG, metering, quota, daily summary, revenue recommendation, automation, ops incidents, and security findings. Cost is estimated by app instrumentation, not billing-provider invoices."
+          }
+        },
+        {
+          "id": 1,
+          "title": "AI RPS by Feature",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 3, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{ "expr": "sum(rate(ai_requests_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1m])) by (feature, provider, status)", "legendFormat": "{{feature}} / {{provider}} / {{status}}" }]
+        },
+        {
+          "id": 2,
+          "title": "AI Error Rate by Feature (with traffic guard)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 3, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "(sum(rate(ai_errors_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (feature, provider) / clamp_min(sum(rate(ai_requests_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (feature, provider), 0.001)) and sum(rate(ai_requests_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (feature, provider) > 0.01",
+            "legendFormat": "{{feature}} / {{provider}}"
+          }]
+        },
+        {
+          "id": 3,
+          "title": "AI Latency p50 / p95 / p99 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(ai_request_duration_ms_bucket{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (le))", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(ai_request_duration_ms_bucket{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (le))", "legendFormat": "p95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(ai_request_duration_ms_bucket{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[5m])) by (le))", "legendFormat": "p99" }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Token Rate by Feature + Model (per min)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(rate(ai_tokens_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1m])) by (feature, provider, model) * 60", "legendFormat": "{{feature}} / {{provider}} / {{model}}" }]
+        },
+        {
+          "id": 5,
+          "title": "Estimated Cost per Hour by Model (USD)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 19, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" } },
+          "targets": [{ "expr": "sum(rate(ai_cost_estimated_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1h])) by (feature, provider, model) * 3600", "legendFormat": "{{feature}} / {{provider}} / {{model}}" }]
+        },
+        {
+          "id": 6,
+          "title": "AI Quota Usage per Property (%)",
+          "type": "timeseries",
+          "gridPos": { "x": 8, "y": 19, "w": 8, "h": 8 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] }
+            }
+          },
+          "targets": [{ "expr": "ai_quota_usage_percent{job=\"$api_job\"}", "legendFormat": "{{property_id}}" }]
+        },
+        {
+          "id": 7,
+          "title": "Tool Calls by Tool Name",
+          "type": "barchart",
+          "gridPos": { "x": 16, "y": 19, "w": 8, "h": 8 },
+          "targets": [{ "expr": "sum(rate(ai_tool_calls_total{job=\"$api_job\",feature=~\"$feature\"}[5m])) by (feature, tool)", "legendFormat": "{{feature}} / {{tool}}", "instant": true }]
+        },
+        {
+          "id": 8,
+          "title": "RAG Search — Success vs Error vs Empty",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 27, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(ai_rag_search_total{job=\"$api_job\"}[5m])) by (mode, status)", "legendFormat": "{{mode}} / {{status}}" }]
+        },
+        {
+          "id": 9,
+          "title": "Daily Summary Jobs (last 24h)",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 27, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(increase(ai_daily_summary_generated_total{job=\"$api_job\"}[24h])) by (status)", "legendFormat": "{{status}}" }]
+        },
+        {
+          "id": 10,
+          "title": "Revenue Recommendation Approval Rate",
+          "type": "stat",
+          "gridPos": { "x": 18, "y": 27, "w": 6, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "sum(increase(ai_revenue_recommendations_total{job=\"$api_job\",status=\"approved\"}[24h])) / clamp_min(sum(increase(ai_revenue_recommendations_total{job=\"$api_job\"}[24h])), 1)",
+            "legendFormat": "Approval Rate"
+          }]
+        },
+        {
+          "id": 11,
+          "title": "Automation Suggestions by Risk Level",
+          "type": "barchart",
+          "gridPos": { "x": 0, "y": 35, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(increase(ai_automation_suggestions_total{job=\"$api_job\"}[24h])) by (risk_level, status)", "legendFormat": "{{risk_level}} / {{status}}", "instant": true }]
+        },
+        {
+          "id": 12,
+          "title": "AI Errors by Feature + Error Code",
+          "type": "table",
+          "gridPos": { "x": 12, "y": 35, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(increase(ai_errors_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1h])) by (feature, provider, error_code)", "legendFormat": "{{feature}} / {{provider}} / {{error_code}}", "instant": true }]
+        }
+      ]
+    }

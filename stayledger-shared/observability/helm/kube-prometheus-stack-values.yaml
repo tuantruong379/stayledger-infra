@@ -1,0 +1,193 @@
+# kube-prometheus-stack Helm values for StayLedger staging
+# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+# helm upgrade --install kps prometheus-community/kube-prometheus-stack \
+#   -n observability -f helm/kube-prometheus-stack-values.yaml \
+#   --set grafana.adminPassword=<pw>
+#
+# Release name `kps` matches the live cluster (fullnameOverride).
+
+fullnameOverride: kps
+
+grafana:
+  image:
+    tag: "13.0.2"
+  adminPassword: ""  # Override via: --set grafana.adminPassword=<pw>
+  # Reasoning: local PV contents already exist; recursive chown can fail on exported subdirs.
+  initChownData:
+    enabled: false
+  # Reasoning: LimitRange default is 256Mi — Grafana 13 OOMKills without explicit resources.
+  resources:
+    requests: { cpu: 200m, memory: 512Mi }
+    limits:   { cpu: 500m, memory: 1Gi }
+  service:
+    type: NodePort
+    nodePort: 30030
+  persistence:
+    enabled: true
+    storageClassName: observability-sc
+    size: 5Gi
+  defaultDashboardsTimezone: "Asia/Ho_Chi_Minh"
+  # Pre-wire Loki + Tempo; disable streaming to avoid gRPC-on-HTTP-3200 errors with single-binary Tempo.
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      access: proxy
+      uid: loki
+      url: http://loki.observability.svc.cluster.local:3100
+      isDefault: false
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: tempo
+            matcherRegex: '"trace_id"\s*:\s*"([a-f0-9]+)"'
+            name: trace_id
+            url: "$${__value.raw}"
+    - name: Tempo
+      type: tempo
+      access: proxy
+      uid: tempo
+      url: http://tempo.observability.svc.cluster.local:3200
+      isDefault: false
+      jsonData:
+        streamingEnabled: false
+        searchStreaming: false
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: -5m
+          spanEndTimeShift: 5m
+          tags: [{ key: service.name, value: service }]
+          filterByTraceID: true
+        serviceMap:
+          datasourceUid: prometheus
+        nodeGraph:
+          enabled: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: stayledger
+          orgId: 1
+          folder: StayLedger PMS
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 30
+          options:
+            path: /etc/grafana/provisioning/dashboards
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+      folderAnnotation: grafana_folder
+      provider:
+        foldersFromFilesStructure: true
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+
+prometheus:
+  service:
+    type: NodePort
+    nodePort: 30090
+  prometheusSpec:
+    retention: 30d
+    retentionSize: "40GB"
+    # Pick up ServiceMonitors/PrometheusRules regardless of helm release label.
+    ruleSelectorNilUsesHelmValues: false
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    serviceMonitorSelector: {}
+    podMonitorSelector: {}
+    probeSelector: {}
+    serviceMonitorNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger-staging, observability, monitoring, kube-system]
+    podMonitorNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger-staging, observability, monitoring]
+    ruleNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger-staging, observability, monitoring]
+    enableFeatures:
+      - exemplar-storage
+    enableRemoteWriteReceiver: true
+    resources:
+      requests: { cpu: 200m, memory: 1Gi }
+      limits:   { cpu: "1",  memory: 2Gi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: observability-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    additionalScrapeConfigs:
+      - job_name: stayledger-api
+        static_configs:
+          - targets:
+              - stayledger-api.stayledger-staging.svc.cluster.local:80
+        metrics_path: /api/metrics
+        scrape_interval: 15s
+        # Uncomment when METRICS_AUTH_TOKEN is configured:
+        # authorization:
+        #   credentials: <metrics-auth-token>
+
+      - job_name: postgres-exporter
+        static_configs:
+          - targets:
+              - postgres-exporter.observability.svc.cluster.local:9187
+        scrape_interval: 15s
+
+      - job_name: redis-exporter
+        static_configs:
+          - targets:
+              - redis-exporter.observability.svc.cluster.local:9121
+        scrape_interval: 15s
+
+      # Uncomment when pgbouncer-exporter-secret exists and deployment is scaled to 1:
+      # - job_name: pgbouncer-exporter
+      #   static_configs:
+      #     - targets:
+      #         - pgbouncer-exporter.observability.svc.cluster.local:9127
+      #   scrape_interval: 15s
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: observability-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+  metricLabelsAllowlist:
+    - pods=[app.kubernetes.io/name,app.kubernetes.io/part-of]
+    - deployments=[app.kubernetes.io/name,app.kubernetes.io/part-of]
+
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false

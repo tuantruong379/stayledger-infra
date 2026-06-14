@@ -1,0 +1,28 @@
+# Split from the former monolithic networkpolicies.yaml so kubectl kustomize (v5.7+)
+# can build the overlay reliably (multi-document single files can fail parsing on Windows/CRLF).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- allow-alembic-egress.yaml
+- allow-api-egress.yaml
+- allow-api-egress-nats.yaml
+- allow-exporters-egress.yaml
+- allow-frontend-egress.yaml
+- allow-frontend-ingress.yaml
+- allow-api-ingress.yaml
+- allow-channel-worker-egress.yaml
+- allow-egress-dns.yaml
+- allow-metrics-aggregator-egress.yaml
+- allow-nats-ingress.yaml
+- allow-observability-scrape-exporters.yaml
+- allow-pgbouncer-egress.yaml
+- allow-pgbouncer-ingress.yaml
+- allow-postgres-ingress.yaml
+- allow-redis-ingress-from-api.yaml
+- allow-redis-ingress-from-channel-worker.yaml
+- allow-redis-ingress-from-exporter.yaml
+- allow-redis-ingress-from-webhook-worker.yaml
+- allow-webhook-worker-egress.yaml
+- allow-webhook-worker-ingress.yaml
+- allow-workers-egress-nats.yaml
+- default-deny-all.yaml

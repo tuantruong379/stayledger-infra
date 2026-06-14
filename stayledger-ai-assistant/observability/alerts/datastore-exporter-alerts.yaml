@@ -1,0 +1,81 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-assistant-datastore-exporters
+  namespace: observability
+  labels:
+    release: kps
+    app.kubernetes.io/name: hotel-assistant-datastore-exporters
+    app.kubernetes.io/part-of: hotel-assistant
+spec:
+  groups:
+    - name: hotel-assistant.datastore-exporters
+      rules:
+        - alert: PostgresExporterDown
+          expr: up{namespace="hotel-assistant", job="postgres-exporter"} == 0
+          for: 3m
+          labels:
+            severity: p2
+            component: postgres
+            category: datastore
+          annotations:
+            summary: "Postgres exporter is down"
+            description: "Prometheus cannot scrape postgres-exporter. Database internals are not observable."
+
+        - alert: PostgresHighConnectionUtilization
+          expr: |
+            (
+              sum(pg_stat_activity_count{namespace="hotel-assistant", job="postgres-exporter"})
+              /
+              max(pg_settings_max_connections{namespace="hotel-assistant", job="postgres-exporter"})
+            ) > 0.80
+          for: 10m
+          labels:
+            severity: p2
+            component: postgres
+            category: datastore
+          annotations:
+            summary: "Postgres connection utilization above 80%"
+            description: "Postgres is close to max_connections. Check PgBouncer pool pressure and application connection usage."
+
+        - alert: RedisExporterDown
+          expr: up{namespace="hotel-assistant", job="redis-exporter"} == 0
+          for: 3m
+          labels:
+            severity: p2
+            component: redis
+            category: datastore
+          annotations:
+            summary: "Redis exporter is down"
+            description: "Prometheus cannot scrape redis-exporter. Redis internals are not observable."
+
+        - alert: RedisHighMemoryUtilization
+          expr: |
+            (
+              redis_memory_max_bytes{namespace="hotel-assistant", job="redis-exporter"} > 0
+            )
+            and
+            (
+              redis_memory_used_bytes{namespace="hotel-assistant", job="redis-exporter"}
+              /
+              redis_memory_max_bytes{namespace="hotel-assistant", job="redis-exporter"}
+            ) > 0.85
+          for: 10m
+          labels:
+            severity: p2
+            component: redis
+            category: datastore
+          annotations:
+            summary: "Redis memory utilization above 85%"
+            description: "Redis is near maxmemory. Check cache TTLs, queue depth, and eviction policy."
+
+        - alert: RedisEvictionsDetected
+          expr: increase(redis_evicted_keys_total{namespace="hotel-assistant", job="redis-exporter"}[10m]) > 0
+          for: 5m
+          labels:
+            severity: p3
+            component: redis
+            category: datastore
+          annotations:
+            summary: "Redis evicted keys"
+            description: "Redis evicted keys in the last 10 minutes. Tenant cache, queue, or pub/sub behavior may degrade."

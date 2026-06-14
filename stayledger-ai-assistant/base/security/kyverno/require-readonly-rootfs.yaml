@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-readonly-rootfs
+  annotations:
+    policies.kyverno.io/title: Require Read-Only Root Filesystem
+    policies.kyverno.io/description: >
+      All containers in the hotel-assistant namespace must set
+      readOnlyRootFilesystem: true. Prevents runtime writes to the image layer.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-readOnlyRootFilesystem
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - hotel-assistant
+      validate:
+        message: "Containers must set readOnlyRootFilesystem: true"
+        pattern:
+          spec:
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true

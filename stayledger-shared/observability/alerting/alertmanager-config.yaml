@@ -1,0 +1,58 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: stayledger-alertmanager
+  namespace: observability
+  labels:
+    release: kube-prometheus-stack
+spec:
+  route:
+    receiver: slack-warnings
+    groupBy: [alertname, severity]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    routes:
+      - receiver: slack-critical
+        matchers:
+          - name: severity
+            value: critical
+        continue: false
+
+  receivers:
+    - name: slack-warnings
+      slackConfigs:
+        - apiURL:
+            name: alertmanager-slack-secret
+            key: webhook-url
+          channel: "#stayledger-alerts"
+          title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+          text: |
+            {{ range .Alerts }}
+            *Summary:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            *Severity:* {{ .Labels.severity }}
+            {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
+            {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+            {{ end }}
+          sendResolved: true
+
+    - name: slack-critical
+      slackConfigs:
+        - apiURL:
+            name: alertmanager-slack-secret
+            key: webhook-url
+          channel: "#stayledger-oncall"
+          title: ':rotating_light: [CRITICAL] {{ .CommonLabels.alertname }}'
+          text: |
+            {{ range .Alerts }}
+            *Summary:* {{ .Annotations.summary }}
+            *Description:* {{ .Annotations.description }}
+            {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
+            {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+            {{ end }}
+          sendResolved: true
+
+# Create the Slack webhook secret:
+# kubectl create secret generic alertmanager-slack-secret -n observability \
+#   --from-literal=webhook-url=https://hooks.slack.com/services/T.../B.../...

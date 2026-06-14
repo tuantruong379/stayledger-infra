@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: hotel-assistant
+  namespace: argocd
+spec:
+  description: Hotel Assistant production GitOps project
+  sourceRepos:
+    - https://github.com/tuantruong379/ai-hotel-assistant.git
+  destinations:
+    - namespace: hotel-assistant
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: storage.k8s.io
+      kind: StorageClass
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

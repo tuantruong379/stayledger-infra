@@ -1,0 +1,61 @@
+# Resource quotas and LimitRange for the observability namespace.
+# Grafana 13+ needs explicit memory above the LimitRange default (256Mi) to avoid OOMKilled.
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: observability-quota
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "8Gi"
+    limits.cpu: "8"
+    limits.memory: "16Gi"
+    pods: "25"
+    persistentvolumeclaims: "10"
+    requests.storage: "100Gi"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: observability-limits
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+spec:
+  limits:
+    - max:
+        cpu: "2"
+        memory: 4Gi
+      min:
+        cpu: 50m
+        memory: 64Mi
+      type: Pod
+    - max:
+        cpu: "1"
+        memory: 2Gi
+      min:
+        cpu: 50m
+        memory: 64Mi
+      default:
+        cpu: 200m
+        memory: 256Mi
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      type: Container
+
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: observability-low-priority
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+value: 100
+globalDefault: false
+description: "Low priority for observability components; can be preempted under cluster pressure"
