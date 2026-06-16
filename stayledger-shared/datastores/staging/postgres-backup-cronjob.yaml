@@ -1,0 +1,145 @@
+# pg_dump backup CronJob for StayLedger PMS PostgreSQL (staging).
+# Schedule: 02:00 Asia/Ho_Chi_Minh = 19:00 UTC.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-staging-postgres-backup-pv
+  labels:
+    type: local
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger-staging/postgres-backup
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stayledger-postgres-backup-pvc
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-postgres-backup-script
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+data:
+  backup.sh: |
+    #!/bin/bash
+    set -euo pipefail
+
+    BACKUP_DIR="/backup"
+    DB_HOST="stayledger-postgres"
+    DB_PORT="5432"
+    DB_NAME="stayledger"
+    RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+    TIMESTAMP=$(date +%Y-%m-%d)
+    DUMP_FILE="${BACKUP_DIR}/stayledger_${TIMESTAMP}.dump"
+
+    echo "[backup] Starting pg_dump for ${DB_NAME} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+    for i in $(seq 1 30); do
+      pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" && break
+      sleep 2
+    done
+
+    export PGPASSWORD="${POSTGRES_PASSWORD}"
+    pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" -d "${DB_NAME}" -Fc -f "${DUMP_FILE}"
+
+    find "${BACKUP_DIR}" -name "stayledger_*.dump" -mtime +"${RETENTION_DAYS}" -print -delete || true
+    echo "[backup] Finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-postgres-backup
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  schedule: "0 19 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            fsGroup: 999
+          containers:
+            - name: pg-dump
+              image: pgvector/pgvector:pg16
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stayledger-postgres-config
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: postgres-password
+                - name: BACKUP_RETENTION_DAYS
+                  value: "14"
+              command: ["/bin/bash", "/scripts/backup.sh"]
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+          volumes:
+            - name: backup-data
+              persistentVolumeClaim:
+                claimName: stayledger-postgres-backup-pvc
+            - name: backup-script
+              configMap:
+                name: stayledger-postgres-backup-script
+                defaultMode: 0755

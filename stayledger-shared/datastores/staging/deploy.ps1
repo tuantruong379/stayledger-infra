@@ -53,6 +53,10 @@ Write-Host "[5/5] Deploying Redis..."
 Apply "$DIR\..\staging\redis.yaml"
 WaitReady "deployment" "stayledger-redis" "stayledger-staging" 120
 
+# --- PostgreSQL backup CronJob (optional; requires backup PV path on node) ---
+Write-Host "[6/6] Applying PostgreSQL backup CronJob..."
+Apply "$DIR\..\staging\postgres-backup-cronjob.yaml"
+
 # --- Status summary ---
 Write-Host ""
 Write-Host "=== Staging deploy complete ==="
