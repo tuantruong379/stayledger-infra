@@ -24,8 +24,11 @@ data:
   EMAIL_ENABLED: "false"
   APP_ENV: "staging"
   THROTTLE_STORAGE: "redis"
+  # k6 baseline (~20 VUs) needs headroom above default 100 req/min per client IP.
+  THROTTLE_LIMIT: "6000"
   SWAGGER_ENABLED: "true"
   METRICS_ENABLED: "true"
+  BOOKING_PROFILE_OPS: "true"
   OTEL_ENABLED: "true"
   OTEL_SERVICE_NAME: "stayledger-api-staging"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
@@ -56,17 +59,24 @@ data:
   AI_SECURITY_FINDINGS_ENABLED: "true"
   AI_OPS_NARRATIVE_LLM: "false"
   AI_SAAS_OPS_E2E_SEED: "false"
-  # 1B.1: Decimal flip — prod gate + decimal reads (rollback: set modes to float or unset gate).
+  # 1B.1: Decimal flip — staging runs COMPARE first to collect zero-drift evidence,
+  # then promote to "decimal" once `[compare] money drift` is zero + reconciliation
+  # balances. Rollback: set modes to "float" or unset the prod gate.
   PMS_MONEY_PROD_READ_ENABLED: "true"
-  PMS_MONEY_READ_MODE: "decimal"
-  PMS_REPORT_MONEY_READ_MODE: "decimal"
-  PMS_PRICING_MONEY_MODE: "decimal"
+  PMS_MONEY_READ_MODE: "compare"
+  PMS_REPORT_MONEY_READ_MODE: "compare"
+  PMS_PRICING_MONEY_MODE: "compare"
   PMS_MONEY_EXPOSE_DECIMAL: "true"
   # 1B.2: explicit replay + signature enforcement (also default-on via NODE_ENV=production).
+  # PREREQUISITES before this reaches traffic: (1) external-signing-enc-key secret set
+  # (see deployment.yaml); (2) existing API keys backfilled with replayGraceUntil
+  # (db/src/backfill-replay-grace.ts) or their signing secrets rotated.
   EXTERNAL_API_REPLAY_REQUIRED: "true"
   EXTERNAL_API_SIGNATURE_REQUIRED: "true"
-  # 1B.4: staging validates enforce path before production (prod already enforce).
-  AI_METERING_MODE: "enforce"
+  # 1B.4: metering ramp report_only -> warn -> enforce. Staging starts at "warn"
+  # (alerts fire, no blocking) until the included-unit plan features are seeded
+  # (seed-ai-metering) and quota behaviour is verified; then promote to "enforce".
+  AI_METERING_MODE: "warn"
   EXTERNAL_API_CONTRACT_VERSION: "1.0.0"
   BACKUP_ENABLED: "true"
   BACKUP_SCHEDULE: "0 19 * * *"

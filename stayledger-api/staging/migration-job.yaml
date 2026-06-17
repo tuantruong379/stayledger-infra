@@ -44,7 +44,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: putin111/stayledger-api:staging-054f962
+          image: putin111/stayledger-api:staging-54d04dee
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma

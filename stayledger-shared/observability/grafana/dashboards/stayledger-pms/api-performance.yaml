@@ -120,10 +120,21 @@ data:
           }]
         },
         {
+          "id": 11,
+          "title": "Check-in / Check-out Step Latency p95 (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 35, "w": 24, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{
+            "expr": "histogram_quantile(0.95, sum(rate(booking_step_duration_ms_bucket{job=\"$api_job\"}[5m])) by (operation, step, le))",
+            "legendFormat": "{{operation}} {{step}}"
+          }]
+        },
+        {
           "id": 10,
           "title": "Route Table — RPS / p50 / p95 / Error Rate",
           "type": "table",
-          "gridPos": { "x": 0, "y": 35, "w": 24, "h": 10 },
+          "gridPos": { "x": 0, "y": 43, "w": 24, "h": 10 },
           "options": { "sortBy": [{ "displayName": "p95 ms", "desc": true }] },
           "targets": [
             { "expr": "sum(rate(http_requests_total{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, method)", "legendFormat": "{{method}} {{route}}", "instant": true, "refId": "A" },

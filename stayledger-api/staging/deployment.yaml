@@ -31,7 +31,7 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-2c4b1cd"
+        version: "staging-54d04dee"
       annotations:
         # Prometheus scraping — matches the NestJS prom-client /metrics path.
         prometheus.io/scrape: "true"
@@ -63,7 +63,7 @@ spec:
       containers:
         - name: api
           # Tag is updated by CI deploy-staging step.
-          image: putin111/stayledger-api:staging-054f962
+          image: putin111/stayledger-api:staging-54d04dee
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -119,6 +119,15 @@ spec:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: jwt-refresh-secret
+            # 1B.2: AES-256-GCM key encrypting external API signing secrets at rest.
+            # REQUIRED because EXTERNAL_API_SIGNATURE_REQUIRED=true — without it the
+            # server cannot provision/verify signing secrets and external calls 401.
+            # Create the secret value with: openssl rand -hex 32
+            - name: EXTERNAL_SIGNING_ENC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: external-signing-enc-key
             - name: AZURE_OPENAI_ENDPOINT
               valueFrom:
                 secretKeyRef:
