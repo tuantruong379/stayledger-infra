@@ -125,6 +125,35 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/PaymentFailureRateHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
 
+    - name: stayledger.external_api
+      interval: 30s
+      rules:
+        - alert: ExternalApiReplayRejectionsHigh
+          expr: |
+            sum(rate(external_api_replay_rejected_total{job="stayledger-api"}[5m])) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Elevated external API replay rejections"
+            description: "Partners may be sending expired/nonces or missing headers. Rate: {{ $value }}/s."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+        - alert: ReportQueryP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(report_query_duration_ms_bucket{job="stayledger-api"}[5m])) by (le)
+            ) > 3000
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Report query p95 latency above 3000ms"
+            description: "Current p95: {{ $value }}ms. Check DB indexes and report cache."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
     - name: stayledger.ai
       interval: 60s
       rules:
