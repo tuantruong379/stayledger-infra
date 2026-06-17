@@ -31,7 +31,7 @@ data:
           "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
           "options": {
             "mode": "markdown",
-            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, and `payment_errors_total` are emitted by `stayledger-api`. Empty charts mean no matching booking/payment activity or metrics are disabled."
+            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, `payment_errors_total`, and `booking_engine_*` are emitted by `stayledger-api`. Empty charts mean no matching booking/payment/booking-engine activity or metrics are disabled."
           }
         },
         {
@@ -127,6 +127,41 @@ data:
           "type": "timeseries",
           "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(rate(payment_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (error_type, property_id)", "legendFormat": "{{error_type}} / {{property_id}}" }]
+        },
+        {
+          "id": 11,
+          "title": "Booking Engine Requests (per min)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 31, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqpm" } },
+          "targets": [{ "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status) * 60", "legendFormat": "{{operation}} / {{status}}" }]
+        },
+        {
+          "id": 12,
+          "title": "Booking Engine p95 Latency (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 31, "w": 12, "h": 8 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 800, "color": "yellow" }, { "value": 2500, "color": "red" }] }
+            }
+          },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(booking_engine_request_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, le))", "legendFormat": "{{operation}} p95" }]
+        },
+        {
+          "id": 13,
+          "title": "Booking Engine Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 39, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_engine_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, error_code)", "legendFormat": "{{operation}} / {{error_code}}" }]
+        },
+        {
+          "id": 14,
+          "title": "Booking Engine Inventory Conflicts",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 39, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_engine_inventory_conflicts_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, property_id)", "legendFormat": "{{operation}} / {{property_id}}" }]
         }
       ]
     }

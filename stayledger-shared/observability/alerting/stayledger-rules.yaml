@@ -125,6 +125,57 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/PaymentFailureRateHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
 
+        - alert: BookingEngineFailureRateHigh
+          expr: |
+            (
+              sum(rate(booking_engine_errors_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(booking_engine_requests_total{job="stayledger-api"}[5m])), 0.001)
+              > 0.02
+            )
+            and sum(rate(booking_engine_requests_total{job="stayledger-api"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Booking engine failure rate above 2%"
+            description: "Error rate: {{ $value | humanizePercentage }}. Check quote/create/status errors and public booking logs."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineFailureRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+        - alert: BookingEngineCreateP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(booking_engine_request_duration_ms_bucket{job="stayledger-api",operation="create"}[5m])) by (le)
+            ) > 2500
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Booking engine create p95 latency above 2500ms"
+            description: "Current create p95: {{ $value }}ms. Check booking transaction, availability reserve, and DB locks."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineCreateLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+        - alert: BookingEngineInventoryConflictHigh
+          expr: |
+            (
+              sum(rate(booking_engine_inventory_conflicts_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(booking_engine_requests_total{job="stayledger-api",operation="create"}[5m])), 0.001)
+              > 0.10
+            )
+            and sum(rate(booking_engine_requests_total{job="stayledger-api",operation="create"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Booking engine inventory conflict rate above 10%"
+            description: "Conflict rate: {{ $value | humanizePercentage }}. Check stale quotes, hot dates, and availability inventory."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineInventoryConflictHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
     - name: stayledger.external_api
       interval: 30s
       rules:
