@@ -32,8 +32,8 @@ metadata:
     component: frontend
     environment: staging
   annotations:
-    kubernetes.io/change-cause: "Deploy staging-2cdf1686 — guest chat embed CSP readiness"
-    stayledger.io/git-sha: "2cdf1686"
+    kubernetes.io/change-cause: "Deploy staging-909bebe — guest chat iframe canary readiness"
+    stayledger.io/git-sha: "909bebe"
     stayledger.io/branch: "release/1.2.8"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
@@ -56,9 +56,9 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-2cdf1686"
+        version: "staging-909bebe-embedcanary"
       annotations:
-        stayledger.io/git-sha: "2cdf1686"
+        stayledger.io/git-sha: "909bebe"
     spec:
       serviceAccountName: stayledger-admin-web
       # No K8s API access needed — suppress the auto-mounted token entirely.
@@ -89,7 +89,7 @@ spec:
       initContainers:
         - name: env-inject
           # Must use the same image tag as the main container — updated by CI.
-          image: putin111/stayledger-admin-web:staging-2cdf1686
+          image: putin111/stayledger-admin-web:staging-909bebe-embedcanary
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -135,7 +135,7 @@ spec:
       containers:
         - name: admin-web
           # Tag is updated by CI deploy-staging step (both init and main containers).
-          image: putin111/stayledger-admin-web:staging-2cdf1686
+          image: putin111/stayledger-admin-web:staging-909bebe-embedcanary
           imagePullPolicy: Always
           # Override Dockerfile CMD only — ENTRYPOINT (tini) remains as PID 1.
           # The init container has already patched the .next bundle, so we go
