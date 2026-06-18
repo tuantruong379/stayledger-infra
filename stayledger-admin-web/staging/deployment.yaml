@@ -32,8 +32,8 @@ metadata:
     component: frontend
     environment: staging
   annotations:
-    kubernetes.io/change-cause: "Deploy staging-7cfb97d2 — guest-chat admin config"
-    stayledger.io/git-sha: "7cfb97d2"
+    kubernetes.io/change-cause: "Deploy staging-5efa28d5 — webchat handoff queue polish"
+    stayledger.io/git-sha: "5efa28d5"
     stayledger.io/branch: "release/1.2.8"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
@@ -56,9 +56,9 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-7cfb97d2"
+        version: "staging-5efa28d5"
       annotations:
-        stayledger.io/git-sha: "7cfb97d2"
+        stayledger.io/git-sha: "5efa28d5"
     spec:
       serviceAccountName: stayledger-admin-web
       # No K8s API access needed — suppress the auto-mounted token entirely.
@@ -89,7 +89,7 @@ spec:
       initContainers:
         - name: env-inject
           # Must use the same image tag as the main container — updated by CI.
-          image: putin111/stayledger-admin-web:staging-7cfb97d2
+          image: putin111/stayledger-admin-web:staging-5efa28d5
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -135,7 +135,7 @@ spec:
       containers:
         - name: admin-web
           # Tag is updated by CI deploy-staging step (both init and main containers).
-          image: putin111/stayledger-admin-web:staging-7cfb97d2
+          image: putin111/stayledger-admin-web:staging-5efa28d5
           imagePullPolicy: Always
           # Override Dockerfile CMD only — ENTRYPOINT (tini) remains as PID 1.
           # The init container has already patched the .next bundle, so we go
