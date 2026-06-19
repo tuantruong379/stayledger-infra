@@ -21,7 +21,12 @@ data:
   JWT_EXPIRES_IN: "15m"
   JWT_REFRESH_EXPIRES_IN: "7d"
   LOG_LEVEL: "info"
-  EMAIL_ENABLED: "false"
+  # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
+  EMAIL_ENABLED: "true"
+  EMAIL_FROM: "stayledger@tekcent.com"
+  SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
+  SMTP_PORT: "465"
+  SMTP_SECURE: "true"
   APP_ENV: "staging"
   THROTTLE_STORAGE: "redis"
   # k6 baseline (~20 VUs) needs headroom above default 100 req/min per client IP.
@@ -59,13 +64,13 @@ data:
   AI_SECURITY_FINDINGS_ENABLED: "true"
   AI_OPS_NARRATIVE_LLM: "false"
   AI_SAAS_OPS_E2E_SEED: "false"
-  # 1B.1: Decimal flip — staging runs COMPARE first to collect zero-drift evidence,
-  # then promote to "decimal" once `[compare] money drift` is zero + reconciliation
-  # balances. Rollback: set modes to "float" or unset the prod gate.
+  # 1B.1: Decimal flip — promoted after zero-drift compare evidence.
+  # Rollback: set modes back to "compare" for drift logging, or "float" / unset
+  # PMS_MONEY_PROD_READ_ENABLED for legacy Float reads. Do not drop Float columns yet.
   PMS_MONEY_PROD_READ_ENABLED: "true"
-  PMS_MONEY_READ_MODE: "compare"
-  PMS_REPORT_MONEY_READ_MODE: "compare"
-  PMS_PRICING_MONEY_MODE: "compare"
+  PMS_MONEY_READ_MODE: "decimal"
+  PMS_REPORT_MONEY_READ_MODE: "decimal"
+  PMS_PRICING_MONEY_MODE: "decimal"
   PMS_MONEY_EXPOSE_DECIMAL: "true"
   # 1B.2: explicit replay + signature enforcement (also default-on via NODE_ENV=production).
   # PREREQUISITES before this reaches traffic: (1) external-signing-enc-key secret set
@@ -73,10 +78,10 @@ data:
   # (db/src/backfill-replay-grace.ts) or their signing secrets rotated.
   EXTERNAL_API_REPLAY_REQUIRED: "true"
   EXTERNAL_API_SIGNATURE_REQUIRED: "true"
-  # 1B.4: metering ramp report_only -> warn -> enforce. Staging starts at "warn"
-  # (alerts fire, no blocking) until the included-unit plan features are seeded
-  # (seed-ai-metering) and quota behaviour is verified; then promote to "enforce".
-  AI_METERING_MODE: "warn"
+  # 1B.4: quota enforcement enabled after included-unit seed + blocked-request proof.
+  # Rollback: set to "warn" to keep alerts/usage without blocking, or "report_only"
+  # for usage-only telemetry.
+  AI_METERING_MODE: "enforce"
   EXTERNAL_API_CONTRACT_VERSION: "1.0.0"
   BACKUP_ENABLED: "true"
   BACKUP_SCHEDULE: "0 19 * * *"

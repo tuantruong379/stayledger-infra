@@ -41,7 +41,7 @@ data:
           "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
           "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.01, "color": "red" }] } } },
           "targets": [{
-            "expr": "rate(k6_http_reqs_total{expected_response=\"false\"}[30s]) / rate(k6_http_reqs_total[30s])",
+            "expr": "avg(k6_http_req_failed_rate)",
             "legendFormat": "Error Rate"
           }]
         },
@@ -52,7 +52,7 @@ data:
           "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
           "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] } } },
           "targets": [{
-            "expr": "rate(k6_checks_total{pass=\"true\"}[30s]) / rate(k6_checks_total[30s])",
+            "expr": "avg(k6_checks_rate)",
             "legendFormat": "Pass Rate"
           }]
         },
@@ -63,9 +63,9 @@ data:
           "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
           "targets": [
-            { "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p50" },
-            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p95" },
-            { "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p99" }
+            { "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p95" },
+            { "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p99" }
           ]
         },
         {
@@ -75,8 +75,8 @@ data:
           "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
           "targets": [
-            { "expr": "histogram_quantile(0.50, sum(rate(k6_iteration_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p50" },
-            { "expr": "histogram_quantile(0.95, sum(rate(k6_iteration_duration_bucket[30s])) by (le)) * 1000", "legendFormat": "p95" }
+            { "expr": "histogram_quantile(0.50, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000", "legendFormat": "p50" },
+            { "expr": "histogram_quantile(0.95, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000", "legendFormat": "p95" }
           ]
         },
         {
@@ -86,7 +86,7 @@ data:
           "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
           "targets": [{
-            "expr": "histogram_quantile(0.95, sum(rate(k6_booking_lifecycle_ms_bucket[30s])) by (le))",
+            "expr": "histogram_quantile(0.95, sum(rate(k6_booking_lifecycle_ms[30s])))",
             "legendFormat": "p95 lifecycle ms"
           }]
         },
@@ -113,7 +113,7 @@ data:
           "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
           "targets": [{
-            "expr": "histogram_quantile(0.95, sum(rate(k6_ai_chat_duration_ms_bucket[30s])) by (le))",
+            "expr": "histogram_quantile(0.95, sum(rate(k6_ai_chat_duration_ms[30s])))",
             "legendFormat": "AI p95 ms"
           }]
         },
@@ -124,16 +124,60 @@ data:
           "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
           "targets": [
-            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_bucket[30s])) by (type, le)) * 1000", "legendFormat": "p95 {{type}}" }
+            { "expr": "histogram_quantile(0.95, sum by (type) (rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p95 {{type}}" }
+          ]
+        },
+        {
+          "id": 13,
+          "title": "Business Success Rate",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 30, "w": 8, "h": 7 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] }
+            }
+          },
+          "targets": [{ "expr": "avg(k6_business_success_rate)", "legendFormat": "business_success" }]
+        },
+        {
+          "id": 14,
+          "title": "Lifecycle Step Success Rates",
+          "type": "timeseries",
+          "gridPos": { "x": 8, "y": 30, "w": 8, "h": 7 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] }
+            }
+          },
+          "targets": [
+            { "expr": "avg(k6_booking_create_success_rate)", "legendFormat": "booking_create" },
+            { "expr": "avg(k6_booking_confirm_success_rate)", "legendFormat": "booking_confirm" },
+            { "expr": "avg(k6_payment_success_rate)", "legendFormat": "payment" },
+            { "expr": "avg(k6_checkin_success_rate)", "legendFormat": "checkin" },
+            { "expr": "avg(k6_checkout_success_rate)", "legendFormat": "checkout" }
+          ]
+        },
+        {
+          "id": 15,
+          "title": "Stress Failure Classification",
+          "type": "timeseries",
+          "gridPos": { "x": 16, "y": 30, "w": 8, "h": 7 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [
+            { "expr": "k6_system_5xx_rate", "legendFormat": "system_5xx_rate" },
+            { "expr": "k6_inventory_conflict_rate", "legendFormat": "inventory_conflict_rate" },
+            { "expr": "k6_error_rate", "legendFormat": "stress_error_rate" }
           ]
         },
         {
           "id": 12,
           "title": "IMPORTANT: Verify k6 metric names before using this dashboard",
           "type": "text",
-          "gridPos": { "x": 0, "y": 30, "w": 24, "h": 3 },
+          "gridPos": { "x": 0, "y": 37, "w": 24, "h": 3 },
           "options": {
-            "content": "**Verification step:** After the first k6 run with `--out experimental-prometheus-rw`, run this PromQL in Grafana Explore to see the actual k6 metric names:\n\n`{__name__=~\"k6_.*\"}`\n\nMetric names above may differ from actual k6 remote write output. Update panel queries to match real names.",
+            "content": "**Verification step:** after a k6 run with `--out experimental-prometheus-rw`, run `{__name__=~\"k6_.*\"}` in Grafana Explore. This dashboard is wired for k6 v1.7 remote-write metric names with native histogram trends.",
             "mode": "markdown"
           }
         }

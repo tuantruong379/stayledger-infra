@@ -141,6 +141,35 @@ data:
           "type": "table",
           "gridPos": { "x": 12, "y": 35, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(increase(ai_errors_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1h])) by (feature, provider, error_code)", "legendFormat": "{{feature}} / {{provider}} / {{error_code}}", "instant": true }]
+        },
+        {
+          "id": 13,
+          "title": "AI Quota Blocks (HTTP 429)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"$api_job\",route=\"/api/ai/chat\",status=\"429\"}[5m]))", "legendFormat": "quota blocks/s" }]
+        },
+        {
+          "id": 14,
+          "title": "AI Timeout-like Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 8, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(ai_errors_total{job=\"$api_job\",error_code=~\".*[Tt][Ii][Mm][Ee][Oo][Uu][Tt].*|ETIMEDOUT|ECONNRESET\"}[5m])) by (feature, provider, error_code)", "legendFormat": "{{feature}} / {{provider}} / {{error_code}}" }]
+        },
+        {
+          "id": 15,
+          "title": "Top AI Quota Usage Now (%)",
+          "type": "barchart",
+          "gridPos": { "x": 16, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] }
+            }
+          },
+          "targets": [{ "expr": "topk(10, ai_quota_usage_percent{job=\"$api_job\"})", "legendFormat": "{{property_id}}", "instant": true }]
         }
       ]
     }

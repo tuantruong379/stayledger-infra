@@ -141,6 +141,53 @@ data:
             { "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le))", "instant": true, "refId": "B" },
             { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\",route=~\"$route_filter\"}[5m])) by (route, le))", "instant": true, "refId": "C" }
           ]
+        },
+        {
+          "id": 12,
+          "title": "Paid Pilot API p95 / 5xx / 429",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 53, "w": 8, "h": 5 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [
+            { "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_ms_bucket{job=\"$api_job\"}[5m])) by (le))", "legendFormat": "p95 ms", "refId": "A" },
+            { "expr": "sum(rate(http_requests_total{job=\"$api_job\",status=~\"5..\"}[5m]))", "legendFormat": "5xx/s", "refId": "B" },
+            { "expr": "sum(rate(http_requests_total{job=\"$api_job\",status=\"429\"}[5m]))", "legendFormat": "429/s", "refId": "C" }
+          ]
+        },
+        {
+          "id": 13,
+          "title": "External API Replay Rejections by Reason",
+          "type": "timeseries",
+          "gridPos": { "x": 8, "y": 53, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(external_api_replay_rejected_total{job=\"$api_job\"}[5m])) by (reason)", "legendFormat": "{{reason}}" }]
+        },
+        {
+          "id": 14,
+          "title": "External API Signature Verification",
+          "type": "timeseries",
+          "gridPos": { "x": 16, "y": 53, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(external_api_signature_verified_total{job=\"$api_job\"}[5m])) by (status)", "legendFormat": "{{status}}" }]
+        },
+        {
+          "id": 15,
+          "title": "Report Query Latency p95 by Report (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 61, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(report_query_duration_ms_bucket{job=\"$api_job\"}[5m])) by (report, le))", "legendFormat": "{{report}}" }]
+        },
+        {
+          "id": 16,
+          "title": "External API Requests and Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 61, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [
+            { "expr": "sum(rate(external_api_requests_total{job=\"$api_job\"}[5m])) by (operation, status)", "legendFormat": "{{operation}} / {{status}}", "refId": "A" },
+            { "expr": "sum(rate(external_api_errors_total{job=\"$api_job\"}[5m])) by (operation, error_code)", "legendFormat": "error {{operation}} / {{error_code}}", "refId": "B" }
+          ]
         }
       ]
     }

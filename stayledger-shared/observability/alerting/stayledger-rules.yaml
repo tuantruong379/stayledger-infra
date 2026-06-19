@@ -56,6 +56,21 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
 
+        - alert: ApiOverallP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api"}[5m])) by (le)
+            ) > 2500
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API overall p95 latency above 2500ms"
+            description: "Current p95: {{ $value }}ms. Check top slow routes, DB pool pressure, and recent deploys."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
         - alert: ApiWriteP99LatencyHigh
           expr: |
             histogram_quantile(0.99,
@@ -239,6 +254,32 @@ spec:
             summary: "AI request p95 latency above 5s"
             description: "Current p95: {{ $value }}ms. Check OpenAI load and retry settings."
             runbook_url: "https://wiki.internal/runbooks/stayledger/AiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiTimeoutsHigh
+          expr: |
+            sum(rate(ai_errors_total{job="stayledger-api",error_code=~".*[Tt][Ii][Mm][Ee][Oo][Uu][Tt].*|ETIMEDOUT|ECONNRESET"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI timeout/error rate elevated"
+            description: "AI timeout-like errors are above 0.05/s. Check provider latency, retry settings, and quota status."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiQuotaBlocksHigh
+          expr: |
+            sum(rate(http_requests_total{job="stayledger-api",route="/api/ai/chat",status="429"}[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI quota blocks elevated"
+            description: "AI chat requests are being blocked by quota at {{ $value }}/s. Confirm paid-plan included units and notify the account team."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
         - alert: AiTokenQuotaWarning

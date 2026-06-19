@@ -59,6 +59,20 @@ kubectl rollout undo deployment/stayledger-api -n stayledger          # producti
 kubectl rollout undo deployment/stayledger-api -n stayledger-staging  # staging
 ```
 
+### 1B.1 Decimal Read Rollback
+
+The decimal read flip is env-only while Float columns remain in place. To roll
+staging back without a deploy, patch the ConfigMap modes and restart the API:
+
+```bash
+kubectl patch configmap stayledger-api-config -n stayledger-staging --type merge -p "{\"data\":{\"PMS_MONEY_READ_MODE\":\"compare\",\"PMS_REPORT_MONEY_READ_MODE\":\"compare\",\"PMS_PRICING_MONEY_MODE\":\"compare\"}}"
+kubectl rollout restart deployment/stayledger-api -n stayledger-staging
+kubectl rollout status deployment/stayledger-api -n stayledger-staging
+```
+
+Use `float` for all three modes, or set `PMS_MONEY_PROD_READ_ENABLED=false`, for
+the legacy Float-column read path. Do not drop Float columns during 1B.1.
+
 ## NodePorts
 
 | Environment | NodePort | Ingress host (when configured)      |

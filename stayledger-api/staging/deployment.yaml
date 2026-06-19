@@ -31,7 +31,7 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-bca8c02"
+        version: "staging-028c950-1b4"
       annotations:
         # Prometheus scraping — matches the NestJS prom-client /metrics path.
         prometheus.io/scrape: "true"
@@ -63,7 +63,7 @@ spec:
       containers:
         - name: api
           # Tag is updated by CI deploy-staging step.
-          image: putin111/stayledger-api:staging-bca8c02
+          image: putin111/stayledger-api:staging-028c950-1b4
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -144,36 +144,17 @@ spec:
                   name: stayledger-staging-secrets
                   key: metrics-auth-token
                   optional: true
-            - name: SMTP_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: stayledger-staging-secrets
-                  key: smtp-host
-                  optional: true
-            - name: SMTP_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: stayledger-staging-secrets
-                  key: smtp-port
-                  optional: true
             - name: SMTP_USER
               valueFrom:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: smtp-user
-                  optional: true
-            - name: SMTP_PASSWORD
+            # API reads SMTP_PASS (not SMTP_PASSWORD).
+            - name: SMTP_PASS
               valueFrom:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: smtp-password
-                  optional: true
-            - name: SMTP_FROM
-              valueFrom:
-                secretKeyRef:
-                  name: stayledger-staging-secrets
-                  key: smtp-from
-                  optional: true
             - name: FRONTEND_URL
               valueFrom:
                 secretKeyRef:
