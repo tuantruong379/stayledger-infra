@@ -20,6 +20,13 @@ data:
   NEXT_PUBLIC_API_URL: "http://10.89.1.40:30010/api-proxy"
   NEXT_PUBLIC_BOOKING_WEB_URL: "http://10.89.1.40:30010"
   INTERNAL_API_URL: "http://stayledger-api/api"
+  # Phase 3 UI — enable property AI Ops dashboard and related nav entries.
+  NEXT_PUBLIC_AI_OPS_ENABLED: "true"
+  NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"
+  NEXT_PUBLIC_AI_REVENUE_ENABLED: "true"
+  NEXT_PUBLIC_AI_KNOWLEDGE_ENABLED: "true"
+  NEXT_PUBLIC_AI_COPILOT_ENABLED: "true"
+  NEXT_PUBLIC_AI_SAAS_OPS_ENABLED: "true"
 
 ---
 apiVersion: apps/v1

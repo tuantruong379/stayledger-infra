@@ -40,7 +40,6 @@ data:
   AI_PROVIDER: "azure_openai"
   AI_MODEL: "gpt-4o-mini"
   AI_QUOTA_ALERT_EMAIL_ENABLED: "false"
-  AI_DAILY_SUMMARY_EMAIL_ENABLED: "false"
   AI_DAILY_SUMMARY_LLM: "false"
   AI_REQUEST_TIMEOUT_MS: "30000"
   AI_EMBEDDING_PROVIDER: "azure"
@@ -87,3 +86,10 @@ data:
   BACKUP_SCHEDULE: "0 19 * * *"
   BACKUP_RETENTION_DAYS: "14"
   NOTIFICATION_RETENTION_DAYS: "90"
+  # Phase 2.3 / 3.x — schedulers off until API image with Phase 3 modules is deployed.
+  # Enable after migrations + seed:channel-manager + seed:overage-billing on staging DB.
+  AI_OPS_SCHEDULER_ENABLED: "true"
+  AI_DAILY_SUMMARY_EMAIL_ENABLED: "true"
+  OVERAGE_BILLING_ENABLED: "true"
+  TRIAL_CONVERSION_ENABLED: "true"
+  CHANNEL_ARI_SYNC_ENABLED: "false"

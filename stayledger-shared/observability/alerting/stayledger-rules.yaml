@@ -306,6 +306,52 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
+    - name: stayledger.channel-manager
+      interval: 30s
+      rules:
+        - alert: ChannelSyncFailureRateHigh
+          expr: |
+            (
+              sum(rate(channel_sync_jobs_total{job="stayledger-api",status=~"failed|dlq"}[10m]))
+              / clamp_min(sum(rate(channel_sync_jobs_total{job="stayledger-api"}[10m])), 0.001)
+            ) > 0.2
+            and sum(rate(channel_sync_jobs_total{job="stayledger-api"}[10m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Channel sync failure rate elevated"
+            description: "Over 20% of channel sync jobs are failing/DLQ. Check mappings and connection health."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: ChannelSyncDlqBacklog
+          expr: sum(increase(channel_sync_dlq_total{job="stayledger-api"}[1h])) > 5
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Channel sync DLQ backlog growing"
+            description: "{{ $value }} channel sync job(s) landed in the DLQ in the last hour. Investigate and replay from the admin dashboard."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: ChannelAriPushStale
+          expr: |
+            sum(increase(channel_sync_jobs_total{job="stayledger-api",operation="ari.push",status="success"}[2h])) == 0
+            and sum(increase(channel_sync_jobs_total{job="stayledger-api",operation="ari.push"}[24h])) > 0
+          for: 30m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "No successful ARI push in 2h"
+            description: "ARI pushes were attempted in the last 24h but none have succeeded in 2h. Check the OTA endpoint and worker."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
     - name: stayledger.database
       interval: 30s
       rules:
