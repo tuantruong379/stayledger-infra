@@ -39,9 +39,9 @@ metadata:
     component: frontend
     environment: staging
   annotations:
-    kubernetes.io/change-cause: "Deploy staging-909bebe — guest chat iframe canary readiness"
-    stayledger.io/git-sha: "909bebe"
-    stayledger.io/branch: "release/1.2.8"
+    kubernetes.io/change-cause: "Deploy staging-220a166d — go-live hardening (date i18n, AI-Ops localization, entitlement gating, KPI title)"
+    stayledger.io/git-sha: "220a166"
+    stayledger.io/branch: "release/1.2.14"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
   # pod failure or node drain without any downtime window.
@@ -63,9 +63,9 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-909bebe-embedcanary"
+        version: "staging-220a166d"
       annotations:
-        stayledger.io/git-sha: "909bebe"
+        stayledger.io/git-sha: "220a166"
     spec:
       serviceAccountName: stayledger-admin-web
       # No K8s API access needed — suppress the auto-mounted token entirely.
@@ -95,8 +95,14 @@ spec:
       # the patched bundle while keeping readOnlyRootFilesystem: true.
       initContainers:
         - name: env-inject
-          # Must use the same image tag as the main container — updated by CI.
-          image: putin111/stayledger-admin-web:staging-909bebe-embedcanary
+          # IMPORTANT: env-inject copies ITS OWN /app/.next into the shared
+          # next-patched volume, which the main container then mounts over its
+          # own /app/.next. So this init image MUST equal the main image — if
+          # they drift, the init container overwrites the main container's build
+          # with stale assets (pods report the new tag but serve old JS).
+          # The YAML anchor below binds both to ONE value: bump it in one place
+          # and the alias on the main container updates in lockstep.
+          image: &adminWebImage putin111/stayledger-admin-web:staging-220a166d
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -141,8 +147,10 @@ spec:
               ephemeral-storage: "600Mi"
       containers:
         - name: admin-web
-          # Tag is updated by CI deploy-staging step (both init and main containers).
-          image: putin111/stayledger-admin-web:staging-909bebe-embedcanary
+          # Bound to the env-inject init image via the &adminWebImage anchor so
+          # the two can never drift (see the init container note above). A future
+          # bump changes only the anchor definition; this alias follows.
+          image: *adminWebImage
           imagePullPolicy: Always
           # Override Dockerfile CMD only — ENTRYPOINT (tini) remains as PID 1.
           # The init container has already patched the .next bundle, so we go
