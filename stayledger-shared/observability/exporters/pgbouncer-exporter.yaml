@@ -32,23 +32,18 @@ spec:
       containers:
         - name: pgbouncer-exporter
           image: spreaker/prometheus-pgbouncer-exporter:latest
-          env:
-            - name: PGBOUNCER_EXPORTER_HOST
-              value: stayledger-pgbouncer.stayledger-staging.svc.cluster.local
-            - name: PGBOUNCER_EXPORTER_PORT
-              value: "5432"
-            - name: PGBOUNCER_EXPORTER_USER
-              value: pgbouncer_exporter
-            - name: PGBOUNCER_EXPORTER_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: pgbouncer-exporter-secret
-                  key: password
-            - name: PGBOUNCER_EXPORTER_DATABASE
-              value: pgbouncer
+          # This image reads a config file (NOT PGBOUNCER_EXPORTER_* env vars). The config —
+          # which contains the DSN with the pgbouncer_exporter password — is mounted from the
+          # `pgbouncer-exporter-config` Secret (created out-of-band; keep the password out of
+          # ConfigMaps). bind host 0.0.0.0 so the pod accepts the Prometheus scrape.
+          args: ["--config", "/etc/pgbouncer-exporter/config.yml"]
           ports:
             - containerPort: 9127
               name: metrics
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer-exporter
+              readOnly: true
           resources:
             requests:
               cpu: 50m
@@ -56,6 +51,10 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+      volumes:
+        - name: config
+          secret:
+            secretName: pgbouncer-exporter-config
 
 ---
 apiVersion: v1

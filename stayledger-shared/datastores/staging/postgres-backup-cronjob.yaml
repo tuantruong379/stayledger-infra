@@ -62,7 +62,9 @@ data:
     BACKUP_DIR="/backup"
     DB_HOST="stayledger-postgres"
     DB_PORT="5432"
-    DB_NAME="stayledger"
+    # Must match POSTGRES_DB in stayledger-postgres-config (the staging DB is
+    # `stayledger_staging`, not `stayledger`) — overridable via env.
+    DB_NAME="${POSTGRES_DB:-stayledger_staging}"
     RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
     TIMESTAMP=$(date +%Y-%m-%d)
     DUMP_FILE="${BACKUP_DIR}/stayledger_${TIMESTAMP}.dump"
@@ -98,6 +100,12 @@ spec:
     spec:
       backoffLimit: 2
       template:
+        metadata:
+          # Pod labels so the datastore ingress NetworkPolicy (SEC-P2-2) admits the backup
+          # pod to Postgres:5432 — without app=stayledger-postgres the dump is blocked.
+          labels:
+            app: stayledger-postgres
+            component: database-backup
         spec:
           restartPolicy: OnFailure
           securityContext:
@@ -114,6 +122,11 @@ spec:
                     configMapKeyRef:
                       name: stayledger-postgres-config
                       key: POSTGRES_USER
+                - name: POSTGRES_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stayledger-postgres-config
+                      key: POSTGRES_DB
                 - name: POSTGRES_PASSWORD
                   valueFrom:
                     secretKeyRef:

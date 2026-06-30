@@ -11,9 +11,9 @@ data:
   k6-load-test.json: |
     {
       "uid": "stayledger-k6",
-      "title": "StayLedger PMS — k6 Load Test",
+      "title": "06 - PMS k6 Load Test",
       "description": "k6 test results via Prometheus remote write. Run: k6 run --out experimental-prometheus-rw. Verify metric names first with {__name__=~\"k6_.*\"}",
-      "tags": ["stayledger", "k6", "loadtest"],
+      "tags": ["stayledger", "pms", "production-readiness", "k6"],
       "schemaVersion": 38,
       "refresh": "10s",
       "time": { "from": "now-30m", "to": "now" },
@@ -108,7 +108,7 @@ data:
         },
         {
           "id": 10,
-          "title": "AI Chat Duration p95 (ms) — from ai-load.js",
+          "title": "AI Chat Duration p95 (ms) - from ai-load.js",
           "type": "timeseries",
           "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
@@ -173,11 +173,11 @@ data:
         },
         {
           "id": 12,
-          "title": "IMPORTANT: Verify k6 metric names before using this dashboard",
+          "title": "Metric source (validated 2026-06-23)",
           "type": "text",
           "gridPos": { "x": 0, "y": 37, "w": 24, "h": 3 },
           "options": {
-            "content": "**Verification step:** after a k6 run with `--out experimental-prometheus-rw`, run `{__name__=~\"k6_.*\"}` in Grafana Explore. This dashboard is wired for k6 v1.7 remote-write metric names with native histogram trends.",
+            "content": "Metric names **validated** against Prometheus: core k6 series (`k6_http_req_duration_seconds`, `k6_http_reqs_total`, `k6_http_req_failed_rate`, `k6_iteration_duration_seconds`, `k6_checks_rate`, `k6_vus`, `k6_*_success_rate`, `k6_booking_lifecycle_ms`) are present - the remote-write pipeline is wired. Run k6 with `--out experimental-prometheus-rw` to feed this dashboard. Write/AI panels (`k6_bookings_created_total`, `k6_write_error_rate`, `k6_inventory_conflict_rate`, `k6_system_5xx_rate`, `k6_ai_chat_duration_ms`) populate only when the write/ai scenarios run.",
             "mode": "markdown"
           }
         }

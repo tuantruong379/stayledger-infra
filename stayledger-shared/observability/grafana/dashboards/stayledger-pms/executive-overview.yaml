@@ -11,9 +11,17 @@ data:
   executive-overview.json: |
     {
       "uid": "stayledger-executive",
-      "title": "StayLedger PMS — Executive Overview",
+      "title": "01 - PMS Executive Overview",
       "description": "Platform health, SLOs, and business KPIs for management and go-live readiness",
-      "tags": ["stayledger", "executive", "slo"],
+      "tags": ["stayledger", "pms", "production-readiness", "executive", "slo"],
+      "links": [
+        { "title": "02 - API Performance", "type": "link", "url": "/d/stayledger-api-perf", "icon": "external link", "targetBlank": false, "tooltip": "Slow/error endpoint drill-down" },
+        { "title": "03 - Booking Lifecycle", "type": "link", "url": "/d/stayledger-booking", "icon": "external link", "targetBlank": false, "tooltip": "Booking/payment flow health" },
+        { "title": "04 - Database & PgBouncer", "type": "link", "url": "/d/stayledger-database", "icon": "external link", "targetBlank": false, "tooltip": "DB connections / saturation" },
+        { "title": "05 - Kubernetes", "type": "link", "url": "/d/stayledger-k8s", "icon": "external link", "targetBlank": false, "tooltip": "Pods / restarts / resources" },
+        { "title": "06 - k6 Load Test", "type": "link", "url": "/d/stayledger-k6", "icon": "external link", "targetBlank": false, "tooltip": "Latest load-test results" },
+        { "title": "PMS dashboards", "type": "dashboards", "tags": ["pms"], "asDropdown": true, "icon": "external link", "targetBlank": false }
+      ],
       "schemaVersion": 38,
       "refresh": "30s",
       "time": { "from": "now-3h", "to": "now" },
@@ -229,10 +237,10 @@ data:
         },
         {
           "id": 17,
-          "title": "AI Quota — Top 3 Properties",
+          "title": "AI Quota - Top 3 Properties",
           "type": "table",
           "gridPos": { "x": 0, "y": 19, "w": 24, "h": 5 },
-          "description": "Companion to the AI Token Quota gauge — shows which properties are closest to exhaustion so operators can act without drilling into another dashboard.",
+          "description": "Companion to the AI Token Quota gauge - shows which properties are closest to exhaustion so operators can act without drilling into another dashboard.",
           "options": { "sortBy": [{ "displayName": "Quota %", "desc": true }] },
           "fieldConfig": { "defaults": { "unit": "percent" } },
           "targets": [{ "expr": "topk(3, ai_quota_usage_percent{job=\"$api_job\"})", "legendFormat": "{{property_id}}", "instant": true }]

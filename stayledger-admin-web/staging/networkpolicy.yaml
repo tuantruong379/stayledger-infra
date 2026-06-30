@@ -16,6 +16,17 @@ spec:
   policyTypes:
     - Ingress
   ingress:
+    # nginx ingress controller (stg-app.stayledger.io)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
     # NodePort traffic arrives from any node IP — allow from within the cluster.
     - ports:
         - protocol: TCP

@@ -1,10 +1,10 @@
-# Grafana — Golden Signals dashboard for stayledger-ai-api.
+# Grafana - Golden Signals dashboard for stayledger-ai-api.
 # Picked up automatically by the Grafana sidecar (label grafana_dashboard: "1").
 #
-# Reasoning: Week 4/C8 — RED method (Rate, Errors, Duration) plus saturation
+# Reasoning: Week 4/C8 - RED method (Rate, Errors, Duration) plus saturation
 # (CPU/memory) and a dependency strip. Stat panels at the top give a 10-second
 # read of system health.
-# Reasoning: 4xx row — webhook auth (401), validation (400), rate limits (429) are excluded from 5xx error rate.
+# Reasoning: 4xx row - webhook auth (401), validation (400), rate limits (429) are excluded from 5xx error rate.
 # Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
 # tenant-scoped PromQL selectors, configurable alert threshold constants, and a
 # Tenant comparison row (throughput/error-rate/p95 latency ranking).
@@ -19,18 +19,18 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger AI"
+    grafana_folder: "StayLedger Internal"
 data:
   golden-signals.json: |-
     {
-      "title": "StayLedger AI — Golden Signals",
+      "title": "AI Assistant - Golden Signals",
       "uid": "hotel-golden",
       "schemaVersion": 39,
       "version": 4,
       "timezone": "Asia/Ho_Chi_Minh",
       "refresh": "30s",
       "time": { "from": "now-1h", "to": "now" },
-      "tags": ["stayledger-ai", "slo", "red"],
+      "tags": ["stayledger", "internal", "deferred", "ai", "assistant"],
       "templating": {
         "list": [
           {

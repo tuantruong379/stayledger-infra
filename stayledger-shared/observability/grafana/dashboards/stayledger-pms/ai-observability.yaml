@@ -6,14 +6,14 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger PMS"
+    grafana_folder: "StayLedger Internal"
 data:
   ai-observability.json: |
     {
       "uid": "stayledger-ai",
-      "title": "StayLedger PMS — AI Observability",
+      "title": "PMS AI Observability",
       "description": "Azure OpenAI usage, latency, cost, token consumption, RAG quality, and AI feature health",
-      "tags": ["stayledger", "ai", "openai", "rag"],
+      "tags": ["stayledger", "internal", "deferred", "ai"],
       "schemaVersion": 38,
       "refresh": "60s",
       "time": { "from": "now-6h", "to": "now" },
@@ -104,7 +104,7 @@ data:
         },
         {
           "id": 8,
-          "title": "RAG Search — Success vs Error vs Empty",
+          "title": "RAG Search - Success vs Error vs Empty",
           "type": "timeseries",
           "gridPos": { "x": 0, "y": 27, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(rate(ai_rag_search_total{job=\"$api_job\"}[5m])) by (mode, status)", "legendFormat": "{{mode}} / {{status}}" }]
@@ -173,7 +173,7 @@ data:
         },
         {
           "id": 200,
-          "title": "Phase 3.4 — Add-on Overage Billing",
+          "title": "Phase 3.4 - Add-on Overage Billing",
           "type": "text",
           "gridPos": { "x": 0, "y": 50, "w": 24, "h": 3 },
           "options": {
@@ -215,7 +215,7 @@ data:
         },
         {
           "id": 300,
-          "title": "Phase 3.1 — Channel Manager (OTA Sync)",
+          "title": "Phase 3.1 - Channel Manager (OTA Sync)",
           "type": "text",
           "gridPos": { "x": 0, "y": 66, "w": 24, "h": 3 },
           "options": {

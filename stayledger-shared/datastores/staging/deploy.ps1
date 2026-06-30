@@ -1,9 +1,11 @@
 # Deploy StayLedger staging to hkk8s-hub-master
 # Prerequisites:
 #   1. kubectl configured and pointing at the cluster
-#   2. Host directories exist on the node (run once manually):
+#   2. Host directories exist on the node (run once manually). The postgres-backup
+#      dir is REQUIRED for the backup CronJob (its local PV mounts that exact path);
+#      omitting it makes the backup pod fail with FailedMount "path does not exist":
 #        kubectl debug node/hkk8s-hub-master -it --image=busybox:1.36 -- \
-#          sh -c "mkdir -p /mnt/data/stayledger-staging/postgres /mnt/data/stayledger-staging/redis"
+#          sh -c "mkdir -p /mnt/data/stayledger-staging/postgres /mnt/data/stayledger-staging/redis /mnt/data/stayledger-staging/postgres-backup && chown -R 999:999 /mnt/data/stayledger-staging/postgres-backup"
 #   3. Secrets created:
 #        .\k8s\generate-secrets.ps1 -Environment staging
 

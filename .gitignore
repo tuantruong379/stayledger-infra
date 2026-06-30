@@ -1,8 +1,16 @@
 # Real Kubernetes secrets — never commit these
 # Safe counterparts are *.example.yaml in the same directories
 **/secrets.yaml
+**/secret.yaml
 **/pgbouncer-secret.yaml
 **/*-secret.yaml
+
+# Scratch / debug artifacts
+tmp-*
+tmp_*
+
+# Landing deploy manifests tracked in stayledger-landing repo (not infra)
+stayledger-landing/
 
 # Keep example/template files
 !**/*.example.yaml

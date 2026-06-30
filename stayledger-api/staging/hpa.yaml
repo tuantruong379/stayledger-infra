@@ -1,0 +1,51 @@
+---
+# P1C — HorizontalPodAutoscaler for the API.
+#
+# Prerequisites (verify before relying on this):
+#   - metrics-server installed and healthy: `kubectl top pods -n stayledger-staging`
+#     must return CPU/memory.
+#   - API resource REQUESTS tuned (deployment.yaml: cpu 400m) so the 60% target maps
+#     to real saturation — HPA utilization is computed against requests, not limits.
+#   - PgBouncer/Postgres connection budget validated at maxReplicas (see the P1C
+#     runbook) so scaling out does not starve DB connections.
+#
+# PodDisruptionBudget (pdb.yaml, minAvailable: 1) stays compatible with minReplicas: 2.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stayledger-api
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stayledger-api
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # 60% of the 400m request. Raise toward 70% if scaling is too eager.
+          averageUtilization: 60
+  behavior:
+    scaleUp:
+      # React quickly to spikes: no stabilization window, add up to 2 pods / 30s.
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      # Drain slowly to avoid flapping: 3-minute window, remove 1 pod / 60s.
+      stabilizationWindowSeconds: 180
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

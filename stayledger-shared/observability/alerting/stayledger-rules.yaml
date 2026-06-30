@@ -357,7 +357,7 @@ spec:
       rules:
         - alert: PostgresConnectionHigh
           expr: |
-            sum(pg_stat_activity_count{job="postgres-exporter",datname="stayledger"})
+            sum(pg_stat_activity_count{job="postgres-exporter",datname="stayledger_staging"})
             / clamp_min(max(pg_settings_max_connections{job="postgres-exporter"}), 1)
             > 0.80
           for: 5m
@@ -371,7 +371,9 @@ spec:
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
 
         - alert: PgBouncerClientsWaiting
-          expr: sum(pgbouncer_pools_cl_waiting{job="pgbouncer-exporter"}) > 10
+          # Metric name matches the spreaker pgbouncer-exporter (was pgbouncer_pools_cl_waiting,
+          # which this exporter does not expose — the alert was blind).
+          expr: sum(pgbouncer_pools_client_waiting_connections{job="pgbouncer-exporter"}) > 10
           for: 2m
           labels:
             severity: critical

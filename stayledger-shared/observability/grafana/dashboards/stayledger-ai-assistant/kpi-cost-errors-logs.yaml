@@ -1,4 +1,4 @@
-# Grafana — KPI Cost / Errors / Logs (tokens → cost → 5xx rate + Loki logs)
+# Grafana - KPI Cost / Errors / Logs (tokens → cost → 5xx rate + Loki logs)
 # Auto-loaded via grafana sidecar (label grafana_dashboard: "1").
 # Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
 # tenant-scoped PromQL selectors, configurable alert threshold constants, tenant-aware
@@ -15,18 +15,18 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger AI"
+    grafana_folder: "StayLedger Internal"
 data:
   kpi-cost-errors-logs.json: |-
     {
-      "title": "StayLedger AI — Tokens, Cost, Errors & Logs",
+      "title": "AI Assistant - Tokens, Cost, Errors & Logs",
       "uid": "hotel-kpi-cost-errors-logs",
       "schemaVersion": 39,
       "version": 2,
       "timezone": "Asia/Ho_Chi_Minh",
       "refresh": "30s",
       "time": { "from": "now-6h", "to": "now" },
-      "tags": ["stayledger-ai", "tokens", "cost", "errors", "logs"],
+      "tags": ["stayledger", "internal", "deferred", "ai", "assistant"],
       "templating": {
         "list": [
           {

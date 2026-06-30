@@ -11,9 +11,9 @@ data:
   api-performance.json: |
     {
       "uid": "stayledger-api-perf",
-      "title": "StayLedger PMS — API Performance",
+      "title": "02 - PMS API Performance",
       "description": "Per-route latency, error rates, and throughput. Use for incident response and performance tuning.",
-      "tags": ["stayledger", "api", "performance"],
+      "tags": ["stayledger", "pms", "production-readiness", "api"],
       "schemaVersion": 38,
       "refresh": "30s",
       "time": { "from": "now-1h", "to": "now" },
@@ -52,7 +52,7 @@ data:
         },
         {
           "id": 3,
-          "title": "Top 10 Slowest Routes — p95 (ms)",
+          "title": "Top 10 Slowest Routes - p95 (ms)",
           "type": "barchart",
           "gridPos": { "x": 0, "y": 11, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "ms" } },
@@ -61,7 +61,7 @@ data:
         },
         {
           "id": 4,
-          "title": "Error Rate by Route (5xx only — routes with traffic)",
+          "title": "Error Rate by Route (5xx only - routes with traffic)",
           "type": "timeseries",
           "gridPos": { "x": 12, "y": 11, "w": 12, "h": 8 },
           "fieldConfig": { "defaults": { "unit": "percentunit" } },
@@ -132,7 +132,7 @@ data:
         },
         {
           "id": 10,
-          "title": "Route Table — RPS / p50 / p95 / Error Rate",
+          "title": "Route Table - RPS / p50 / p95 / Error Rate",
           "type": "table",
           "gridPos": { "x": 0, "y": 43, "w": 24, "h": 10 },
           "options": { "sortBy": [{ "displayName": "p95 ms", "desc": true }] },

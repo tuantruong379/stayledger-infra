@@ -144,6 +144,12 @@ prometheus:
         # authorization:
         #   credentials: <metrics-auth-token>
 
+      # AI worker metrics (ai_first_token_ms, ai_worker_inflight, ai_worker_failed_jobs_total,
+      # ai_stream_*) are scraped via the operator-native ServiceMonitor
+      # `stayledger-ai-worker` (stayledger-infra/stayledger-api/staging/ai-worker-servicemonitor.yaml),
+      # which takes effect WITHOUT a helm upgrade. Do NOT re-add a static job here — it would
+      # double-scrape the worker once this values file is helm-upgraded.
+
       - job_name: postgres-exporter
         static_configs:
           - targets:
@@ -156,12 +162,14 @@ prometheus:
               - redis-exporter.observability.svc.cluster.local:9121
         scrape_interval: 15s
 
-      # Uncomment when pgbouncer-exporter-secret exists and deployment is scaled to 1:
-      # - job_name: pgbouncer-exporter
-      #   static_configs:
-      #     - targets:
-      #         - pgbouncer-exporter.observability.svc.cluster.local:9127
-      #   scrape_interval: 15s
+      # P1A: enabled. Requires pgbouncer-exporter-secret (exporter password), the
+      # pgbouncer_exporter user in the PgBouncer userlist secret + stats_users (set
+      # in datastores/staging/pgbouncer.yaml), and the exporter deployment running.
+      - job_name: pgbouncer-exporter
+        static_configs:
+          - targets:
+              - pgbouncer-exporter.observability.svc.cluster.local:9127
+        scrape_interval: 15s
 
 alertmanager:
   alertmanagerSpec:

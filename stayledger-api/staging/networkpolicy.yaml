@@ -24,6 +24,17 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
+    # nginx ingress controller (stg-api.stayledger.io)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
     # NodePort traffic from kube-proxy (direct staging access via port 30011)
     - ports:
         - protocol: TCP

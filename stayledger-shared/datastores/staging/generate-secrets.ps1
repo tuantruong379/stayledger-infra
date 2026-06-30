@@ -8,7 +8,7 @@
 #     -PostgresPassword "yourStrongPassword" `
 #     -JwtSecret "your64PlusCharJwtSecretHere..." `
 #     -JwtRefreshSecret "your64PlusCharRefreshSecretHere..." `
-#     -FrontendUrl "https://admin-staging.stayledger.tekcent.com" `
+#     -FrontendUrl "https://stg-app.stayledger.io" `
 #     -AzureOpenAiEndpoint "https://your-resource.cognitiveservices.azure.com" `
 #     -AzureOpenAiApiKey "your-azure-openai-key" `
 #     -RedisPassword "yourRedisPassword"

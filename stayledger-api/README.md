@@ -49,7 +49,8 @@ kubectl rollout status deployment/stayledger-api -n stayledger
 
 ```bash
 curl http://hkk8s-hub-master:30001/api/health    # production
-curl http://hkk8s-hub-master:30011/api/health    # staging
+curl https://stg-api.stayledger.io/api/health    # staging (ingress)
+curl http://hkk8s-hub-master:30011/api/health    # staging (NodePort fallback)
 ```
 
 ## Rollback
@@ -78,4 +79,4 @@ the legacy Float-column read path. Do not drop Float columns during 1B.1.
 | Environment | NodePort | Ingress host (when configured)      |
 |-------------|----------|-------------------------------------|
 | Production  | 30001    | —                                   |
-| Staging     | 30011    | api-staging.stayledger.tekcent.com  |
+| Staging     | 30011    | stg-api.stayledger.io  |

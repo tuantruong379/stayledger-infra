@@ -11,9 +11,9 @@ data:
   kubernetes.json: |
     {
       "uid": "stayledger-k8s",
-      "title": "StayLedger PMS — Kubernetes Infrastructure",
+      "title": "05 - PMS Kubernetes",
       "description": "Pod health, CPU/memory usage, throttling, PV usage, and node pressure",
-      "tags": ["stayledger", "kubernetes", "infrastructure"],
+      "tags": ["stayledger", "pms", "production-readiness", "kubernetes"],
       "schemaVersion": 38,
       "refresh": "30s",
       "time": { "from": "now-3h", "to": "now" },
@@ -118,6 +118,40 @@ data:
           "targets": [{
             "expr": "(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"} - node_filesystem_avail_bytes{fstype!~\"tmpfs|overlay\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}) / clamp_min(node_filesystem_size_bytes{fstype!~\"tmpfs|overlay\",mountpoint!~\"/run.*|/var/lib/kubelet/pods/.*\"}, 1)",
             "legendFormat": "{{device}} {{mountpoint}}"
+          }]
+        },
+        {
+          "id": 101,
+          "title": "HPA — Autoscaling (populates once P1C HorizontalPodAutoscaler is applied)",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 33, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "HPA panels read `kube_horizontalpodautoscaler_*` from kube-state-metrics. They stay empty until the `stayledger-api` HPA is created in **P1C**. Watch current vs desired vs max replicas during the spike test to confirm scale-up/scale-down and detect flapping."
+          }
+        },
+        {
+          "id": 10,
+          "title": "HPA Replicas (current / desired / min / max)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 36, "w": 16, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [
+            { "expr": "kube_horizontalpodautoscaler_status_current_replicas{namespace=\"$namespace\"}", "legendFormat": "current {{horizontalpodautoscaler}}" },
+            { "expr": "kube_horizontalpodautoscaler_status_desired_replicas{namespace=\"$namespace\"}", "legendFormat": "desired {{horizontalpodautoscaler}}" },
+            { "expr": "kube_horizontalpodautoscaler_spec_min_replicas{namespace=\"$namespace\"}", "legendFormat": "min {{horizontalpodautoscaler}}" },
+            { "expr": "kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"$namespace\"}", "legendFormat": "max {{horizontalpodautoscaler}}" }
+          ]
+        },
+        {
+          "id": 11,
+          "title": "HPA at Max Replicas (saturation)",
+          "type": "stat",
+          "gridPos": { "x": 16, "y": 36, "w": 8, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short", "mappings": [{ "type": "value", "options": { "0": { "text": "OK", "color": "green" }, "1": { "text": "AT MAX", "color": "red" } } }] } },
+          "targets": [{
+            "expr": "max(kube_horizontalpodautoscaler_status_current_replicas{namespace=\"$namespace\"} >= bool kube_horizontalpodautoscaler_spec_max_replicas{namespace=\"$namespace\"})",
+            "legendFormat": "at-max"
           }]
         }
       ]

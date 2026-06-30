@@ -139,6 +139,34 @@ kubectl apply -f stayledger-ai-assistant/argocd/project.yaml
 kubectl apply -f stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
 ```
 
+### Staging TLS edge (PMS admin + API)
+
+Point DNS `stg-app.stayledger.io` and `stg-api.stayledger.io` at the cluster ingress
+controller, then:
+
+```powershell
+# Update frontend-url in the cluster secret (email links, invites)
+kubectl patch secret stayledger-staging-secrets -n stayledger-staging --type merge `
+  -p '{"stringData":{"frontend-url":"https://stg-app.stayledger.io"}}'
+
+kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
+kubectl apply -f stayledger-shared/staging/ingress.yaml
+kubectl apply -f stayledger-api/staging/
+kubectl apply -f stayledger-admin-web/staging/
+```
+
+Verify:
+
+```bash
+curl -fsS https://stg-app.stayledger.io/healthz
+curl -fsS https://stg-api.stayledger.io/api/health
+```
+
+**Cloudflare note:** `/_next/static/*` is cached as `immutable` for 1 year. After changing
+`NEXT_PUBLIC_*` via ConfigMap/env-inject only (without a new image build), purge Cloudflare
+cache for `stg-app.stayledger.io/_next/static/*` or rebuild/push a new image so chunk hashes
+change. Otherwise browsers keep loading stale JS with the old API URL.
+
 ## Adding a new project
 
 1. Create `<project-name>/` with `prd/` and `staging/` subdirectories inside this repo.

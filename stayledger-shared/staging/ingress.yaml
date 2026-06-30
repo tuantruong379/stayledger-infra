@@ -1,0 +1,79 @@
+# Staging TLS edge for StayLedger PMS (admin web + API).
+#
+# DNS (before apply):
+#   stg-app.stayledger.io  -> ingress controller LoadBalancer / node IP
+#   stg-api.stayledger.io  -> same target
+#
+# Apply order:
+#   kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
+#   kubectl apply -f stayledger-shared/staging/ingress.yaml
+#
+# Verify:
+#   curl -fsS https://stg-app.stayledger.io/healthz
+#   curl -fsS https://stg-api.stayledger.io/api/health
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stayledger-admin-web
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: staging
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - stg-app.stayledger.io
+      secretName: stayledger-staging-app-tls
+  rules:
+    - host: stg-app.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stayledger-admin-web
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stayledger-api
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: staging
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - stg-api.stayledger.io
+      secretName: stayledger-staging-api-tls
+  rules:
+    - host: stg-api.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stayledger-api
+                port:
+                  number: 80

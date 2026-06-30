@@ -23,7 +23,7 @@ cd stayledger-admin-web
 # Option B: manual
 $SHA = git rev-parse --short=8 HEAD
 docker build `
-  --build-arg NEXT_PUBLIC_API_URL=https://api-staging.stayledger.tekcent.com/api `
+  --build-arg NEXT_PUBLIC_API_URL=https://stg-app.stayledger.io/api-proxy `
   --build-arg NEXT_PUBLIC_APP_ENV=staging `
   -t putin111/stayledger-admin-web:staging-$SHA .
 docker push putin111/stayledger-admin-web:staging-$SHA
@@ -50,7 +50,8 @@ kubectl rollout status deployment/stayledger-admin-web -n stayledger
 
 ```bash
 curl http://hkk8s-hub-master:30000/healthz    # production
-curl http://hkk8s-hub-master:30010/healthz    # staging
+curl https://stg-app.stayledger.io/healthz    # staging (ingress)
+curl http://hkk8s-hub-master:30010/healthz    # staging (NodePort fallback)
 ```
 
 ## Rollback
@@ -65,4 +66,4 @@ kubectl rollout undo deployment/stayledger-admin-web -n stayledger-staging  # st
 | Environment | NodePort | Ingress host (when configured)            |
 |-------------|----------|-------------------------------------------|
 | Production  | 30000    | —                                         |
-| Staging     | 30010    | admin-staging.stayledger.tekcent.com      |
+| Staging     | 30010    | stg-app.stayledger.io      |
