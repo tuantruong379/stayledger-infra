@@ -49,3 +49,23 @@ spec:
           annotations:
             summary: "No successful guest documents DR backup in more than 24h"
             description: "S3 is disaster-recovery backup only, but RPO is at risk because the encrypted off-node copy has not succeeded recently."
+
+        - alert: GuestDocumentsRetentionCleanupFailed
+          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-retention.*"} > 0
+          for: 5m
+          labels:
+            severity: p2
+            service: stayledger-api
+          annotations:
+            summary: "Guest documents retention cleanup failed"
+            description: "A retention cleanup job failed. Check API retention logs and verify expired document objects were removed from the PVC."
+
+        - alert: GuestDocumentsRestoreDrillFailed
+          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-restore-drill.*"} > 0
+          for: 5m
+          labels:
+            severity: p1
+            service: stayledger-api
+          annotations:
+            summary: "Guest documents restore drill failed"
+            description: "The restore drill failed. Treat this as release-blocking until checksum verification and scoped restore evidence are updated."

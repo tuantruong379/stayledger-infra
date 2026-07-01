@@ -28,7 +28,7 @@ data:
   NEXT_PUBLIC_AI_COPILOT_ENABLED: "true"
   NEXT_PUBLIC_AI_SAAS_OPS_ENABLED: "true"
   # Release 0: document capture + OCR default off until R1 pilot property is enabled.
-  NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "false"
+  NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
   NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
 
 ---
@@ -105,7 +105,7 @@ spec:
           # with stale assets (pods report the new tag but serve old JS).
           # The YAML anchor below binds both to ONE value: bump it in one place
           # and the alias on the main container updates in lockstep.
-          image: &adminWebImage putin111/stayledger-admin-web:staging-ff2b443a-20260701-1130
+          image: &adminWebImage putin111/stayledger-admin-web:staging-06d89ae2-20260701-1354
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

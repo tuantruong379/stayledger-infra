@@ -63,7 +63,7 @@ spec:
       containers:
         - name: api
           # Tag is updated by CI deploy-staging step.
-          image: putin111/stayledger-api:staging-b38ba0df-20260701-1130
+          image: putin111/stayledger-api:staging-bb68d6e9-20260701-1406
           imagePullPolicy: Always
           ports:
             - containerPort: 3001

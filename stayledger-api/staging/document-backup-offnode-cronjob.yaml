@@ -13,8 +13,10 @@ data:
     set -eu
     SRC=/var/lib/stayledger/guest-documents
     TS="$(date -u +%Y%m%dT%H%M%SZ)"
+    WORK="/tmp/guest-documents-${TS}"
     ARCHIVE="/tmp/guest-documents-${TS}.tar.gz"
     ENCRYPTED="${ARCHIVE}.enc"
+    PREFIX="${DOCUMENT_BACKUP_PREFIX:-guest-documents}"
 
     if [ ! -d "${SRC}" ]; then
       echo "[document-backup] source PVC path missing: ${SRC}"
@@ -25,10 +27,16 @@ data:
       exit 1
     fi
 
-    tar -C "${SRC}" -czf "${ARCHIVE}" .
+    mkdir -p "${WORK}"
+    if find "${SRC}" -type f | grep -q .; then
+      (cd "${SRC}" && find . -type f -print0 | sort -z | xargs -0 sha256sum) > "${WORK}/SHA256SUMS"
+    else
+      : > "${WORK}/SHA256SUMS"
+    fi
+    tar -czf "${ARCHIVE}" -C "${SRC}" . -C "${WORK}" SHA256SUMS
     openssl enc -aes-256-cbc -pbkdf2 -salt -in "${ARCHIVE}" -out "${ENCRYPTED}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
-    aws s3 cp "${ENCRYPTED}" "s3://${DOCUMENT_BACKUP_S3_BUCKET}/guest-documents/${TS}.tar.gz.enc" --sse AES256
-    echo "[document-backup] uploaded encrypted DR copy guest-documents/${TS}.tar.gz.enc"
+    aws s3 cp "${ENCRYPTED}" "s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
+    echo "[document-backup] uploaded encrypted DR copy ${PREFIX}/${TS}.tar.gz.enc"
 
 ---
 apiVersion: batch/v1
@@ -63,7 +71,11 @@ spec:
               env:
                 - name: DOCUMENT_BACKUP_MODE
                   value: "disaster_recovery_only"
-                - name: DOCUMENT_BACKUP_S3_BUCKET
+                - name: DOCUMENT_BACKUP_PREFIX
+                  value: "guest-documents"
+                - name: DOCUMENT_BACKUP_ENCRYPTION
+                  value: "AES256"
+                - name: DOCUMENT_BACKUP_BUCKET
                   valueFrom:
                     secretKeyRef:
                       name: stayledger-document-backup-s3
