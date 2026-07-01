@@ -1,0 +1,72 @@
+# One-off restore verification — download S3 DR backup, decrypt, verify SHA256SUMS.
+# Usage:
+#   kubectl apply -f guest-document-restore-drill-job.yaml
+#   kubectl wait --for=condition=complete job/guest-doc-restore-drill -n stayledger-staging --timeout=180s
+#   kubectl logs job/guest-doc-restore-drill -n stayledger-staging
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: guest-doc-restore-drill
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-api
+    component: guest-documents-restore-drill
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: guest-documents-restore-drill
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine:3.20
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              apk add --no-cache aws-cli tar openssl >/dev/null
+              WORK=/tmp/restore-drill
+              ENC=/tmp/guest-documents.tar.gz.enc
+              ARCH=/tmp/guest-documents.tar.gz
+              mkdir -p "${WORK}"
+              aws s3 cp "s3://${DOCUMENT_BACKUP_BUCKET}/guest-documents/${BACKUP_TS}.tar.gz.enc" "${ENC}"
+              openssl enc -d -aes-256-cbc -pbkdf2 -in "${ENC}" -out "${ARCH}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+              tar -xzf "${ARCH}" -C "${WORK}"
+              (cd "${WORK}" && sha256sum -c SHA256SUMS)
+              PROBE='32461d5bd1773012acef0ba15636752949bd7c2ce50f9172159d9f56cf0dd9af'
+              PROBE_FILE="${WORK}/property-capability_growth_property_1/booking-none/guest-cmr1vp4cd00jd9i07vzjwd305/document-doc_400c3afe9a7345ce9acd3967a1c1f465/front.jpg"
+              ACTUAL=$(sha256sum "${PROBE_FILE}" | awk '{print $1}')
+              echo "probe_sha256_expected=${PROBE}"
+              echo "probe_sha256_actual=${ACTUAL}"
+              test "${PROBE}" = "${ACTUAL}"
+              echo RESTORE_DRILL_VERIFY_PASS
+          env:
+            - name: BACKUP_TS
+              value: "20260701T101806Z"
+            - name: DOCUMENT_BACKUP_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: bucket
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: secret-access-key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: region
+            - name: DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: encryption-passphrase
