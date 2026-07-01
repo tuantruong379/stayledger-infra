@@ -11,9 +11,9 @@ metadata:
     component: backend
     environment: staging
 spec:
-  # 2 replicas: enables zero-downtime rolling updates and tolerates a single
-  # pod failure or node drain without downtime.
-  replicas: 2
+  # Release 1 document pilot uses an RWO PVC mounted by the API. Keep one
+  # replica until the serving path is migrated to RWX/object storage.
+  replicas: 1
   selector:
     matchLabels:
       app: stayledger-api
@@ -63,7 +63,7 @@ spec:
       containers:
         - name: api
           # Tag is updated by CI deploy-staging step.
-          image: putin111/stayledger-api:staging-b38ba0d-golive-p6
+          image: putin111/stayledger-api:staging-b38ba0df-20260701-1130
           imagePullPolicy: Always
           ports:
             - containerPort: 3001
@@ -205,15 +205,18 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
           volumeMounts:
-            # uploads: emptyDir is acceptable for staging (demo data only).
-            # Production: replace with a PVC (RWX) or redirect to object storage.
             - name: uploads
               mountPath: /app/uploads
+            - name: guest-documents
+              mountPath: /var/lib/stayledger/guest-documents
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: uploads
           emptyDir: {}
+        - name: guest-documents
+          persistentVolumeClaim:
+            claimName: stayledger-guest-documents
         - name: tmp
           emptyDir: {}
 

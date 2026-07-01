@@ -9,7 +9,9 @@
 #   - PgBouncer/Postgres connection budget validated at maxReplicas (see the P1C
 #     runbook) so scaling out does not starve DB connections.
 #
-# PodDisruptionBudget (pdb.yaml, minAvailable: 1) stays compatible with minReplicas: 2.
+# Release 1 document pilot keeps API at one replica because guest document
+# storage is an RWO PVC. Re-enable scale-out only after storage no longer binds
+# the serving path to a single pod.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -24,8 +26,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: stayledger-api
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 1
   metrics:
     - type: Resource
       resource:

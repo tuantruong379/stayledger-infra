@@ -1,0 +1,51 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-guest-documents-alerts
+  namespace: observability
+  labels:
+    release: kube-prometheus-stack
+    app: stayledger-api
+    component: guest-documents
+spec:
+  groups:
+    - name: stayledger.guest-documents.storage
+      rules:
+        - alert: GuestDocumentsPvcUsageHigh
+          expr: |
+            (
+              kubelet_volume_stats_used_bytes{namespace="stayledger-staging",persistentvolumeclaim="stayledger-guest-documents"}
+              /
+              kubelet_volume_stats_capacity_bytes{namespace="stayledger-staging",persistentvolumeclaim="stayledger-guest-documents"}
+            ) > 0.80
+          for: 15m
+          labels:
+            severity: p2
+            service: stayledger-api
+          annotations:
+            summary: "Guest documents PVC usage above 80%"
+            description: "The R1 guest-documents PVC is above 80% used. Increase capacity or shorten retention before uploads fail."
+
+        - alert: GuestDocumentsBackupJobFailed
+          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-backup-offnode.*"} > 0
+          for: 5m
+          labels:
+            severity: p1
+            service: stayledger-api
+          annotations:
+            summary: "Guest documents off-node backup failed"
+            description: "The encrypted DR-only guest-documents backup job failed. Check CronJob logs and S3 credentials."
+
+        - alert: GuestDocumentsBackupStale
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-document-backup-offnode"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-document-backup-offnode"}) == 1)
+          for: 15m
+          labels:
+            severity: p1
+            service: stayledger-api
+          annotations:
+            summary: "No successful guest documents DR backup in more than 24h"
+            description: "S3 is disaster-recovery backup only, but RPO is at risk because the encrypted off-node copy has not succeeded recently."

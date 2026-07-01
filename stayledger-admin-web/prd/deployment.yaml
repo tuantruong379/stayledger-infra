@@ -17,6 +17,9 @@ data:
   # Replaced at container start by the env-inject init container.
   NEXT_PUBLIC_API_URL: "https://stayledger.tekcent.com/api"
   NEXT_PUBLIC_BOOKING_WEB_URL: "https://stayledger.tekcent.com"
+  # Release 0: document capture + OCR default off until R1 pilot is approved.
+  NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "false"
+  NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
 
 ---
 apiVersion: apps/v1
