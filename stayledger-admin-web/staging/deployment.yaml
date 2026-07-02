@@ -42,8 +42,8 @@ metadata:
     component: frontend
     environment: staging
   annotations:
-    kubernetes.io/change-cause: "Deploy staging-903a7e5c — document capture, AI monitoring router labels"
-    stayledger.io/git-sha: "903a7e5"
+    kubernetes.io/change-cause: "Deploy staging-f5079eff — full regression PASS, image sync 2026-07-02"
+    stayledger.io/git-sha: "f5079ef"
     stayledger.io/branch: "release/1.2.20"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
@@ -66,9 +66,9 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-903a7e5c"
+        version: "staging-f5079eff"
       annotations:
-        stayledger.io/git-sha: "903a7e5"
+        stayledger.io/git-sha: "f5079ef"
     spec:
       serviceAccountName: stayledger-admin-web
       # No K8s API access needed — suppress the auto-mounted token entirely.
@@ -105,7 +105,7 @@ spec:
           # with stale assets (pods report the new tag but serve old JS).
           # The YAML anchor below binds both to ONE value: bump it in one place
           # and the alias on the main container updates in lockstep.
-          image: &adminWebImage putin111/stayledger-admin-web:staging-903a7e5c
+          image: &adminWebImage putin111/stayledger-admin-web:staging-f5079eff
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
