@@ -105,7 +105,7 @@ spec:
           # with stale assets (pods report the new tag but serve old JS).
           # The YAML anchor below binds both to ONE value: bump it in one place
           # and the alias on the main container updates in lockstep.
-          image: &adminWebImage putin111/stayledger-admin-web:staging-06d89ae2-20260701-1354
+          image: &adminWebImage putin111/stayledger-admin-web:staging-ef23d8dd
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
