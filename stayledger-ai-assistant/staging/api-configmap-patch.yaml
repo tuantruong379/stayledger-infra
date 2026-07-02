@@ -1,0 +1,11 @@
+# Staging public URLs for hotel-assistant-api (CORS + admin links).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: hotel-assistant
+data:
+  ENVIRONMENT: "staging"
+  APP_ENV: "staging"
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"

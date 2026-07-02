@@ -162,6 +162,27 @@ curl -fsS https://stg-app.stayledger.io/healthz
 curl -fsS https://stg-api.stayledger.io/api/health
 ```
 
+### Staging TLS edge (AI Assistant)
+
+Point DNS `assistant.stayledger.io` and `api-assistant.stayledger.io` at the same ingress
+controller, then:
+
+```powershell
+kubectl apply -k stayledger-ai-assistant/staging/
+kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
+kubectl apply -f stayledger-ai-assistant/staging/ingress.yaml
+kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n hotel-assistant
+```
+
+Verify:
+
+```bash
+curl -fsS https://assistant.stayledger.io/
+curl -fsS https://api-assistant.stayledger.io/health
+```
+
+See [stayledger-ai-assistant/staging/README.md](stayledger-ai-assistant/staging/README.md).
+
 **Cloudflare note:** `/_next/static/*` is cached as `immutable` for 1 year. After changing
 `NEXT_PUBLIC_*` via ConfigMap/env-inject only (without a new image build), purge Cloudflare
 cache for `stg-app.stayledger.io/_next/static/*` or rebuild/push a new image so chunk hashes

@@ -5,6 +5,7 @@ Kubernetes manifests for the StayLedger AI Assistant. Organised into three sub-t
 | Folder | Purpose |
 | --- | --- |
 | [base/](base/) | Kustomize root — deploy with `kubectl apply -k stayledger-ai-assistant/base/` |
+| [staging/](staging/) | Staging overlay — `assistant.stayledger.io` + `api-assistant.stayledger.io` |
 | [minimal/](minimal/) | App-only raw YAML (API + frontend); external Postgres/Redis assumed |
 | [argocd/](argocd/) | GitOps — ArgoCD Application targeting this path |
 | [observability/](observability/) | App-specific alerts, dashboards, recording rules, servicemonitors |
