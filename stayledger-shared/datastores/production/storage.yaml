@@ -1,0 +1,96 @@
+---
+# StorageClass for local storage on hkk8s-hub-master node (production).
+# Same StorageClass name as prd/ — idempotent to apply if already exists.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-storage-hub-master
+provisioner: kubernetes.io/no-provisioner
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: false
+
+---
+# PersistentVolume for PostgreSQL data
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-postgres-pv
+  labels:
+    type: local
+    app: stayledger-postgres
+    environment: production
+spec:
+  storageClassName: local-storage-hub-master
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger/postgres
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master
+
+---
+# PersistentVolume for Redis data
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-redis-pv
+  labels:
+    type: local
+    app: stayledger-redis
+    environment: production
+spec:
+  storageClassName: local-storage-hub-master
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger/redis
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master
+
+---
+# PersistentVolume for guest document storage (100Gi — production capacity)
+# Prereq on node: mkdir -p /mnt/data/stayledger/guest-documents && chown 1001:1001 /mnt/data/stayledger/guest-documents
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-production-guest-documents-pv
+  labels:
+    type: local
+    app: stayledger-api
+    component: guest-documents
+    environment: production
+spec:
+  storageClassName: local-storage-hub-master
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger/guest-documents
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - hkk8s-hub-master

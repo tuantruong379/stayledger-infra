@@ -12,10 +12,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: hotel-assistant-api
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
   annotations:
     # Reasoning: ClusterIssuer name must match cert-manager-issuer.yaml below.
     cert-manager.io/cluster-issuer: letsencrypt-prod

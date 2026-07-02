@@ -1,0 +1,134 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-pms-production
+  namespace: stayledger
+  labels:
+    release: kps
+spec:
+  groups:
+    - name: stayledger-pms-production
+      rules:
+        # P0 — AI provider is running in mock mode in production (never acceptable)
+        - alert: StayLedgerAIProviderMock
+          expr: |
+            count(ai_provider_mode{mode="mock", namespace="stayledger"}) > 0
+          for: 1m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "AI provider is in mock mode in production"
+            description: "The API is returning mock AI responses in production. AI_PROVIDER must be azure_openai."
+
+        # P1 — API pod crash-looping
+        - alert: StayLedgerAPIPodCrashLooping
+          expr: |
+            increase(kube_pod_container_status_restarts_total{
+              namespace="stayledger",
+              pod=~"stayledger-api-.*"
+            }[10m]) > 2
+          for: 0m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger API pod crash-looping"
+            description: "Pod {{ $labels.pod }} has restarted more than 2 times in the last 10 minutes."
+
+        # P1 — High 5xx rate
+        - alert: StayLedgerAPI5xxHighRate
+          expr: |
+            sum(rate(http_requests_total{
+              namespace="stayledger",
+              job="stayledger-api",
+              status=~"5.."
+            }[5m])) /
+            sum(rate(http_requests_total{
+              namespace="stayledger",
+              job="stayledger-api"
+            }[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger API 5xx rate > 1%"
+            description: "More than 1% of API responses are 5xx errors (current: {{ $value | humanizePercentage }})."
+
+        # P1 — Database connectivity loss
+        - alert: StayLedgerDBConnectivityLoss
+          expr: |
+            sum(up{
+              namespace="stayledger",
+              job="stayledger-api"
+            }) == 0
+          for: 2m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger API readiness check failing"
+            description: "All API pods are reporting unready — possible DB or Redis connectivity loss."
+
+        # P1 — Document backup missed
+        - alert: StayLedgerDocumentBackupFailed
+          expr: |
+            time() - kube_cronjob_status_last_successful_time{
+              namespace="stayledger",
+              cronjob="stayledger-document-backup-offnode"
+            } > 93600
+          for: 0m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger document backup not completed in 26 hours"
+            description: "The guest document off-node backup CronJob has not completed successfully in over 26 hours."
+
+        # P2 — High API latency
+        - alert: StayLedgerAPIHighLatency
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{
+              namespace="stayledger",
+              job="stayledger-api"
+            }[5m])) by (le)) > 2
+          for: 10m
+          labels:
+            severity: warning
+            environment: production
+          annotations:
+            summary: "StayLedger API p95 latency > 2s"
+            description: "API p95 response time has exceeded 2 seconds for 10 minutes (current: {{ $value | humanizeDuration }})."
+
+        # P2 — Guest documents PVC near full
+        - alert: StayLedgerGuestDocsPVCNearFull
+          expr: |
+            kubelet_volume_stats_used_bytes{
+              namespace="stayledger",
+              persistentvolumeclaim="stayledger-production-guest-documents"
+            } /
+            kubelet_volume_stats_capacity_bytes{
+              namespace="stayledger",
+              persistentvolumeclaim="stayledger-production-guest-documents"
+            } > 0.80
+          for: 5m
+          labels:
+            severity: warning
+            environment: production
+          annotations:
+            summary: "Guest documents PVC above 80% capacity"
+            description: "Production guest documents PVC is {{ $value | humanizePercentage }} full. Expand volume or migrate to object storage."
+
+        # P2 — AI quota near exhaustion
+        - alert: StayLedgerAIQuotaNearExhaustion
+          expr: |
+            ai_quota_usage_percent{namespace="stayledger"} > 90
+          for: 5m
+          labels:
+            severity: warning
+            environment: production
+          annotations:
+            summary: "AI token quota above 90%"
+            description: "Property {{ $labels.property_id }} AI token quota is {{ $value }}% used. Quota exhaustion will block AI features (ENTITLEMENT_FAIL_CLOSED=true)."

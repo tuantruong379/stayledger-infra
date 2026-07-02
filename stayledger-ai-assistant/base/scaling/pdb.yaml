@@ -7,14 +7,14 @@
 #     either temporarily deletes the PDB or scales up to a HA topology.
 #
 # Verify:
-#   kubectl -n hotel-assistant get pdb
+#   kubectl -n stayledger-ai-assistant get pdb
 
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: hotel-assistant-api
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   minAvailable: 1
   selector:
@@ -26,7 +26,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: postgres
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   maxUnavailable: 0
   selector:
@@ -38,7 +38,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: redis
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   maxUnavailable: 0
   selector:
@@ -50,7 +50,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: hotel-assistant-frontend
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   minAvailable: 1
   selector:

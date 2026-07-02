@@ -2,10 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-channel-worker
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-channel-worker
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   replicas: 1
   minReadySeconds: 10
@@ -21,7 +21,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hotel-assistant-channel-worker
-        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/part-of: stayledger-ai-assistant
     spec:
       serviceAccountName: api-sa
       automountServiceAccountToken: false

@@ -1,3 +1,6 @@
+# DEPRECATED — use stayledger-admin-web/production/ instead.
+# This stub is stale (wrong domain, replicas: 1, missing serviceaccount/pdb/networkpolicy).
+# Kept for historical reference only. Do not apply to the cluster.
 ---
 # ConfigMap: all non-secret runtime configuration.
 # NEXT_PUBLIC_API_URL and NEXT_PUBLIC_BOOKING_WEB_URL are runtime-injectable —

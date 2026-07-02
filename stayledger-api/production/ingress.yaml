@@ -1,0 +1,36 @@
+---
+# Production TLS ingress for the StayLedger API (api.stayledger.io).
+# DNS prereq: api.stayledger.io → ingress controller LoadBalancer / node IP
+# Apply after DNS propagates; cert-manager will provision the TLS certificate automatically.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "20m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - api.stayledger.io
+      secretName: stayledger-production-api-tls
+  rules:
+    - host: api.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stayledger-api
+                port:
+                  number: 80

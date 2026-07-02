@@ -8,10 +8,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-backup-script
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 data:
   backup.sh: |
@@ -73,10 +73,10 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-backup
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   storageClassName: postgres-sc
@@ -85,15 +85,16 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  volumeName: postgres-backup-pv
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   # 19:00 UTC = 02:00 Asia/Ho_Chi_Minh (UTC+7)
@@ -108,7 +109,7 @@ spec:
         metadata:
           labels:
             app.kubernetes.io/name: postgres
-            app.kubernetes.io/part-of: hotel-assistant
+            app.kubernetes.io/part-of: stayledger-ai-assistant
             app.kubernetes.io/component: database
         spec:
           restartPolicy: OnFailure

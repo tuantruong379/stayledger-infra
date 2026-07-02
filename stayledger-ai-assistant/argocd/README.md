@@ -240,7 +240,7 @@ Vì vậy trước đây muốn deploy image mới thì CI hoặc operator phả
 ### Sau khi cài Image Updater
 
 ```
-GitHub Actions (cd.yml)
+GitHub Actions (ci.yml on main)
   → Build & push Docker image với tag sha-xxxxxxx lên Docker Hub
       → Argo CD Image Updater phát hiện image mới
           → Tự cập nhật image tag trong kustomization.yaml trên Git (write-back)

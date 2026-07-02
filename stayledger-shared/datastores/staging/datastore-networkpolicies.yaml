@@ -6,7 +6,7 @@
 # for an exposure.
 #
 # ⚠️ SHARED-INFRA CAVEAT: the Postgres instance shows a `hotel_ops` database in
-# pg_stat_activity — verify whether the hotel-assistant app (namespace `hotel-assistant`)
+# pg_stat_activity — verify whether the stayledger-ai-assistant app (namespace `stayledger-ai-assistant`)
 # connects to THIS Postgres/PgBouncer. If so, add its pods to the postgres/pgbouncer ingress
 # allow-lists BEFORE applying, or you will break that app. Enumerate every client
 # (app pods, migration jobs, backup CronJob, exporters, and any cross-namespace consumers)

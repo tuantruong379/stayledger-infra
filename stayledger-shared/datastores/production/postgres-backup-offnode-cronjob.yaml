@@ -1,0 +1,88 @@
+# BK-4 — Off-node backup copy (S3-compatible) for production PostgreSQL.
+# Runs daily at 15:00 UTC (22:00 Vietnam time), uploads the latest local dump to S3,
+# verifies it exists, and prunes old remote copies.
+#
+# Prerequisites:
+#   1. BK-3 done (local backup operational — stayledger-postgres-backup-cronjob running).
+#   2. Create the S3 credentials secret:
+#        kubectl create secret generic backup-offnode-s3 -n stayledger \
+#          --from-literal=S3_ENDPOINT=https://s3.<region>.amazonaws.com \
+#          --from-literal=S3_BUCKET=prd-stayledger-pms \
+#          --from-literal=S3_PREFIX=stayledger/production/postgres/ \
+#          --from-literal=S3_ACCESS_KEY_ID=<key> \
+#          --from-literal=S3_SECRET_ACCESS_KEY=<secret> \
+#          --from-literal=RETENTION_DAYS=30
+#   3. kubectl apply -f postgres-backup-offnode-cronjob.yaml
+#   4. kubectl create job -n stayledger --from=cronjob/stayledger-postgres-backup-offnode offnode-verify
+#      → confirm logs show upload + remote verification OK
+#
+# IMPORTANT (AWS S3 only): S3_ENDPOINT must be the GENERIC regional endpoint
+# (https://s3.<region>.amazonaws.com), NOT a bucket-specific vhost URL. Use
+# --path on (path-style) with mc. See staging cronjob comment for full rationale.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-postgres-backup-offnode-script
+  namespace: stayledger
+  labels: { app: stayledger-postgres, component: database-backup-offnode, environment: production }
+data:
+  offnode.sh: |
+    #!/bin/sh
+    set -eu
+    BACKUP_DIR=/backup
+    RETENTION_DAYS="${RETENTION_DAYS:-30}"
+    LATEST=$(ls -1t ${BACKUP_DIR}/stayledger_*.dump 2>/dev/null | head -1 || true)
+    if [ -z "${LATEST}" ]; then
+      echo "[offnode] ERROR: no local backup dump found in ${BACKUP_DIR} (run BK-3 local backup first)"; exit 1
+    fi
+    NAME=$(basename "${LATEST}")
+    echo "[offnode] uploading ${NAME} to ${S3_BUCKET}/${S3_PREFIX} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    SUM=$(md5sum "${LATEST}")
+    echo "${SUM%% *}" > "/tmp/${NAME}.md5"
+    mc alias set offnode "${S3_ENDPOINT}" "${S3_ACCESS_KEY_ID}" "${S3_SECRET_ACCESS_KEY}" --path on
+    mc cp --quiet "${LATEST}" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}"
+    mc cp --quiet "/tmp/${NAME}.md5" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}.md5"
+    mc stat "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}" >/dev/null
+    echo "[offnode] verified remote ${S3_PREFIX}${NAME}"
+    mc find "offnode/${S3_BUCKET}/${S3_PREFIX}" --name "stayledger_*.dump" --older-than "${RETENTION_DAYS}d" --exec "mc rm {}" || true
+    echo "[offnode] done at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-postgres-backup-offnode
+  namespace: stayledger
+  labels: { app: stayledger-postgres, component: database-backup-offnode, environment: production }
+spec:
+  schedule: "0 15 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector: { kubernetes.io/hostname: hkk8s-hub-master }
+          securityContext: { runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, fsGroup: 999, seccompProfile: { type: RuntimeDefault } }
+          containers:
+            - name: offnode-copy
+              image: minio/mc:latest
+              command: ["/bin/sh", "/scripts/offnode.sh"]
+              env:
+                - { name: HOME, value: /tmp }
+              envFrom:
+                - secretRef: { name: backup-offnode-s3 }
+              volumeMounts:
+                - { name: backup-data, mountPath: /backup, readOnly: true }
+                - { name: script, mountPath: /scripts/offnode.sh, subPath: offnode.sh }
+              securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: false, capabilities: { drop: ["ALL"] } }
+              resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { cpu: 250m, memory: 256Mi } }
+          volumes:
+            - name: backup-data
+              persistentVolumeClaim: { claimName: stayledger-postgres-backup-pvc }
+            - name: script
+              configMap: { name: stayledger-postgres-backup-offnode-script, defaultMode: 0755 }

@@ -17,7 +17,7 @@ All critical misconfiguration and redundancy issues have been addressed. Below i
 
 **Verification:**
 ```bash
-kubectl get networkpolicies -n hotel-assistant
+kubectl get networkpolicies -n stayledger-ai-assistant
 # Should see: allow-webhook-worker-{ingress,egress}, allow-redis-ingress-from-webhook-worker
 ```
 
@@ -32,7 +32,7 @@ kubectl get networkpolicies -n hotel-assistant
 **Verification:**
 ```bash
 kubectl apply -k k8s/onprem/
-kubectl exec -n hotel-assistant deploy/hotel-assistant-webhook-worker -- ls -la /tmp
+kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- ls -la /tmp
 # Should be writable
 ```
 
@@ -48,7 +48,7 @@ kubectl exec -n hotel-assistant deploy/hotel-assistant-webhook-worker -- ls -la 
 
 **Verification:**
 ```bash
-kubectl get configmap hotel-assistant-api-config -n hotel-assistant -o yaml | grep REDIS_SOCKET_TIMEOUT_S
+kubectl get configmap hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET_TIMEOUT_S
 # Should return: REDIS_SOCKET_TIMEOUT_S: "5"
 ```
 
@@ -147,9 +147,9 @@ kubectl get ns hotel-assistant --show-labels | grep monitoring
 
 **Verification:**
 ```bash
-kubectl get hpa -n hotel-assistant
+kubectl get hpa -n stayledger-ai-assistant
 # Should see: hotel-assistant-api, hotel-assistant-channel-worker, hotel-assistant-webhook-worker
-kubectl describe hpa hotel-assistant-webhook-worker -n hotel-assistant
+kubectl describe hpa hotel-assistant-webhook-worker -n stayledger-ai-assistant
 ```
 
 ---
@@ -210,10 +210,10 @@ kubectl label nodes hkk8s-hub-master node-role.kubernetes.io/api-data=true --ove
 kubectl apply -k k8s/onprem/
 
 # 3. Verify everything deployed
-kubectl get pods,svc,hpa,pdb,networkpolicies -n hotel-assistant
+kubectl get pods,svc,hpa,pdb,networkpolicies -n stayledger-ai-assistant
 
 # 4. Wait for rollout (new images with /tmp mount, etc.)
-kubectl rollout status deployment/hotel-assistant-webhook-worker -n hotel-assistant
+kubectl rollout status deployment/hotel-assistant-webhook-worker -n stayledger-ai-assistant
 ```
 
 ---
@@ -222,7 +222,7 @@ kubectl rollout status deployment/hotel-assistant-webhook-worker -n hotel-assist
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Kubernetes Namespace: hotel-assistant                               │
+│ Kubernetes namespace: stayledger-ai-assistant                               │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │  API (Deployment)                    Workers (Deployments)          │
@@ -265,7 +265,7 @@ kubectl rollout status deployment/hotel-assistant-webhook-worker -n hotel-assist
 ### Immediate (This Week)
 1. ✅ Deploy fixes: `kubectl apply -k k8s/onprem/`
 2. ✅ Label data node: `kubectl label nodes ... node-role.kubernetes.io/api-data=true`
-3. ✅ Verify HPA active: `kubectl get hpa -n hotel-assistant`
+3. ✅ Verify HPA active: `kubectl get hpa -n stayledger-ai-assistant`
 4. Provision NFS storage (or decide: self-hosted vs cloud-managed)
 
 ### Short-term (Weeks 2-4)
@@ -286,21 +286,21 @@ See `HA_MIGRATION_PLAN.md` for detailed timeline.
 
 ```bash
 # Network policies
-kubectl get networkpolicies -n hotel-assistant
+kubectl get networkpolicies -n stayledger-ai-assistant
 # Should list 14 policies including new webhook-worker ones
 
 # HPA status
-kubectl get hpa -n hotel-assistant
-kubectl describe hpa hotel-assistant-webhook-worker -n hotel-assistant
+kubectl get hpa -n stayledger-ai-assistant
+kubectl describe hpa hotel-assistant-webhook-worker -n stayledger-ai-assistant
 
 # ConfigMap
-kubectl get configmap hotel-assistant-api-config -n hotel-assistant -o yaml | head -30
+kubectl get configmap hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | head -30
 
 # Node labels
 kubectl get nodes --show-labels | grep api-data
 
 # Pod /tmp
-kubectl exec -n hotel-assistant deploy/hotel-assistant-webhook-worker -- touch /tmp/test
+kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- touch /tmp/test
 # Should succeed (no EROFS error)
 
 # Tenant channel credentials

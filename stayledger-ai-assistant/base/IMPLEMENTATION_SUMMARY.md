@@ -45,11 +45,11 @@ kubectl label nodes hkk8s-hub-master node-role.kubernetes.io/api-data=true --ove
 kubectl apply -k k8s/onprem/
 
 # Step 3: Wait for rollout
-kubectl rollout status deployment/hotel-assistant-api -n hotel-assistant
-kubectl rollout status deployment/hotel-assistant-webhook-worker -n hotel-assistant
+kubectl rollout status deployment/hotel-assistant-api -n stayledger-ai-assistant
+kubectl rollout status deployment/hotel-assistant-webhook-worker -n stayledger-ai-assistant
 
 # Step 4: Verify everything is working
-kubectl get pods,svc,hpa,networkpolicies -n hotel-assistant
+kubectl get pods,svc,hpa,networkpolicies -n stayledger-ai-assistant
 ```
 
 ---
@@ -58,12 +58,12 @@ kubectl get pods,svc,hpa,networkpolicies -n hotel-assistant
 
 **After deploying, verify:**
 
-- [ ] All pods are `Running`: `kubectl get pods -n hotel-assistant`
-- [ ] HPA is active: `kubectl get hpa -n hotel-assistant` (should show 3 HPAs)
-- [ ] Network policies applied: `kubectl get networkpolicies -n hotel-assistant` (14 policies)
+- [ ] All pods are `Running`: `kubectl get pods -n stayledger-ai-assistant`
+- [ ] HPA is active: `kubectl get hpa -n stayledger-ai-assistant` (should show 3 HPAs)
+- [ ] Network policies applied: `kubectl get networkpolicies -n stayledger-ai-assistant` (14 policies)
 - [ ] Node label exists: `kubectl get nodes --show-labels | grep api-data`
-- [ ] ConfigMap updated: `kubectl get cm hotel-assistant-api-config -n hotel-assistant -o yaml | grep REDIS_SOCKET`
-- [ ] Webhook worker has /tmp: `kubectl exec -n hotel-assistant deploy/hotel-assistant-webhook-worker -- ls /tmp`
+- [ ] ConfigMap updated: `kubectl get cm hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET`
+- [ ] Webhook worker has /tmp: `kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- ls /tmp`
 - [ ] Tenant channel credentials configured in `tenant_channel_secrets` via Admin -> Tenant -> Config
 
 ---

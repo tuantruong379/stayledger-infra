@@ -159,7 +159,7 @@ spec:
         - alert: HotelAIPodCrashLooping
           expr: |
             max by (pod) (
-              increase(kube_pod_container_status_restarts_total{namespace="hotel-assistant"}[10m])
+              increase(kube_pod_container_status_restarts_total{namespace="stayledger-ai-assistant"}[10m])
             ) > 2
           for: 5m
           labels:

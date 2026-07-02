@@ -1,18 +1,14 @@
-# Staging overlay — public URLs:
-#   UI:  https://assistant.stayledger.io
-#   API: https://api-assistant.stayledger.io
+# Staging overlay — NodePort (no ingress). Public URLs via Cloudflare → node ports:
+#   UI:  https://stg-assistant.stayledger.io       → NodePort 30081
+#   API: https://stg-api-assistant.stayledger.io  → NodePort 30080
 #
 # Deploy (after base secrets):
 #   kubectl apply -k stayledger-ai-assistant/staging/
-#
-# TLS ingress (cluster edge):
-#   kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
-#   kubectl apply -f stayledger-shared/staging/ingress.yaml
-#   kubectl apply -f stayledger-ai-assistant/staging/ingress.yaml
+#   kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n stayledger-ai-assistant
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: hotel-assistant
+namespace: stayledger-ai-assistant
 
 resources:
   - ../base

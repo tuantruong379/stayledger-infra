@@ -5,17 +5,19 @@ Kubernetes manifests for the StayLedger AI Assistant. Organised into three sub-t
 | Folder | Purpose |
 | --- | --- |
 | [base/](base/) | Kustomize root — deploy with `kubectl apply -k stayledger-ai-assistant/base/` |
-| [staging/](staging/) | Staging overlay — `assistant.stayledger.io` + `api-assistant.stayledger.io` |
+| [staging/](staging/) | Staging overlay — `stg-assistant.stayledger.io` + `stg-api-assistant.stayledger.io` (NodePort) |
 | [minimal/](minimal/) | App-only raw YAML (API + frontend); external Postgres/Redis assumed |
 | [argocd/](argocd/) | GitOps — ArgoCD Application targeting this path |
 | [observability/](observability/) | App-specific alerts, dashboards, recording rules, servicemonitors |
+
+**Namespace:** all manifests deploy to `stayledger-ai-assistant`. See [MIGRATION_NAMESPACE.md](MIGRATION_NAMESPACE.md) for cutover from the legacy `hotel-assistant` namespace.
 
 ## base/ layout
 
 ```text
 base/
 ├── kustomization.yaml         # Kustomize root — references all sub-directories
-├── namespace.yaml             # hotel-assistant namespace
+├── namespace.yaml             # stayledger-ai-assistant namespace
 ├── serviceaccounts.yaml       # Service accounts
 ├── nginx-hotel-assistant.conf # Nginx reverse-proxy config (if used at edge)
 ├── app/                       # Workload deployments and configmaps

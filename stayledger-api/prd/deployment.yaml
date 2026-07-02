@@ -1,3 +1,6 @@
+# DEPRECATED — use stayledger-api/production/ instead.
+# This stub is stale (wrong domain, wrong resources, missing ~20 ConfigMap keys).
+# Kept for historical reference only. Do not apply to the cluster.
 ---
 apiVersion: v1
 kind: ConfigMap

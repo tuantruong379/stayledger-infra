@@ -8,10 +8,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: redis-tuning
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: redis
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache
 data:
   redis.conf: |

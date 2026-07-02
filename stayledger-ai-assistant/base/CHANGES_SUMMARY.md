@@ -105,7 +105,7 @@ spec:
 **Details:**
 - Enables Prometheus ServiceMonitor discovery by label selector
 
-**Before:** Only `app.kubernetes.io/part-of: hotel-assistant`  
+**Before:** Only `app.kubernetes.io/part-of: stayledger-ai-assistant`  
 **After:** Added `monitoring: "true"`
 
 ---
@@ -210,7 +210,7 @@ spec:
 1. Read [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) (5 min)
 2. Label node: `kubectl label nodes ... node-role.kubernetes.io/api-data=true`
 3. Apply manifests: `kubectl apply -k k8s/onprem/`
-4. Verify: `kubectl get pods,hpa -n hotel-assistant`
+4. Verify: `kubectl get pods,hpa -n stayledger-ai-assistant`
 
 ---
 

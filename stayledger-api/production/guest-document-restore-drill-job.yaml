@@ -1,0 +1,72 @@
+# One-off restore verification — download S3 DR backup, decrypt, verify SHA256SUMS.
+# Run this drill after each month's first backup to confirm restore is viable.
+# Usage:
+#   kubectl apply -f guest-document-restore-drill-job.yaml
+#   kubectl wait --for=condition=complete job/guest-doc-restore-drill -n stayledger --timeout=300s
+#   kubectl logs job/guest-doc-restore-drill -n stayledger
+# After verifying, delete the job:
+#   kubectl delete job guest-doc-restore-drill -n stayledger
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: guest-doc-restore-drill
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: guest-documents-restore-drill
+    environment: production
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: guest-documents-restore-drill
+        environment: production
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: restore
+          image: alpine:3.20
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              apk add --no-cache aws-cli tar openssl >/dev/null
+              WORK=/tmp/restore-drill
+              ENC=/tmp/guest-documents.tar.gz.enc
+              ARCH=/tmp/guest-documents.tar.gz
+              mkdir -p "${WORK}"
+              aws s3 cp "s3://${DOCUMENT_BACKUP_BUCKET}/production/guest-documents/${BACKUP_TS}.tar.gz.enc" "${ENC}"
+              openssl enc -d -aes-256-cbc -pbkdf2 -in "${ENC}" -out "${ARCH}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+              tar -xzf "${ARCH}" -C "${WORK}"
+              (cd "${WORK}" && sha256sum -c SHA256SUMS)
+              echo RESTORE_DRILL_VERIFY_PASS
+          env:
+            # Set BACKUP_TS to the timestamp of the backup to verify, e.g. 20260701T191500Z
+            - name: BACKUP_TS
+              value: "REPLACE_WITH_BACKUP_TIMESTAMP"
+            - name: DOCUMENT_BACKUP_BUCKET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: bucket
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: secret-access-key
+            - name: AWS_DEFAULT_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: region
+            - name: DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-document-backup-s3
+                  key: encryption-passphrase

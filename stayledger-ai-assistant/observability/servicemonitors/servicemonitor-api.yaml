@@ -10,13 +10,13 @@ metadata:
   namespace: observability
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   selector:
     matchLabels:
       app.kubernetes.io/name: hotel-assistant-api
   namespaceSelector:
-    matchNames: [hotel-assistant]
+    matchNames: [stayledger-ai-assistant]
   endpoints:
     - port: http
       path: /metrics/prom

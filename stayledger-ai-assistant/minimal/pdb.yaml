@@ -6,7 +6,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: ai-hotel-assistant-pdb
-  namespace: stayledger
+  namespace: stayledger-ai-assistant
 spec:
   minAvailable: 1
   selector:
@@ -19,7 +19,7 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: ai-hotel-assistant-frontend-pdb
-  namespace: stayledger
+  namespace: stayledger-ai-assistant
 spec:
   minAvailable: 1
   selector:

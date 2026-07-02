@@ -1,0 +1,15 @@
+title = "StayLedger Infra gitleaks configuration"
+
+# These files were committed before the .gitignore rules covered them.
+# They contain real staging credentials and MUST be rotated before public
+# production launch. Tracked in docs/infra/staging-secret-inventory.md.
+# Do NOT add new files to this list; fix them instead.
+[allowlist]
+description = "Pre-.gitignore committed staging secret files (legacy — rotation required)"
+paths = [
+  '''stayledger-api/staging/secret\.yaml''',
+  '''stayledger-shared/datastores/staging/secrets\.yaml''',
+  '''stayledger-shared/datastores/staging/pgbouncer-secret\.yaml''',
+  '''stayledger-shared/datastores/staging/backup-offnode-s3-secret\.yaml''',
+  '''stayledger-ai-assistant/base/datastores/pgbouncer-secret\.yaml''',
+]

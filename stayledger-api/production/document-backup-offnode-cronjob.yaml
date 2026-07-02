@@ -1,0 +1,124 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-document-backup-offnode-script
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: guest-documents-backup
+    environment: production
+data:
+  backup.sh: |
+    #!/usr/bin/env sh
+    set -eu
+    SRC=/var/lib/stayledger/guest-documents
+    TS="$(date -u +%Y%m%dT%H%M%SZ)"
+    WORK="/tmp/guest-documents-${TS}"
+    ARCHIVE="/tmp/guest-documents-${TS}.tar.gz"
+    ENCRYPTED="${ARCHIVE}.enc"
+    PREFIX="${DOCUMENT_BACKUP_PREFIX:-production/guest-documents}"
+
+    if [ ! -d "${SRC}" ]; then
+      echo "[document-backup] source PVC path missing: ${SRC}"
+      exit 1
+    fi
+    if [ "${DOCUMENT_BACKUP_MODE:-disaster_recovery_only}" != "disaster_recovery_only" ]; then
+      echo "[document-backup] refusing non-DR backup mode"
+      exit 1
+    fi
+
+    mkdir -p "${WORK}"
+    if find "${SRC}" -type f | grep -q .; then
+      (cd "${SRC}" && find . -type f -print0 | sort -z | xargs -0 sha256sum) > "${WORK}/SHA256SUMS"
+    else
+      : > "${WORK}/SHA256SUMS"
+    fi
+    tar -czf "${ARCHIVE}" -C "${SRC}" . -C "${WORK}" SHA256SUMS
+    openssl enc -aes-256-cbc -pbkdf2 -salt -in "${ARCHIVE}" -out "${ENCRYPTED}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+    aws s3 cp "${ENCRYPTED}" "s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
+    echo "[document-backup] uploaded encrypted DR copy ${PREFIX}/${TS}.tar.gz.enc"
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-document-backup-offnode
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: guest-documents-backup
+    environment: production
+spec:
+  schedule: "30 19 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: stayledger-api
+            component: guest-documents-backup
+            environment: production
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: backup
+              image: alpine:3.20
+              imagePullPolicy: IfNotPresent
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  apk add --no-cache tar openssl aws-cli >/dev/null
+                  exec /scripts/backup.sh
+              env:
+                - name: DOCUMENT_BACKUP_MODE
+                  value: "disaster_recovery_only"
+                - name: DOCUMENT_BACKUP_PREFIX
+                  value: "production/guest-documents"
+                - name: DOCUMENT_BACKUP_ENCRYPTION
+                  value: "AES256"
+                - name: DOCUMENT_BACKUP_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: bucket
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: secret-access-key
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: region
+                - name: DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: encryption-passphrase
+              volumeMounts:
+                - name: guest-documents
+                  mountPath: /var/lib/stayledger/guest-documents
+                  readOnly: true
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+          volumes:
+            - name: guest-documents
+              persistentVolumeClaim:
+                claimName: stayledger-production-guest-documents
+            - name: backup-script
+              configMap:
+                name: stayledger-document-backup-offnode-script
+                defaultMode: 0755

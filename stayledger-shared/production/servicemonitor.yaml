@@ -1,0 +1,19 @@
+# Scrape the production API /api/metrics endpoint.
+# The kube-prometheus-stack Prometheus in the observability namespace picks this up
+# via serviceMonitorSelector: {} (matches all ServiceMonitors).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    release: kps
+spec:
+  selector:
+    matchLabels:
+      app: stayledger-api
+      environment: production
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s

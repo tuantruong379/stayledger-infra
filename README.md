@@ -162,23 +162,25 @@ curl -fsS https://stg-app.stayledger.io/healthz
 curl -fsS https://stg-api.stayledger.io/api/health
 ```
 
-### Staging TLS edge (AI Assistant)
+### Staging (AI Assistant — NodePort)
 
-Point DNS `assistant.stayledger.io` and `api-assistant.stayledger.io` at the same ingress
-controller, then:
+Public URLs via Cloudflare → node ports (no ingress):
+
+| Surface | URL | NodePort |
+| --- | --- | --- |
+| UI | `https://stg-assistant.stayledger.io` | 30081 |
+| API | `https://stg-api-assistant.stayledger.io` | 30080 |
 
 ```powershell
 kubectl apply -k stayledger-ai-assistant/staging/
-kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
-kubectl apply -f stayledger-ai-assistant/staging/ingress.yaml
-kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n hotel-assistant
+kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n stayledger-ai-assistant
 ```
 
 Verify:
 
 ```bash
-curl -fsS https://assistant.stayledger.io/
-curl -fsS https://api-assistant.stayledger.io/health
+curl -fsS https://stg-assistant.stayledger.io/
+curl -fsS https://stg-api-assistant.stayledger.io/health
 ```
 
 See [stayledger-ai-assistant/staging/README.md](stayledger-ai-assistant/staging/README.md).

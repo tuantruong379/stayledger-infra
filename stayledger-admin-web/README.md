@@ -20,15 +20,13 @@ Infra prerequisites (postgres, redis, secrets) are in `stayledger-shared/k8s/prd
 cd stayledger-admin-web
 .\scripts\deploy-staging.ps1
 
-# Option B: manual
-$SHA = git rev-parse --short=8 HEAD
-docker build `
-  --build-arg NEXT_PUBLIC_API_URL=https://stg-app.stayledger.io/api-proxy `
-  --build-arg NEXT_PUBLIC_APP_ENV=staging `
-  -t putin111/stayledger-admin-web:staging-$SHA .
-docker push putin111/stayledger-admin-web:staging-$SHA
+# Option B: manual (image built by CI on main as sha-<7-char>)
+$SHORT = git rev-parse --short=7 HEAD
+$TAG = "sha-$SHORT"
+# Prefer the tag printed in the GitHub Actions workflow summary after merge to main.
+docker pull putin111/stayledger-admin-web:$TAG
 
-(Get-Content k8s/staging/deployment.yaml) -replace "staging-PLACEHOLDER","staging-$SHA" | kubectl apply -f -
+(Get-Content k8s/staging/deployment.yaml) -replace "sha-PLACEHOLDER",$TAG | kubectl apply -f -
 kubectl rollout status deployment/stayledger-admin-web -n stayledger-staging
 ```
 

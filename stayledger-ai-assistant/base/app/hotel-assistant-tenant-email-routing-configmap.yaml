@@ -8,10 +8,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hotel-assistant-tenant-email-routing
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: notifications
 data:
   # Legacy tenant-specific fallback only. Global fallback lives in SMTP_OPS_TO_EMAIL.

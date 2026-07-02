@@ -10,7 +10,7 @@ kind: ClusterIssuer
 metadata:
   name: letsencrypt-prod
   labels:
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory

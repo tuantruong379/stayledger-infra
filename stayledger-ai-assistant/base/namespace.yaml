@@ -1,9 +1,9 @@
-# Namespace for AI Hotel Assistant API + in-cluster Redis (on-prem K8s).
+# Namespace for StayLedger AI Assistant (API + in-cluster datastores).
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: hotel-assistant
+  name: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     # Enable Prometheus scraping for ServiceMonitor discovery.
     monitoring: "true"

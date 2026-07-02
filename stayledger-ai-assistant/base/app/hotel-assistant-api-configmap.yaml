@@ -5,10 +5,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hotel-assistant-api-config
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 data:
   # --- Redis (in-cluster Service: redis) ---
   # Reasoning (B1): REDIS_URL moved to the api Secret because it now embeds a password
@@ -70,7 +70,7 @@ data:
   # the metrics aggregator writes 1-minute materialized rows to metrics_1m.
   # Tenant KPI cards still use Postgres usage_events as the source of truth.
   FEATURE_METRICS_PIPELINE: "1"
-  NATS_URL: "nats://nats.hotel-assistant.svc.cluster.local:4222"
+  NATS_URL: "nats://nats:4222"
 
   # --- Public URL + CORS (cors_setup.py) ---
   # Reasoning: ENVIRONMENT=production activates strict CORS; CORS_ORIGINS must list every

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: stayledger
+  name: stayledger-ai-assistant
   labels:
     app.kubernetes.io/managed-by: kubectl
 
@@ -10,8 +10,8 @@ metadata:
 apiVersion: v1
 kind: ResourceQuota
 metadata:
-  name: stayledger-quota
-  namespace: stayledger
+  name: stayledger-ai-assistant-quota
+  namespace: stayledger-ai-assistant
 spec:
   hard:
     requests.cpu: "4"
@@ -27,8 +27,8 @@ spec:
 apiVersion: v1
 kind: LimitRange
 metadata:
-  name: stayledger-limits
-  namespace: stayledger
+  name: stayledger-ai-assistant-limits
+  namespace: stayledger-ai-assistant
 spec:
   limits:
   - type: Container

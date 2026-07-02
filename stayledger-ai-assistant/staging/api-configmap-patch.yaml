@@ -1,11 +1,13 @@
-# Staging public URLs for hotel-assistant-api (CORS + admin links).
+# Staging public URLs — NodePort + Cloudflare (no ingress).
+#   UI:  https://stg-assistant.stayledger.io  (→ node :30081)
+#   API: https://stg-api-assistant.stayledger.io (→ node :30080)
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hotel-assistant-api-config
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
-  CORS_ORIGINS: "https://assistant.stayledger.io,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
+  ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
+  CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"

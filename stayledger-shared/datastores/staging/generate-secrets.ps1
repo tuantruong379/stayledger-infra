@@ -9,7 +9,7 @@
 #     -JwtSecret "your64PlusCharJwtSecretHere..." `
 #     -JwtRefreshSecret "your64PlusCharRefreshSecretHere..." `
 #     -FrontendUrl "https://stg-app.stayledger.io" `
-#     -AzureOpenAiEndpoint "https://your-resource.cognitiveservices.azure.com" `
+#     -AzureOpenAiEndpoint "https://stayledger-resource.openai.azure.com" `
 #     -AzureOpenAiApiKey "your-azure-openai-key" `
 #     -RedisPassword "yourRedisPassword"
 

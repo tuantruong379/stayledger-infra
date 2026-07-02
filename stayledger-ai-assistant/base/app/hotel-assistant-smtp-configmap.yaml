@@ -4,10 +4,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hotel-assistant-smtp-config
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: smtp
 data:
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"

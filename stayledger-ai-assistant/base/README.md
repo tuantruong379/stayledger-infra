@@ -17,10 +17,10 @@ kubectl label nodes hkk8s-hub-master node-role.kubernetes.io/api-data=true --ove
 kubectl apply -k k8s/onprem/
 
 # 3. Verify deployments
-kubectl get pods,hpa,networkpolicies -n hotel-assistant
+kubectl get pods,hpa,networkpolicies -n stayledger-ai-assistant
 
 # 4. Monitor HPA scaling
-kubectl get hpa -n hotel-assistant --watch
+kubectl get hpa -n stayledger-ai-assistant --watch
 ```
 
 ### GitOps with Argo CD
@@ -78,8 +78,8 @@ Direct chat webhook auth (`POST /webhook*`) resolves keys in this order: tenant 
 ## Verifying in a running API pod
 
 ```bash
-kubectl exec -n hotel-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/readyz
-kubectl exec -n hotel-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/livez
+kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/readyz
+kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/livez
 ```
 
 Tenant runtime config is fetched from PostgreSQL (`tenant_runtime_config` table) at startup and refreshed via Redis Pub/Sub. Webhook/channel credentials are fetched from `tenant_channel_secrets` with a short in-process TTL.
@@ -100,7 +100,7 @@ python scripts/generate_tenant_seed_sql.py \
 1. Apply SQL into Postgres operational DB:
 
 ```bash
-kubectl exec -i -n hotel-assistant deploy/postgres -- \
+kubectl exec -i -n stayledger-ai-assistant deploy/postgres -- \
   psql -U "$POSTGRES_USER" -d hotel_ops < k8s/onprem/generated/my-new-tenant.sql
 ```
 

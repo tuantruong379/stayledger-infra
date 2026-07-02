@@ -10,7 +10,7 @@ metadata:
   namespace: observability
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     prometheus: kube-prometheus
     role: alert-rules
 spec:
