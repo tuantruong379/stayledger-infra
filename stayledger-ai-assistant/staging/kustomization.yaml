@@ -24,6 +24,6 @@ patches:
 # Match post-base-transform image names (base kustomization already renames ai-hotel-assistant).
 images:
   - name: putin111/stayledger-ai-assistant
-    newTag: sha-0558a0d
+    newTag: sha-1f802a9
   - name: putin111/stayledger-ai-assistant-frontend
     newTag: sha-985654e
