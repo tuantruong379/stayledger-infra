@@ -58,7 +58,7 @@ spec:
               app: stayledger-ai-worker
       containers:
         - name: ai-worker
-          image: putin111/stayledger-api:staging-5b0ed0ce
+          image: putin111/stayledger-api:staging-febb9c5
           imagePullPolicy: Always
           # Run the worker entrypoint instead of the API server. Use `args` (not
           # `command`) so the image's tini ENTRYPOINT stays PID 1 — required for

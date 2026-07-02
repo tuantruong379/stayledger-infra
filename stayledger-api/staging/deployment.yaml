@@ -31,7 +31,7 @@ spec:
         environment: staging
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-5b0ed0ce"
+        version: "staging-febb9c5"
       annotations:
         # Prometheus scraping — matches the NestJS prom-client /metrics path.
         prometheus.io/scrape: "true"
@@ -63,7 +63,7 @@ spec:
       containers:
         - name: api
           # Tag is updated by CI deploy-staging step.
-          image: putin111/stayledger-api:staging-5b0ed0ce
+          image: putin111/stayledger-api:staging-febb9c5
           imagePullPolicy: Always
           ports:
             - containerPort: 3001

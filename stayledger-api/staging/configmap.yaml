@@ -23,7 +23,8 @@ data:
   LOG_LEVEL: "info"
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
   EMAIL_ENABLED: "true"
-  EMAIL_FROM: "platform@stayledger.io"
+  EMAIL_FROM: "no-reply@stayledger.io"
+  EMAIL_FROM_NAME: "StayLedger"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "465"
   SMTP_SECURE: "true"
