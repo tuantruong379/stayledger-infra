@@ -23,7 +23,7 @@ data:
   LOG_LEVEL: "info"
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
   EMAIL_ENABLED: "true"
-  EMAIL_FROM: "stayledger@tekcent.com"
+  EMAIL_FROM: "platform@stayledger.io"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "465"
   SMTP_SECURE: "true"
@@ -38,7 +38,7 @@ data:
   OTEL_SERVICE_NAME: "stayledger-api-staging"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
   AI_PROVIDER: "azure_openai"
-  AI_MODEL: "gpt-4o-mini"
+  AI_MODEL: "gpt-5.4-mini"
   # P1B AI worker isolation — ENABLED on staging (worker stayledger-ai-worker is Ready).
   # The API offloads all AI execution to the worker queue and exposes /ai/chat/stream.
   # Rollback: set both "false" + `kubectl scale deploy/stayledger-ai-worker --replicas=0`.
@@ -56,7 +56,7 @@ data:
   AI_EMBEDDING_SYNC: "true"
   AI_RAG_CHUNK_SIZE: "800"
   AI_RAG_CHUNK_OVERLAP: "120"
-  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
   AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
   AI_REVENUE_ENABLED: "true"
@@ -85,10 +85,10 @@ data:
   AI_OPS_NARRATIVE_LLM: "false"
   FEATURE_AI_OPERATION_BETA: "true"
   AI_OPS_MODEL_ROUTING_ENABLED: "true"
-  AI_OPS_MAIN_MODEL: "gpt-4o-mini"
-  AI_OPS_ROUTER_MODEL: "gpt-4o-mini"
-  AI_OPS_FALLBACK_MODEL: "gpt-4o-mini"
-  AI_OPS_AVAILABLE_MODELS: "gpt-4o-mini"
+  AI_OPS_MAIN_MODEL: "gpt-5.4-mini"
+  AI_OPS_ROUTER_MODEL: "gpt-5.4-nano"
+  AI_OPS_FALLBACK_MODEL: "gpt-5.4-mini"
+  AI_OPS_AVAILABLE_MODELS: "gpt-5.4-nano,gpt-5.4-mini"
   AI_SAAS_OPS_E2E_SEED: "false"
   # 1B.1: Decimal flip — promoted after zero-drift compare evidence.
   # Rollback: set modes back to "compare" for drift logging, or "float" / unset
