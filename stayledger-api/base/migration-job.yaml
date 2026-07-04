@@ -54,7 +54,6 @@ spec:
             - /app/node_modules/.bin/prisma
             - migrate
             - deploy
-            - --schema=/app/prisma/schema.prisma
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
