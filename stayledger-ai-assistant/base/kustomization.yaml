@@ -45,6 +45,7 @@ resources:
   # Optional: enable when WEBHOOK_ASYNC_QUEUE=1 and you run a dedicated webhook worker pool.
   - app/hotel-assistant-webhook-worker.yaml
   - app/hotel-assistant-metrics-aggregator.yaml
+  - app/rag-eval-cronjob.yaml
   # --- Frontend (Next.js admin dashboard) ---
   - app/hotel-assistant-frontend-configmap.yaml
   - app/hotel-assistant-frontend.yaml

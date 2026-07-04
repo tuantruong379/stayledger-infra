@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-admin-web
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        version: "staging-b1bbb616"

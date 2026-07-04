@@ -1,0 +1,31 @@
+# Production overlay — apply after datastores and secrets.
+# Deploy: kubectl apply -k stayledger-api/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger
+
+resources:
+  - ../base
+  - namespace.yaml
+  - configmap.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+images:
+  - name: putin111/stayledger-api
+    newTag: staging-7fe3b527
+
+patches:
+  - path: patches/api-nodeport-patch.yaml
+    target:
+      kind: Service
+      name: stayledger-api-nodeport
+  - path: patches/deployment-production.yaml
+  - path: patches/ai-worker-production.yaml
+  - path: patches/secret-refs-production.yaml
+  - path: patches/guest-documents-pvc-production.yaml

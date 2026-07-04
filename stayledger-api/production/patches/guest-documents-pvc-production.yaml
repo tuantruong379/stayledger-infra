@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stayledger-guest-documents
+spec:
+  volumeName: stayledger-production-guest-documents-pv
+  resources:
+    requests:
+      storage: 100Gi

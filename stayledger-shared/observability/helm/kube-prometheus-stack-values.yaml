@@ -1,10 +1,22 @@
-# kube-prometheus-stack Helm values for StayLedger staging
+# kube-prometheus-stack Helm values for StayLedger — single cluster-wide Prometheus/Grafana
+# instance covering BOTH stayledger-staging and stayledger (production) namespaces.
 # helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 # helm upgrade --install kps prometheus-community/kube-prometheus-stack \
 #   -n observability -f helm/kube-prometheus-stack-values.yaml \
 #   --set grafana.adminPassword=<pw>
 #
 # Release name `kps` matches the live cluster (fullnameOverride).
+#
+# P1-7 (2026-07-04): this file previously scoped serviceMonitorNamespaceSelector /
+# podMonitorNamespaceSelector / ruleNamespaceSelector to `stayledger-staging` only, and the
+# one additionalScrapeConfigs job for the main API hardcoded the staging FQDN — so the
+# `stayledger` (production) namespace was never scraped at all: no AI latency/error/token/
+# quota panels, no AiWorkerScrapeMissing-style alerts, nothing, for production. Fixed by
+# adding `stayledger` to all three namespace selectors and a second static scrape job for
+# the production API. `kubectl apply -k stayledger-api/production/` already creates the
+# ai-worker ServiceMonitor in the `stayledger` namespace via `../base` (verified — the
+# loose top-level copies in `production/` are unreferenced, see the note in that
+# directory), so no infra changes were needed there — only the Prometheus-side selectors.
 
 fullnameOverride: kps
 
@@ -104,21 +116,23 @@ prometheus:
     serviceMonitorSelector: {}
     podMonitorSelector: {}
     probeSelector: {}
+    # P1-7: `stayledger` (production) added alongside `stayledger-staging` — this cluster
+    # runs one Prometheus for both environments, so both namespaces must be discoverable.
     serviceMonitorNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring, kube-system]
+          values: [stayledger-staging, stayledger, observability, monitoring, kube-system]
     podMonitorNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring]
+          values: [stayledger-staging, stayledger, observability, monitoring]
     ruleNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring]
+          values: [stayledger-staging, stayledger, observability, monitoring]
     enableFeatures:
       - exemplar-storage
     enableRemoteWriteReceiver: true
@@ -144,11 +158,27 @@ prometheus:
         # authorization:
         #   credentials: <metrics-auth-token>
 
+      # P1-7: production counterpart of the staging job above — same API, same
+      # /api/metrics path, different namespace. Without this job, production had zero
+      # scrape target for stayledger-api at all (the namespace-selector fix above only
+      # unblocks ServiceMonitor/PodMonitor/PrometheusRule discovery, not static jobs).
+      - job_name: stayledger-api-production
+        static_configs:
+          - targets:
+              - stayledger-api.stayledger.svc.cluster.local:80
+        metrics_path: /api/metrics
+        scrape_interval: 15s
+        # Uncomment when METRICS_AUTH_TOKEN is configured:
+        # authorization:
+        #   credentials: <metrics-auth-token>
+
       # AI worker metrics (ai_first_token_ms, ai_worker_inflight, ai_worker_failed_jobs_total,
       # ai_stream_*) are scraped via the operator-native ServiceMonitor
-      # `stayledger-ai-worker` (stayledger-infra/stayledger-api/staging/ai-worker-servicemonitor.yaml),
-      # which takes effect WITHOUT a helm upgrade. Do NOT re-add a static job here — it would
-      # double-scrape the worker once this values file is helm-upgraded.
+      # `stayledger-ai-worker` (stayledger-infra/stayledger-api/base/ai-worker-servicemonitor.yaml,
+      # applied to both staging/ and production/ via kustomize `../base`), which takes effect
+      # WITHOUT a helm upgrade as long as the namespace-selector fix above is applied. Do NOT
+      # re-add a static job here — it would double-scrape the worker once this values file is
+      # helm-upgraded.
 
       - job_name: postgres-exporter
         static_configs:

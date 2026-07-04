@@ -1,46 +1,12 @@
 ---
-# ConfigMap: all non-secret runtime configuration.
-# NEXT_PUBLIC_API_URL and NEXT_PUBLIC_BOOKING_WEB_URL are runtime-injectable —
-# the env-inject init container replaces the placeholder URLs baked into the
-# image at build time. Update these values and redeploy; no image rebuild needed.
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: stayledger-admin-web-config
-  namespace: stayledger-staging
-  labels:
-    app: stayledger-admin-web
-    component: frontend
-    environment: staging
-data:
-  TZ: "Asia/Ho_Chi_Minh"
-  NODE_ENV: "production"
-  # API calls go through the Next.js /api-proxy rewrite (same origin as the UI).
-  # The frontend never talks to the API NodePort directly — no CSP_EXTRA_CONNECT_SRC needed.
-  NEXT_PUBLIC_API_URL: "https://stg-app.stayledger.io/api-proxy"
-  NEXT_PUBLIC_BOOKING_WEB_URL: "https://stg-app.stayledger.io"
-  INTERNAL_API_URL: "http://stayledger-api/api"
-  # Phase 3 UI — enable property AI Ops dashboard and related nav entries.
-  NEXT_PUBLIC_AI_OPS_ENABLED: "true"
-  NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"
-  NEXT_PUBLIC_AI_REVENUE_ENABLED: "true"
-  NEXT_PUBLIC_AI_KNOWLEDGE_ENABLED: "true"
-  NEXT_PUBLIC_AI_COPILOT_ENABLED: "true"
-  NEXT_PUBLIC_AI_SAAS_OPS_ENABLED: "true"
-  # Release 0: document capture + OCR default off until R1 pilot property is enabled.
-  NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
-  NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
-
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stayledger-admin-web
-  namespace: stayledger-staging
   labels:
     app: stayledger-admin-web
     component: frontend
-    environment: staging
+    environment: overlay
   annotations:
     kubernetes.io/change-cause: "Deploy staging-b1bbb616 — JSON parse fix, golive stabilization 2026-07-03"
     stayledger.io/git-sha: "f5079ef"
@@ -63,7 +29,7 @@ spec:
       labels:
         app: stayledger-admin-web
         component: frontend
-        environment: staging
+        environment: overlay
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
         version: "staging-b1bbb616"
@@ -240,10 +206,7 @@ spec:
               # Next.js writes session data and query caches to /tmp at runtime
               ephemeral-storage: "50Mi"
             limits:
-              cpu: "1000m"
-              # 512Mi covers Next.js standalone steady-state + SSR cache.
-              # Raise to 768Mi if OOMKilled events appear; never restore 1Gi
-              # without investigating what is consuming that memory.
+              cpu: "500m"
               memory: "512Mi"
               ephemeral-storage: "200Mi"
           startupProbe:
@@ -283,11 +246,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: stayledger-admin-web
-  namespace: stayledger-staging
   labels:
     app: stayledger-admin-web
     component: frontend
-    environment: staging
+    environment: overlay
 spec:
   type: NodePort
   ports:

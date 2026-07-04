@@ -1,8 +1,4 @@
 ---
-# Non-secret runtime configuration for the StayLedger admin web (production).
-# NEXT_PUBLIC_API_URL and NEXT_PUBLIC_BOOKING_WEB_URL are runtime-injectable —
-# the env-inject init container replaces placeholder URLs baked into the image.
-# Update values here and redeploy; no image rebuild needed.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -10,12 +6,11 @@ metadata:
   labels:
     app: stayledger-admin-web
     component: frontend
-    environment: production
 data:
   TZ: "Asia/Ho_Chi_Minh"
   NODE_ENV: "production"
-  NEXT_PUBLIC_API_URL: "https://app.stayledger.io/api-proxy"
-  NEXT_PUBLIC_BOOKING_WEB_URL: "https://app.stayledger.io"
+  NEXT_PUBLIC_API_URL: "https://stg-app.stayledger.io/api-proxy"
+  NEXT_PUBLIC_BOOKING_WEB_URL: "https://stg-app.stayledger.io"
   INTERNAL_API_URL: "http://stayledger-api/api"
   NEXT_PUBLIC_AI_OPS_ENABLED: "true"
   NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"

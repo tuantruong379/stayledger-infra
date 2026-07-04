@@ -1,9 +1,12 @@
 # Real Kubernetes secrets — never commit these
-# Safe counterparts are *.example.yaml in the same directories
+# Safe counterparts are *.example.yaml and *.template.yaml in the same directories
 **/secrets.yaml
 **/secret.yaml
 **/pgbouncer-secret.yaml
 **/*-secret.yaml
+
+# Allow secret templates (no real values)
+!**/*.template.yaml
 
 # Scratch / debug artifacts
 tmp-*

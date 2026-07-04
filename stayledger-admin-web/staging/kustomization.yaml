@@ -1,0 +1,22 @@
+# Staging overlay — NodePort 30010 + Cloudflare TLS edge.
+# Deploy: kubectl apply -k stayledger-admin-web/staging/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-staging
+
+resources:
+  - ../base
+  - configmap.yaml
+
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
+
+images:
+  - name: putin111/stayledger-admin-web
+    newTag: staging-b1bbb616
+
+patches:
+  - path: patches/deployment-staging.yaml

@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-api
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        version: "sha-PLACEHOLDER"
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: ALLOWED_ORIGINS
+              value: "https://app.stayledger.io"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+          volumeMounts:
+            - name: guest-documents
+              mountPath: /var/lib/stayledger/guest-documents
+      volumes:
+        - name: guest-documents
+          persistentVolumeClaim:
+            claimName: stayledger-guest-documents

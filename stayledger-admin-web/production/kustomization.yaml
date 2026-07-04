@@ -1,0 +1,27 @@
+# Production overlay.
+# Deploy: kubectl apply -k stayledger-admin-web/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger
+
+resources:
+  - ../base
+  - configmap.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+images:
+  - name: putin111/stayledger-admin-web
+    newTag: staging-b1bbb616
+
+patches:
+  - path: patches/admin-web-nodeport-patch.yaml
+    target:
+      kind: Service
+      name: stayledger-admin-web
+  - path: patches/deployment-production.yaml
