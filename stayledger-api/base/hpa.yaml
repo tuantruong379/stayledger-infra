@@ -16,11 +16,10 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: stayledger-api
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: backend
-    environment: staging
+    environment: overlay
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

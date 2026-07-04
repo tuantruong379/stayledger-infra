@@ -1,0 +1,24 @@
+# Staging overlay — NodePort + Cloudflare TLS edge.
+# Deploy: kubectl apply -k stayledger-api/staging/
+# Migration (one-shot): kubectl apply -f ../base/migration-job.yaml -n stayledger-staging
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-staging
+
+resources:
+  - ../base
+  - configmap.yaml
+
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
+
+images:
+  - name: putin111/stayledger-api
+    newTag: staging-b29e645
+
+patches:
+  - path: patches/deployment-staging.yaml
+  - path: patches/ai-worker-staging.yaml

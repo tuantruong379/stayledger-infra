@@ -7,7 +7,6 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: guest-doc-restore-drill
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: guest-documents-restore-drill

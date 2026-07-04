@@ -6,11 +6,10 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: stayledger-api-pdb
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: backend
-    environment: staging
+    environment: overlay
 spec:
   minAvailable: 1
   selector:

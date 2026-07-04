@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-worker
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        version: "staging-b29e645"

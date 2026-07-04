@@ -5,11 +5,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stayledger-api
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: backend
-    environment: staging
+    environment: overlay
 spec:
   # Release 1 document pilot uses an RWO PVC mounted by the API. Keep one
   # replica until the serving path is migrated to RWX/object storage.
@@ -28,7 +27,7 @@ spec:
       labels:
         app: stayledger-api
         component: backend
-        environment: staging
+        environment: overlay
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
         version: "staging-7fe3b527"
@@ -162,22 +161,13 @@ spec:
                   key: frontend-url
           resources:
             requests:
-              # P1C: raised 200m→400m so the HPA's 60% CPU target tracks real
-              # saturation (HPA utilization is computed against the REQUEST, not the
-              # limit). At 200m, 60% tripped at ~120m — far below real load — causing
-              # premature/erratic scaling. Verify against live `kubectl top` before
-              # finalizing.
-              cpu: "400m"
-              # 512Mi request (was 256Mi) reflects steady-state NestJS + Prisma +
-              # BullMQ; keeps the pod off the eviction line under load.
+              # Release 2 staging profile — HPA capped at 1 replica while guest-docs PVC is RWO.
+              cpu: "250m"
               memory: "512Mi"
               ephemeral-storage: "50Mi"
             limits:
-              cpu: "1000m"
-              # 768Mi covers steady-state NestJS + pdfkit + BullMQ.
-              # The previous 1536Mi limit was generous enough to mask memory leaks —
-              # keep this tighter and raise only if OOMKilled events appear.
-              memory: "768Mi"
+              cpu: "1"
+              memory: "1Gi"
               ephemeral-storage: "200Mi"
           startupProbe:
             httpGet:
@@ -226,11 +216,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: stayledger-api
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: backend
-    environment: staging
+    environment: overlay
 spec:
   type: ClusterIP
   ports:
@@ -247,11 +236,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: stayledger-api-nodeport
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: backend
-    environment: staging
+    environment: overlay
 spec:
   type: NodePort
   ports:

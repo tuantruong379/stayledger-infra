@@ -11,11 +11,10 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: stayledger-db-migrate
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: migration
-    environment: staging
+    environment: overlay
   annotations:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
@@ -32,7 +31,7 @@ spec:
       labels:
         app: stayledger-api
         component: migration
-        environment: staging
+        environment: overlay
     spec:
       restartPolicy: Never
       # The stayledger-api ServiceAccount is created during the sync (non-hook
@@ -49,7 +48,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: putin111/stayledger-api:staging-b29e645
+          image: putin111/stayledger-api:staging-7fe3b527
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma

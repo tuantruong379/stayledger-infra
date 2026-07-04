@@ -5,10 +5,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: stayledger-api-ingress
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
-    environment: staging
+    environment: overlay
 spec:
   podSelector:
     matchLabels:
@@ -59,10 +58,9 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: stayledger-api-egress
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
-    environment: staging
+    environment: overlay
 spec:
   podSelector:
     matchLabels:

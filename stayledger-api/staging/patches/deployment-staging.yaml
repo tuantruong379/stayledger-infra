@@ -1,0 +1,17 @@
+# Staging-specific deployment overrides (CORS, version label).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-api
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        version: "staging-b29e645"
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: ALLOWED_ORIGINS
+              value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
