@@ -7,4 +7,4 @@ spec:
   template:
     metadata:
       labels:
-        version: "staging-8681f631"
+        version: "staging-fc6674fb"
