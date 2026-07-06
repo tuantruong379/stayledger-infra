@@ -4,7 +4,6 @@ kind: Deployment
 metadata:
   name: stayledger-api
 spec:
-  replicas: 1
   template:
     metadata:
       labels:
@@ -15,3 +14,12 @@ spec:
           env:
             - name: ALLOWED_ORIGINS
               value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+              ephemeral-storage: "200Mi"

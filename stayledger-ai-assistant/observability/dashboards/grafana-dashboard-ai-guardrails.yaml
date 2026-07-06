@@ -1,0 +1,113 @@
+# Grafana — AI guardrails / RAG quality / PMS tool health dashboard.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-ai-guardrails
+  namespace: observability
+  labels:
+    grafana_dashboard: "1"
+  annotations:
+    grafana_folder: "StayLedger AI"
+data:
+  ai-guardrails.json: |-
+    {
+      "title": "StayLedger AI — Guardrails & RAG Quality",
+      "uid": "hotel-ai-guardrails",
+      "schemaVersion": 39,
+      "version": 1,
+      "timezone": "Asia/Ho_Chi_Minh",
+      "refresh": "30s",
+      "tags": ["stayledger-ai", "guardrails", "rag"],
+      "templating": {
+        "list": [
+          {
+            "name": "tenant_id",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(guardrail_block_total, tenant_id)",
+            "includeAll": true,
+            "multi": true,
+            "current": { "text": "All", "value": "$__all" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "Guardrail blocks / min",
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (guardrail_type) (rate(guardrail_block_total{tenant_id=~\"$tenant_id\"}[5m])) * 60",
+              "legendFormat": "{{guardrail_type}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "type": "timeseries",
+          "title": "Prompt injection blocks / min",
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(prompt_injection_block_total{tenant_id=~\"$tenant_id\"}[5m])) * 60",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "Ungrounded output blocks / min",
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (block_type) (rate(ai_ungrounded_output_block_total{tenant_id=~\"$tenant_id\"}[5m])) * 60",
+              "legendFormat": "{{block_type}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "RAG no-context rate",
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum(rate(rag_no_context_total{tenant_id=~\"$tenant_id\"}[5m])) / clamp_min(sum(rate(rag_retrieval_total{tenant_id=~\"$tenant_id\"}[5m])), 1e-9)",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } }
+        },
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "PMS tool calls / min",
+          "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (tool, outcome) (rate(pms_tool_call_total{tenant_id=~\"$tenant_id\"}[5m])) * 60",
+              "legendFormat": "{{tool}} {{outcome}}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "PMS fail-closed / min",
+          "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (operation) (rate(pms_fail_closed_total{tenant_id=~\"$tenant_id\"}[5m])) * 60",
+              "legendFormat": "{{operation}}",
+              "refId": "A"
+            }
+          ]
+        }
+      ]
+    }

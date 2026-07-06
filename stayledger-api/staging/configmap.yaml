@@ -32,7 +32,7 @@ data:
   THROTTLE_STORAGE: "redis"
   # k6 baseline (~20 VUs) needs headroom above default 100 req/min per client IP.
   THROTTLE_LIMIT: "6000"
-  SWAGGER_ENABLED: "true"
+  SWAGGER_ENABLED: "false"
   METRICS_ENABLED: "true"
   BOOKING_PROFILE_OPS: "true"
   OTEL_ENABLED: "true"

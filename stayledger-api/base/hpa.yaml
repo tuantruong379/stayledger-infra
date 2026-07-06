@@ -4,7 +4,7 @@
 # Prerequisites (verify before relying on this):
 #   - metrics-server installed and healthy: `kubectl top pods -n stayledger-staging`
 #     must return CPU/memory.
-#   - API resource REQUESTS tuned (deployment.yaml: cpu 400m) so the 60% target maps
+#   - API resource REQUESTS tuned so the 60% target maps
 #     to real saturation — HPA utilization is computed against requests, not limits.
 #   - PgBouncer/Postgres connection budget validated at maxReplicas (see the P1C
 #     runbook) so scaling out does not starve DB connections.
@@ -33,7 +33,7 @@ spec:
         name: cpu
         target:
           type: Utilization
-          # 60% of the 400m request. Raise toward 70% if scaling is too eager.
+          # 60% of the request. Raise toward 70% if scaling is too eager.
           averageUtilization: 60
   behavior:
     scaleUp:

@@ -194,3 +194,38 @@ spec:
             runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/hotel-ai-incident-runbook.md"
             dashboard_url: "/d/hotel-llm-cost/hotel-assistant-llm-cost?from=now-24h&to=now"
 
+    - name: hotel-ai.guardrails
+      interval: 30s
+      rules:
+        - alert: HotelAIPromptInjectionSpike
+          expr: sum(rate(prompt_injection_block_total[5m])) * 60 > 3
+          for: 10m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+          annotations:
+            summary: "Prompt injection block spike"
+            description: "More than 3 prompt-injection blocks per minute for 10 minutes."
+            dashboard_url: "/d/hotel-ai-guardrails/stayledger-ai-guardrails-rag-quality"
+
+        - alert: HotelAIPmsFailClosedSpike
+          expr: sum(rate(pms_fail_closed_total[5m])) * 60 > 2
+          for: 10m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+          annotations:
+            summary: "PMS fail-closed spike"
+            description: "PMS read fail-closed outcomes exceed 2/min — guests may not receive live quotes/availability."
+            dashboard_url: "/d/hotel-ai-guardrails/stayledger-ai-guardrails-rag-quality"
+
+        - alert: HotelAIUngroundedOutputSpike
+          expr: sum(rate(ai_ungrounded_output_block_total[5m])) * 60 > 5
+          for: 15m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+          annotations:
+            summary: "Ungrounded AI output replacement spike"
+            description: "Output guard is replacing model replies frequently — check PMS connectivity and RAG grounding."
+

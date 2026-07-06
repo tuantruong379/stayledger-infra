@@ -162,7 +162,10 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
-            failureThreshold: 12
+            # Worker bootstrap loads the full AppModule and can exceed 70s on the
+            # single-node staging cluster during rollout. Keep the window generous
+            # so startupProbe does not kill a healthy boot before /api/live binds.
+            failureThreshold: 24
           livenessProbe:
             httpGet:
               path: /api/live
