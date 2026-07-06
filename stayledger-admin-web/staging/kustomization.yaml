@@ -16,7 +16,7 @@ labels:
 
 images:
   - name: putin111/stayledger-admin-web
-    newTag: staging-19dacba6
+    newTag: staging-aa920b0d
 
 patches:
   - path: patches/deployment-staging.yaml
