@@ -13,7 +13,7 @@ metadata:
   name: stayledger-db-migrate
   namespace: stayledger-staging
   labels:
-    app: stayledger-api
+    app: stayledger-db-migrate
     component: migration
     environment: staging
   annotations:
@@ -30,7 +30,7 @@ spec:
   template:
     metadata:
       labels:
-        app: stayledger-api
+        app: stayledger-db-migrate
         component: migration
         environment: staging
     spec:
