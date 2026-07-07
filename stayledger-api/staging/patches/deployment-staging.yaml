@@ -7,7 +7,7 @@ spec:
   template:
     metadata:
       labels:
-        version: "staging-8a3c939b"
+        version: "staging-7696b2c8"
     spec:
       containers:
         - name: api
