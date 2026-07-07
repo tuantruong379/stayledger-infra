@@ -22,3 +22,4 @@ images:
 patches:
   - path: patches/deployment-staging.yaml
   - path: patches/ai-worker-staging.yaml
+  - path: patches/hpa-staging.yaml
