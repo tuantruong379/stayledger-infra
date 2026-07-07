@@ -1,0 +1,15 @@
+# Use the image CMD (docker-entrypoint.sh) so routes-manifest.json and other
+# build-time API URL placeholders are patched at container start. A legacy inline
+# sh -c startup script on the cluster only replaced older hostname patterns.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          command: ["./docker-entrypoint.sh"]
+          args: []
