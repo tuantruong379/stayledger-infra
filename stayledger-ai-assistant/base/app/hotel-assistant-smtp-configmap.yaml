@@ -12,11 +12,11 @@ metadata:
 data:
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "587"
-  SMTP_FROM_EMAIL: "hotel-assistant@tekcent.com"
-  SMTP_FROM_NAME: "Hotel Assistant"
+  SMTP_FROM_EMAIL: "no-reply@stayledger.io"
+  SMTP_FROM_NAME: "StayLedger"
   # Fallback ops recipient when a tenant has no tenant_runtime_config.notification_emails
   # and no legacy tenant routing entry. Comma-separate multiple addresses.
-  SMTP_OPS_TO_EMAIL: "truonglamtuan@gmail.com"
+  SMTP_OPS_TO_EMAIL: "platform@stayledger.io"
   SMTP_TIMEOUT_S: "10"
   SMTP_MAX_RETRIES: "2"
   SMTP_RETRY_BACKOFF_S: "1.0"

@@ -30,6 +30,11 @@ spec:
     - ports:
         - protocol: TCP
           port: 3000
+    # Return traffic from AI Assistant namespace (channel-status server-side fetch)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
 
 ---
 # Allow the frontend to reach the API service and DNS only.
@@ -63,3 +68,7 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
+    # HTTPS egress (assistant channel-status via public staging URL)
+    - ports:
+        - protocol: TCP
+          port: 443

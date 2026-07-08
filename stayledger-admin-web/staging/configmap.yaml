@@ -12,6 +12,8 @@ data:
   NEXT_PUBLIC_API_URL: "https://stg-app.stayledger.io/api-proxy"
   NEXT_PUBLIC_BOOKING_WEB_URL: "https://stg-app.stayledger.io"
   INTERNAL_API_URL: "http://stayledger-api/api"
+  # Public assistant API — cross-namespace ClusterIP is blocked by CNI/netpol on this cluster.
+  AI_ASSISTANT_INTERNAL_API_URL: "https://stg-api-assistant.stayledger.io"
   NEXT_PUBLIC_AI_OPS_ENABLED: "true"
   NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"
   NEXT_PUBLIC_AI_REVENUE_ENABLED: "true"

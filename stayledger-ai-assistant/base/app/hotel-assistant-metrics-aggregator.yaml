@@ -86,7 +86,7 @@ spec:
           # Image tag managed by kustomize (k8s/onprem/kustomization.yaml).
           image: putin111/ai-hotel-assistant:3.0.11
           imagePullPolicy: IfNotPresent
-          command: ["python", "-m", "app.metrics.aggregator"]
+          command: ["/venv/bin/python", "-m", "app.metrics.aggregator"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

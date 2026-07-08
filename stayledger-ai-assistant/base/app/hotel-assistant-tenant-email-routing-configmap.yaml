@@ -18,6 +18,6 @@ data:
   TENANT_EMAIL_ROUTING_JSON: |
     {
       "tenants": {
-        "default": {"recipients": ["truonglamtuan@gmail.com"]}
+        "default": {"recipients": ["platform@stayledger.io"]}
       }
     }

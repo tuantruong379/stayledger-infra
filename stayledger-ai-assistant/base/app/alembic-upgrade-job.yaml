@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: alembic
-          image: putin111/ai-hotel-assistant:dfcb0a467b6da480b94446e98819eda11b663318
+          image: putin111/ai-hotel-assistant:sha-312bf55
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

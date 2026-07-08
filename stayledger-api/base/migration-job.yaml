@@ -12,7 +12,7 @@ kind: Job
 metadata:
   name: stayledger-db-migrate
   labels:
-    app: stayledger-db-migrate
+    app: stayledger-api
     component: migration
     environment: overlay
   annotations:
@@ -29,7 +29,7 @@ spec:
   template:
     metadata:
       labels:
-        app: stayledger-db-migrate
+        app: stayledger-api
         component: migration
         environment: overlay
     spec:

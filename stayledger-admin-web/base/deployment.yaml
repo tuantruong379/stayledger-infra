@@ -167,6 +167,11 @@ spec:
                 configMapKeyRef:
                   name: stayledger-admin-web-config
                   key: INTERNAL_API_URL
+            - name: AI_ASSISTANT_INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: AI_ASSISTANT_INTERNAL_API_URL
             - name: NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE
               valueFrom:
                 configMapKeyRef:

@@ -4,6 +4,7 @@
 **/secret.yaml
 **/pgbouncer-secret.yaml
 **/*-secret.yaml
+**/*-secrets.yaml
 
 # Allow secret templates (no real values)
 !**/*.template.yaml

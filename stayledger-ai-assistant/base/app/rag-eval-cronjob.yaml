@@ -47,10 +47,10 @@ spec:
             - name: rag-eval
               image: putin111/ai-hotel-assistant:latest
               imagePullPolicy: IfNotPresent
-              command: ["python", "scripts/run_rag_eval.py"]
+              command: ["/venv/bin/python", "scripts/run_rag_eval.py"]
               env:
                 - name: RAG_EVAL_JUDGE_MODEL
-                  value: "azure/gpt-4o-mini"
+                  value: "azure/gpt-5.4-mini"
                 - name: RAG_EVAL_REQUIRE_REVIEWED
                   value: "1"
               envFrom:
