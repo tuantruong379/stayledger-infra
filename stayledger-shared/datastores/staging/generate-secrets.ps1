@@ -109,9 +109,14 @@ if ($RedisPassword -ne "") {
     $SecretArgs += "--from-literal=redis-url=$RedisUrl"
 }
 
-if ($MetricsAuthToken -ne "") {
-    $SecretArgs += "--from-literal=metrics-auth-token=$MetricsAuthToken"
+if ($MetricsAuthToken -eq "") {
+    # Auto-generate when omitted — required for production-like staging metrics auth.
+    $MetricsBytes = New-Object byte[] 32
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($MetricsBytes)
+    $MetricsAuthToken = [Convert]::ToBase64String($MetricsBytes)
+    Write-Host "Generated metrics-auth-token (not printed)." -ForegroundColor Yellow
 }
+$SecretArgs += "--from-literal=metrics-auth-token=$MetricsAuthToken"
 
 if ($SmtpHost -ne "") {
     $SecretArgs += "--from-literal=smtp-host=$SmtpHost"

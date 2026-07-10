@@ -147,6 +147,9 @@ prometheus:
           resources:
             requests:
               storage: 25Gi
+    # Mounted at /etc/prometheus/secrets/stayledger-metrics-auth/token by configure-staging-metrics-auth.ps1
+    secrets:
+      - stayledger-metrics-auth
     additionalScrapeConfigs:
       - job_name: stayledger-api
         static_configs:
@@ -154,9 +157,7 @@ prometheus:
               - stayledger-api.stayledger-staging.svc.cluster.local:80
         metrics_path: /api/metrics
         scrape_interval: 15s
-        # Uncomment when METRICS_AUTH_TOKEN is configured:
-        # authorization:
-        #   credentials: <metrics-auth-token>
+        bearer_token_file: /etc/prometheus/secrets/stayledger-metrics-auth/token
 
       # P1-7: production counterpart of the staging job above — same API, same
       # /api/metrics path, different namespace. Without this job, production had zero

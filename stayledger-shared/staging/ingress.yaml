@@ -60,6 +60,11 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-body-size: "20m"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "120"
+    # Block public Prometheus scrape; in-cluster scraper uses Service DNS, not this ingress.
+    nginx.ingress.kubernetes.io/server-snippet: |
+      location = /api/metrics {
+        return 403;
+      }
 spec:
   ingressClassName: nginx
   tls:

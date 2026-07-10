@@ -34,7 +34,20 @@ Future: SealedSecrets or SOPS (documented below, not yet installed).
 
 ## Generate and Apply
 
-### Staging
+### Staging metrics auth (post security review)
+
+```powershell
+.\stayledger-infra\scripts\configure-staging-metrics-auth.ps1
+# Verify: curl -sk -o NUL -w "%{http_code}" https://stg-api.stayledger.io/api/metrics  → 401
+```
+
+### Staging RBAC fixture repair
+
+```powershell
+.\stayledger-infra\scripts\repair-staging-rbac-fixtures.ps1
+```
+
+### Staging secrets bootstrap
 
 ```powershell
 cd stayledger-infra/stayledger-shared/datastores/staging
