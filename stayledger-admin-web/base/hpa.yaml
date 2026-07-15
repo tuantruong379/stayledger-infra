@@ -1,0 +1,42 @@
+---
+# HorizontalPodAutoscaler for admin-web (stateless Next.js).
+#
+# minReplicas: 2 — preserves HA with the PDB (minAvailable: 1) and
+# zero-downtime RollingUpdate (maxUnavailable: 0).
+# HPA utilization is % of CPU *request*, not limit — keep requests honest.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stayledger-admin-web
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: overlay
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stayledger-admin-web
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          # Align with landing (70%); raise if scale-out is too eager under SSR.
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 180
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

@@ -14,9 +14,10 @@ labels:
       environment: staging
     includeSelectors: false
 
+# CI short-commit tags (no staging- prefix) — Release staging promote 2026-07-15
 images:
   - name: putin111/stayledger-admin-web
-    newTag: staging-f9aa6ddd
+    newTag: c4fadf3
 
 patches:
   - path: patches/deployment-staging.yaml

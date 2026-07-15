@@ -3,8 +3,8 @@
 # NOT managed by ArgoCD hooks (production uses manual apply workflow).
 #
 # Usage:
-#   export IMAGE_TAG=sha-<7-char>
-#   sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
+#   export IMAGE_TAG=<7-char>   # short commit hash from CI summary (no sha- prefix)
+#   sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
 #   kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger --timeout=300s
 #   kubectl logs job/stayledger-db-migrate -n stayledger
 #
@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: putin111/stayledger-api:sha-PLACEHOLDER
+          image: putin111/stayledger-api:COMMIT_SHA
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma

@@ -7,14 +7,16 @@ spec:
   template:
     metadata:
       labels:
-        version: "sha-PLACEHOLDER"
+        version: "f1b2e27"
     spec:
       containers:
         - name: ai-worker
+          # Idle CPU was ~8m with 500m request; memory sits ~472Mi so keep
+          # memory request near observed usage with modest headroom.
           resources:
             requests:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "200m"
+              memory: "768Mi"
             limits:
-              cpu: "2"
-              memory: "2Gi"
+              cpu: "1"
+              memory: "1536Mi"

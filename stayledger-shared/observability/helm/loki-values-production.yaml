@@ -1,0 +1,13 @@
+# Production Loki sizing for stayledger k3s (smaller than hub staging).
+singleBinary:
+  persistence:
+    size: 10Gi
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits:   { cpu: 400m, memory: 768Mi }
+
+loki:
+  limits_config:
+    retention_period: 168h
+    ingestion_rate_mb: 8
+    ingestion_burst_size_mb: 16

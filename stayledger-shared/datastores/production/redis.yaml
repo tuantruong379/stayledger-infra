@@ -11,7 +11,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-storage-hub-master
+  storageClassName: local-storage-stayledger
   resources:
     requests:
       storage: 5Gi
@@ -83,7 +83,8 @@ spec:
         environment: production
     spec:
       nodeSelector:
-        kubernetes.io/hostname: hkk8s-hub-master
+        # stayledger k3s production node (was hkk8s-hub-master on hub cluster)
+        kubernetes.io/hostname: stayledger
       containers:
       - name: redis
         image: redis:7-alpine

@@ -27,7 +27,7 @@ spec:
         app: stayledger-ai-worker
         component: ai-worker
         environment: production
-        version: "sha-PLACEHOLDER"
+        version: "COMMIT_SHA"
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3001"
@@ -52,7 +52,7 @@ spec:
               app: stayledger-ai-worker
       containers:
         - name: ai-worker
-          image: putin111/stayledger-api:sha-PLACEHOLDER
+          image: putin111/stayledger-api:COMMIT_SHA
           imagePullPolicy: Always
           args: ["node", "--require", "./dist/instrumentation.js", "dist/worker-ai.main"]
           ports:

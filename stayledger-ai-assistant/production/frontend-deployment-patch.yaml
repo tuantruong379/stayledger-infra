@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: frontend
+          command: ["./docker-entrypoint.sh"]
+          args: []

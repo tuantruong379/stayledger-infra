@@ -16,16 +16,17 @@ labels:
       environment: production
     includeSelectors: false
 
+# Release image from staging promote 2026-07-15 (verify:golive PASS)
 images:
   - name: putin111/stayledger-api
-    newTag: staging-7fe3b527
+    newTag: f1b2e27
 
 patches:
-  - path: patches/api-nodeport-patch.yaml
-    target:
-      kind: Service
-      name: stayledger-api-nodeport
+  # Production uses ClusterIP + Traefik Ingress only (no NodePort).
+  - path: patches/delete-api-nodeport.yaml
+  - path: patches/delete-staging-guest-docs-pv.yaml
   - path: patches/deployment-production.yaml
   - path: patches/ai-worker-production.yaml
   - path: patches/secret-refs-production.yaml
+  - path: patches/ai-worker-secret-refs-production.yaml
   - path: patches/guest-documents-pvc-production.yaml

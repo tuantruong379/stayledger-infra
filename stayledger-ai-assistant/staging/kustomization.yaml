@@ -18,9 +18,12 @@ patches:
   - path: frontend-configmap-patch.yaml
   - path: frontend-deployment-patch.yaml
 
-# Match post-base-transform image names (base kustomization already renames ai-hotel-assistant).
+# Match post-base-transform image names (base kustomization renames to stayledger-*),
+# then pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
 images:
   - name: putin111/stayledger-ai-assistant
-    newTag: sha-a44441b
+    newName: putin111/ai-hotel-assistant
+    newTag: "pmsfix-20260715-1835"
   - name: putin111/stayledger-ai-assistant-frontend
-    newTag: sha-a44441b
+    newName: putin111/ai-hotel-assistant-frontend
+    newTag: "7c04f3d"

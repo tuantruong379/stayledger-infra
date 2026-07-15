@@ -1,7 +1,10 @@
 # Namespace migration: `hotel-assistant` → `stayledger-ai-assistant`
 
-Manifests in this repo now target the **`stayledger-ai-assistant`** namespace. The live staging
-cluster may still run in **`hotel-assistant`** until you execute this cutover.
+**Status (2026-07-15):** Staging cutover is **complete**. The live HK-HUB cluster runs in
+`stayledger-ai-assistant`; the old `hotel-assistant` namespace is gone.
+
+Manifests in this repo target **`stayledger-ai-assistant`**. ServiceMonitors and Prometheus
+storage (25Gi claim matching PV) match what is deployed in staging.
 
 ## Naming convention (current)
 
@@ -90,7 +93,7 @@ kubectl get pvc -n stayledger-ai-assistant
 
 ```powershell
 # From stayledger-ai-assistant repo:
-make migrate IMAGE=putin111/stayledger-ai-assistant:sha-<tag>
+make migrate IMAGE=putin111/stayledger-ai-assistant:<tag>
 
 kubectl rollout status deployment/hotel-assistant-api -n stayledger-ai-assistant --timeout=300s
 kubectl rollout status deployment/hotel-assistant-frontend -n stayledger-ai-assistant --timeout=300s

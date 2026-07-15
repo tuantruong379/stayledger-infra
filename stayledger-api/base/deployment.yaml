@@ -12,14 +12,20 @@ metadata:
 spec:
   # Release 1 document pilot uses an RWO PVC mounted by the API. Keep one
   # replica until the serving path is migrated to RWX/object storage.
+  # On a single-node local PV, RWO still allows the surge pod to mount during
+  # rolling update (same node) so maxUnavailable:0 can keep serving Ready.
   replicas: 1
+  # Wait until the new pod stays Ready before considering it available — avoids
+  # tearing down the old API pod after a flaky first readiness pass.
+  minReadySeconds: 15
   selector:
     matchLabels:
       app: stayledger-api
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      # Never take a pod out of rotation before the replacement is ready.
+      # ZERO-DOWNTIME: never kill the last Ready pod before the surge replacement
+      # is Ready. Do not change to Recreate or maxUnavailable>0 in production.
       maxUnavailable: 0
       maxSurge: 1
   template:

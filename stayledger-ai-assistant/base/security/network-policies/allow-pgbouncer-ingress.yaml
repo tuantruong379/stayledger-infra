@@ -1,4 +1,4 @@
-# Allow API pods + workers to reach PgBouncer on port 5432.
+# Allow API pods + workers + alembic Job to reach PgBouncer on port 5432.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -24,6 +24,12 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alembic-upgrade
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: rag-eval
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: postgres   # bootstrap job uses postgres SA

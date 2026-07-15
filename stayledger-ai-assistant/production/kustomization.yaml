@@ -1,0 +1,44 @@
+# Production overlay for stayledger k3s cluster (context: stayledger).
+# Public URLs via Traefik + cert-manager:
+#   UI:  https://assistant.stayledger.io
+#   API: https://api-assistant.stayledger.io
+#
+# Deploy (after secrets):
+#   kubectl apply -k stayledger-ai-assistant/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-ai-assistant
+
+resources:
+  - ../base
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+patches:
+  - path: api-configmap-patch.yaml
+  - path: frontend-configmap-patch.yaml
+  - path: frontend-deployment-patch.yaml
+  - path: patches/scaling-production.yaml
+  - path: patches/api-service-clusterip.yaml
+    target:
+      kind: Service
+      name: hotel-assistant-api
+  - path: patches/frontend-service-clusterip.yaml
+    target:
+      kind: Service
+      name: hotel-assistant-frontend
+  - path: patches/postgres-pv-production.yaml
+  - path: patches/redis-pv-production.yaml
+  - path: patches/postgres-backup-pv-production.yaml
+
+# Default tags — override via deploy script -AiApiTag / -AiFrontendTag
+images:
+  - name: putin111/stayledger-ai-assistant
+    newTag: cvefix-e2a914e
+  - name: putin111/stayledger-ai-assistant-frontend
+    newTag: sha-golive1000712

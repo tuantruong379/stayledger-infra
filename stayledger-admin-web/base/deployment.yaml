@@ -13,15 +13,20 @@ metadata:
     stayledger.io/branch: "release/1.2.20"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
-  # pod failure or node drain without any downtime window.
+  # pod failure or node drain without any downtime window. HPA minReplicas: 2
+  # must stay >= this so scale-down cannot collapse to a single pod.
   replicas: 2
+  # New pod must stay Ready before it counts as available (and before the old
+  # pod is terminated under maxUnavailable: 0).
+  minReadySeconds: 15
   selector:
     matchLabels:
       app: stayledger-admin-web
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      # Never take a pod out of rotation before the replacement is ready.
+      # ZERO-DOWNTIME: never take a Ready admin-web pod out before replacement
+      # is Ready. Do not change to Recreate or maxUnavailable>0 in production.
       maxUnavailable: 0
       maxSurge: 1
   template:

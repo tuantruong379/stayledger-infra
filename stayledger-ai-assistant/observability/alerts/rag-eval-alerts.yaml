@@ -73,3 +73,22 @@ spec:
             summary: "Nightly RAG eval has not completed in over 36 hours"
             description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: last completed run is more than 36h old (36h = nightly schedule + grace window) — the rag_eval CronJob may be failing silently or the gauges may be stale."
             runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+
+    - name: rag-eval.execution
+      rules:
+        # Distinguishes current CronJob execution failures from stale quality gauges /
+        # historical Failed Jobs retained under failedJobsHistoryLimit.
+        - alert: RagEvalCronJobFailed
+          expr: |
+            kube_job_status_failed{namespace="stayledger-ai-assistant",job_name=~"rag-eval-.*"} > 0
+            and on(job_name)
+            (time() - kube_job_status_start_time{namespace="stayledger-ai-assistant",job_name=~"rag-eval-.*"}) < 86400
+          for: 15m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "RAG eval Job failed within the last 24h"
+            description: "job={{ $labels.job_name }}: Kubernetes reports a Failed completion for the nightly rag-eval CronJob. Inspect Job logs before pruning history."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"

@@ -288,7 +288,7 @@ Update the image tag in the relevant `k8s/staging/deployment.yaml` (and
 ArgoCD detects the change and syncs automatically.
 
 ```bash
-NEW_TAG="sha-abc1234"   # from GitHub Actions workflow summary after merge to main
+NEW_TAG="abc1234"   # 7-char short commit from GitHub Actions summary (no sha- prefix)
 
 # In stayledger-api repo:
 sed -i "s|putin111/stayledger-api:.*|putin111/stayledger-api:${NEW_TAG}|g" \

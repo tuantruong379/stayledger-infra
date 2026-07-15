@@ -17,6 +17,8 @@ data:
   NEXT_PUBLIC_API_URL: "https://app.stayledger.io/api-proxy"
   NEXT_PUBLIC_BOOKING_WEB_URL: "https://app.stayledger.io"
   INTERNAL_API_URL: "http://stayledger-api/api"
+  # Public assistant API — used by PMS admin AI surfaces (Traefik ingress on stayledger cluster).
+  AI_ASSISTANT_INTERNAL_API_URL: "https://api-assistant.stayledger.io"
   NEXT_PUBLIC_AI_OPS_ENABLED: "true"
   NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"
   NEXT_PUBLIC_AI_REVENUE_ENABLED: "true"

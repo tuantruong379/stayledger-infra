@@ -1,0 +1,35 @@
+# Single-node production sizing for stayledger k3s cluster.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 2
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1

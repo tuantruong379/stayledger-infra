@@ -6,9 +6,9 @@ Namespace: `stayledger` | Domain: `app.stayledger.io` | NodePort: `30000`
 
 ```powershell
 # Assumes datastores and API are already deployed (namespace + secrets exist).
-export IMAGE_TAG=sha-XXXXXXX   # match the API release tag
+export IMAGE_TAG=a1b2c3d   # 7-char short commit from CI (match API release; no sha- prefix)
 
-sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-admin-web/production/deployment.yaml | kubectl apply -f -
+sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-admin-web/production/deployment.yaml | kubectl apply -f -
 kubectl apply -f stayledger-admin-web/production/configmap.yaml
 kubectl apply -f stayledger-admin-web/production/serviceaccount.yaml
 kubectl apply -f stayledger-admin-web/production/networkpolicy.yaml
@@ -22,7 +22,7 @@ kubectl apply -f stayledger-admin-web/production/ingress.yaml
 ## Rolling update
 
 ```powershell
-export IMAGE_TAG=sha-XXXXXXX
+export IMAGE_TAG=a1b2c3d
 kubectl set image deployment/stayledger-admin-web \
   env-inject=putin111/stayledger-admin-web:${IMAGE_TAG} \
   admin-web=putin111/stayledger-admin-web:${IMAGE_TAG} \

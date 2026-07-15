@@ -28,16 +28,16 @@ kubectl apply -f stayledger-shared/datastores/production/redis.yaml
 # 4. API — ServiceAccount must exist before migration Job
 kubectl apply -f stayledger-api/production/serviceaccount.yaml
 
-# 5. Run database migration (replace sha-XXXXXXX with the release image tag)
-export IMAGE_TAG=sha-XXXXXXX
+# 5. Run database migration (replace COMMIT_SHA with the 7-char short commit from CI)
+export IMAGE_TAG=a1b2c3d
 kubectl delete job stayledger-db-migrate -n stayledger --ignore-not-found
-sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
+sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
 kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger --timeout=300s
 kubectl logs job/stayledger-db-migrate -n stayledger
 
 # 6. API workload
-sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-api/production/deployment.yaml | kubectl apply -f -
-sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-api/production/ai-worker-deployment.yaml | kubectl apply -f -
+sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/deployment.yaml | kubectl apply -f -
+sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/ai-worker-deployment.yaml | kubectl apply -f -
 kubectl apply -f stayledger-api/production/configmap.yaml
 kubectl apply -f stayledger-api/production/networkpolicy.yaml
 kubectl apply -f stayledger-api/production/pdb.yaml
@@ -62,11 +62,11 @@ kubectl apply -f stayledger-api/production/document-backup-offnode-cronjob.yaml
 ## Rolling update (new release)
 
 ```powershell
-export IMAGE_TAG=sha-XXXXXXX   # new release tag
+export IMAGE_TAG=a1b2c3d   # 7-char short commit from CI summary (no sha- prefix)
 
 # Run migrations first
 kubectl delete job stayledger-db-migrate -n stayledger --ignore-not-found
-sed "s|sha-PLACEHOLDER|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
+sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
 kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger --timeout=300s
 
 # Update image in-place (avoids full re-apply)

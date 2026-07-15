@@ -1,6 +1,6 @@
-# Use the image CMD (docker-entrypoint.sh) so routes-manifest.json and other
-# build-time API URL placeholders are patched at container start. A legacy inline
-# sh -c startup script on the cluster only replaced older hostname patterns.
+# CI currently bakes NEXT_PUBLIC_API_BASE_URL=https://hotel-assistant.tekcent.com
+# into image 7c04f3d. The stock entrypoint rewrites placeholders/legacy hosts but
+# not that tekcent URL, so Next rewrites hang (no egress). Patch it before start.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -11,5 +11,12 @@ spec:
     spec:
       containers:
         - name: frontend
-          command: ["./docker-entrypoint.sh"]
-          args: []
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              RUNTIME_API_URL="${NEXT_PUBLIC_API_BASE_URL:-http://hotel-assistant-api:8000}"
+              find /app/.next /app/server.js -type f \( -name "*.js" -o -name "*.json" \) 2>/dev/null | while IFS= read -r file; do
+                sed -i "s|https://hotel-assistant.tekcent.com|${RUNTIME_API_URL}|g" "$file" 2>/dev/null || true
+              done
+              exec ./docker-entrypoint.sh

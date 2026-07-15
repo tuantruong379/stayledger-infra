@@ -1,0 +1,8 @@
+# Server-side Next.js rewrites target in-cluster API; browser uses same-origin /api/* via ingress.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-frontend-config
+  namespace: stayledger-ai-assistant
+data:
+  NEXT_PUBLIC_API_BASE_URL: "http://hotel-assistant-api:8000"

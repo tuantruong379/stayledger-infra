@@ -7,4 +7,5 @@ spec:
   template:
     metadata:
       labels:
-        version: "staging-1824a664"
+        # Align AI worker version label with API image tag f1b2e27
+        version: "f1b2e27"

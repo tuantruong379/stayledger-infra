@@ -1,0 +1,8 @@
+# Production Tempo sizing for stayledger k3s.
+persistence:
+  enabled: true
+  storageClassName: observability-sc
+  size: 8Gi
+
+tempo:
+  retention: 72h

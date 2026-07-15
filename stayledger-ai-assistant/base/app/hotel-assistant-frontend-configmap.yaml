@@ -14,4 +14,5 @@ data:
   NEXT_TELEMETRY_DISABLED: "1"
   PORT: "3000"
   HOSTNAME: "0.0.0.0"
-  NEXT_PUBLIC_API_BASE_URL: "https://hotel-assistant.tekcent.com"
+  # Overlays must set the in-cluster API Service for Next rewrites (not public URL).
+  NEXT_PUBLIC_API_BASE_URL: "http://hotel-assistant-api:8000"

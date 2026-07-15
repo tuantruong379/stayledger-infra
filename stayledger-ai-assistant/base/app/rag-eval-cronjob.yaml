@@ -1,7 +1,9 @@
 # Nightly RAG evaluation: runs scripts/run_rag_eval.py (real retrieval + real generation +
 # LLM-judge scoring against tests/evals/rag_judge/golden.jsonl) using the same app image and
-# secrets as hotel-assistant-api — no ConfigMap-mounted script needed, the "script" is already
-# a first-class Python entrypoint in the app image.
+# secrets as hotel-assistant-api.
+#
+# Golden set: prefer image-baked tests/evals/rag_judge (Dockerfile COPY). Until that image is
+# rolled, mount ConfigMap `rag-eval-golden` (keys: golden.jsonl, golden.review_status.json).
 #
 # Results persist to Postgres (rag_eval_runs/rag_eval_case_results); the API's /metrics/prom
 # reads the latest run at scrape time (app/observability/prom_client.py:refresh_rag_eval_gauges),
@@ -21,10 +23,14 @@ spec:
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 5
+  # Missed schedules older than 10m are skipped (avoids burst catch-up after outages).
+  startingDeadlineSeconds: 600
   jobTemplate:
     spec:
       backoffLimit: 0 # a transient LLM/API blip should surface as a failed Job, not be masked by retry-then-succeed
       activeDeadlineSeconds: 2700
+      # Keep finished Jobs long enough for triage, then prune so historical Failed noise decays.
+      ttlSecondsAfterFinished: 604800
       template:
         metadata:
           labels:
@@ -53,6 +59,8 @@ spec:
                   value: "azure/gpt-5.4-mini"
                 - name: RAG_EVAL_REQUIRE_REVIEWED
                   value: "1"
+                - name: RAG_EVAL_REPORTS_DIR
+                  value: "/tmp/rag_eval_reports"
               envFrom:
                 - configMapRef:
                     name: hotel-assistant-api-config
@@ -66,15 +74,29 @@ spec:
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
+                - name: golden
+                  mountPath: /app/tests/evals/rag_judge
+                  readOnly: true
+                # Interim until image includes bootstrap + /tmp reports fix in scripts/run_rag_eval.py
+                - name: script
+                  mountPath: /app/scripts/run_rag_eval.py
+                  subPath: run_rag_eval.py
+                  readOnly: true
               resources:
                 requests:
-                  cpu: "250m"
-                  memory: "256Mi"
+                  cpu: "100m"
+                  memory: "192Mi"
                 limits:
-                  cpu: "1"
-                  memory: "1Gi"
+                  cpu: "500m"
+                  memory: "768Mi"
           volumes:
             - name: tmp
               emptyDir:
                 medium: Memory
                 sizeLimit: 64Mi
+            - name: golden
+              configMap:
+                name: rag-eval-golden
+            - name: script
+              configMap:
+                name: rag-eval-script

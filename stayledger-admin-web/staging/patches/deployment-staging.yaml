@@ -7,4 +7,5 @@ spec:
   template:
     metadata:
       labels:
-        version: "staging-f9aa6ddd"
+        # Align pod version label with deployed admin-web image tag c4fadf3
+        version: "c4fadf3"

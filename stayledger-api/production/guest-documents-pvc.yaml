@@ -14,8 +14,8 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: local-storage-hub-master
+  storageClassName: local-storage-stayledger
   volumeName: stayledger-production-guest-documents-pv
   resources:
     requests:
-      storage: 100Gi
+      storage: 40Gi

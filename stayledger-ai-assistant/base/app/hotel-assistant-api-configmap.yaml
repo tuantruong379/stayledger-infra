@@ -79,8 +79,9 @@ data:
   ENVIRONMENT: "production"
   APP_ENV: "production"
   APP_VERSION: "3.0.4"
-  ADMIN_WEB_PUBLIC_URL: "https://hotel-assistant.tekcent.com"
-  CORS_ORIGINS: "https://hotel-assistant.tekcent.com,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,https://admin-hotel-assistant.tekcent.com"
+  # Overlay patches override these for staging/production stayledger hosts.
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
 
   # --- POST /webhook (webhook_auth.py, rate_limiter.py) ---
   ALLOW_NO_AUTH: "false"

@@ -69,7 +69,8 @@ spec:
         environment: production
     spec:
       nodeSelector:
-        kubernetes.io/hostname: hkk8s-hub-master
+        # stayledger k3s production node (was hkk8s-hub-master on hub cluster)
+        kubernetes.io/hostname: stayledger
       automountServiceAccountToken: false
       securityContext:
         runAsNonRoot: true

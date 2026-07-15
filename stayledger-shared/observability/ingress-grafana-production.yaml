@@ -1,0 +1,32 @@
+# OPTIONAL public Grafana HTTPS (not applied by default).
+# Production default is ClusterIP + port-forward only.
+# Enable with: .\install-production.ps1 -GrafanaPassword '...' -EnableGrafanaIngress
+# DNS (if enabled): grafana.stayledger.io → 103.20.96.122
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kps-grafana
+  namespace: observability
+  labels:
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - grafana.stayledger.io
+      secretName: stayledger-grafana-tls
+  rules:
+    - host: grafana.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kps-grafana
+                port:
+                  number: 80

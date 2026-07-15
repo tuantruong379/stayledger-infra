@@ -15,12 +15,15 @@ resources:
 - allow-metrics-aggregator-egress.yaml
 - allow-nats-ingress.yaml
 - allow-observability-scrape-exporters.yaml
+- allow-observability-scrape-api.yaml
 - allow-pgbouncer-egress.yaml
 - allow-pgbouncer-ingress.yaml
 - allow-postgres-ingress.yaml
+- allow-rag-eval-egress.yaml
 - allow-redis-ingress-from-api.yaml
 - allow-redis-ingress-from-channel-worker.yaml
 - allow-redis-ingress-from-exporter.yaml
+- allow-redis-ingress-from-rag-eval.yaml
 - allow-redis-ingress-from-webhook-worker.yaml
 - allow-webhook-worker-egress.yaml
 - allow-webhook-worker-ingress.yaml

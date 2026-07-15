@@ -1,0 +1,19 @@
+# Production public URLs — Traefik ingress on stayledger cluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  ENVIRONMENT: "production"
+  APP_ENV: "production"
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
+  PMS_STAYLEDGER_ENABLED: "1"
+  PMS_DRAFT_BOOKING_ENABLED: "1"
+  PMS_CONVERSATION_SYNC_ENABLED: "1"
+  PMS_OUTBOX_WORKER_ENABLED: "1"
+  PMS_READ_FALLBACK_MODE: "fail_closed"
+  PMS_PROVIDER_DEFAULT: "local"
+  RAG_RETRIEVAL_BACKEND: "in_memory"
+  AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"

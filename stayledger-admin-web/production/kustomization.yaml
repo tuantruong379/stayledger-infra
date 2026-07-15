@@ -15,12 +15,14 @@ labels:
       environment: production
     includeSelectors: false
 
+# Release image from staging promote 2026-07-15 (verify:golive PASS)
 images:
   - name: putin111/stayledger-admin-web
-    newTag: staging-b1bbb616
+    newTag: c4fadf3
 
 patches:
-  - path: patches/admin-web-nodeport-patch.yaml
+  # Production uses ClusterIP + Traefik Ingress only (no NodePort).
+  - path: patches/service-clusterip.yaml
     target:
       kind: Service
       name: stayledger-admin-web

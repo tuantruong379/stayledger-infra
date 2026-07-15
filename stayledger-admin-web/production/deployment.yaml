@@ -25,7 +25,7 @@ spec:
         app: stayledger-admin-web
         component: frontend
         environment: production
-        version: "sha-PLACEHOLDER"
+        version: "COMMIT_SHA"
     spec:
       serviceAccountName: stayledger-admin-web
       automountServiceAccountToken: false
@@ -52,7 +52,7 @@ spec:
           # IMPORTANT: this image MUST equal the main container image (see anchor below).
           # The init container copies its own /app/.next into the shared volume; a mismatch
           # overwrites the main container's build with stale assets.
-          image: &adminWebImage putin111/stayledger-admin-web:sha-PLACEHOLDER
+          image: &adminWebImage putin111/stayledger-admin-web:COMMIT_SHA
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false

@@ -3,11 +3,19 @@ kind: Deployment
 metadata:
   name: stayledger-api
 spec:
+  # Steady-state 1 (RWO guest-docs). RollingUpdate maxUnavailable:0 + maxSurge:1
+  # (from base) keeps the old Ready pod serving until the surge pod is Ready.
   replicas: 1
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   template:
     metadata:
       labels:
-        version: "sha-PLACEHOLDER"
+        version: "f1b2e27"
     spec:
       containers:
         - name: api
