@@ -71,17 +71,12 @@ spec:
                 readOnlyRootFilesystem: true
                 capabilities:
                   drop: ["ALL"]
+              # Reasoning: image bakes tests/evals/rag_judge + scripts/run_rag_eval.py
+              # (Dockerfile COPY). Avoid ConfigMap mounts that break prod when those CMs
+              # are absent; /tmp remains writable for reports under readOnlyRootFilesystem.
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
-                - name: golden
-                  mountPath: /app/tests/evals/rag_judge
-                  readOnly: true
-                # Interim until image includes bootstrap + /tmp reports fix in scripts/run_rag_eval.py
-                - name: script
-                  mountPath: /app/scripts/run_rag_eval.py
-                  subPath: run_rag_eval.py
-                  readOnly: true
               resources:
                 requests:
                   cpu: "100m"
@@ -94,9 +89,3 @@ spec:
               emptyDir:
                 medium: Memory
                 sizeLimit: 64Mi
-            - name: golden
-              configMap:
-                name: rag-eval-golden
-            - name: script
-              configMap:
-                name: rag-eval-script

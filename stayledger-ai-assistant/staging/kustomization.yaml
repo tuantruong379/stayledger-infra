@@ -23,7 +23,7 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    newTag: "pmsfix-20260715-1835"
+    newTag: "1.2.28-pgvstg"
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
-    newTag: "7c04f3d"
+    newTag: "25f29a0"

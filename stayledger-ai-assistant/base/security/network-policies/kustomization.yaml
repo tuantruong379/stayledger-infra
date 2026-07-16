@@ -3,6 +3,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+- allow-acme-solver-egress.yaml
+- allow-acme-solver-ingress.yaml
 - allow-alembic-egress.yaml
 - allow-api-egress.yaml
 - allow-api-egress-nats.yaml
@@ -11,6 +13,8 @@ resources:
 - allow-frontend-ingress.yaml
 - allow-api-ingress.yaml
 - allow-channel-worker-egress.yaml
+- allow-kb-embed-backfill-egress.yaml
+- allow-kb-embed-worker-egress.yaml
 - allow-egress-dns.yaml
 - allow-metrics-aggregator-egress.yaml
 - allow-nats-ingress.yaml

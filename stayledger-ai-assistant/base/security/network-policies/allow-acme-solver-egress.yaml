@@ -1,0 +1,15 @@
+# Reasoning: solvers may need DNS (covered by allow-egress-dns) plus kube API / health;
+# keep egress open for the short-lived ACME pods so issuance is not flaky.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-acme-solver-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: "true"
+  policyTypes:
+    - Egress
+  egress:
+    - {}

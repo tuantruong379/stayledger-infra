@@ -36,9 +36,12 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
-# Default tags — override via deploy script -AiApiTag / -AiFrontendTag
+# Pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
+# Match post-base-transform image names, then remap to published repos.
 images:
   - name: putin111/stayledger-ai-assistant
-    newTag: cvefix-e2a914e
+    newName: putin111/ai-hotel-assistant
+    newTag: "1.2.28-pgvstg"
   - name: putin111/stayledger-ai-assistant-frontend
-    newTag: sha-golive1000712
+    newName: putin111/ai-hotel-assistant-frontend
+    newTag: "25f29a0"

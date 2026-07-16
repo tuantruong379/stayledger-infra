@@ -18,10 +18,11 @@ param(
   [string]$Phase = 'preflight',
 
   [string]$KubectlContext = 'stayledger',
-  [string]$PmsApiTag = 'f1b2e27',
+  [string]$PmsApiTag = 'e40d7de',
   [string]$PmsAdminWebTag = 'c4fadf3',
-  [string]$AiApiTag = 'cvefix-e2a914e',
-  [string]$AiFrontendTag = 'sha-golive1000712',
+  # Reasoning: pin AI API to pgvector-capable image validated on staging (Phases 6–8).
+  [string]$AiApiTag = 'pgva5cc393',
+  [string]$AiFrontendTag = '25f29a0',
 
   [switch]$SkipSecrets,
   [switch]$SkipNodePrep,
@@ -148,10 +149,11 @@ try {
 
     $requiredSecrets = @(
       'stayledger-ai-assistant/base/datastores/redis-secret.yaml',
+      'stayledger-ai-assistant/base/datastores/postgres-secret.yaml',
       'stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml'
+      'stayledger-ai-assistant/base/app/hotel-assistant-api-secrets.yaml',
+      'stayledger-ai-assistant/base/app/hotel-assistant-smtp-secrets.yaml',
+      'stayledger-ai-assistant/base/app/hotel-assistant-frontend-secrets.yaml'
     )
     foreach ($rel in $requiredSecrets) {
       $path = Join-Path $InfraRoot $rel
@@ -164,18 +166,26 @@ try {
     Write-Host '[ai-assistant] optional one-time postgres bootstrap (skip if DB already initialized)' -ForegroundColor Yellow
     Write-Host "  kubectl --context=$KubectlContext apply -f stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml"
 
+    Write-Host '[ai-assistant] apply production overlay (datastores + apps)' -ForegroundColor Yellow
+    # Reasoning: Postgres must be Ready before Alembic; CI images publish as putin111/ai-hotel-assistant*.
+    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant/production/')
+    Invoke-Kubectl @('rollout', 'status', 'deployment/postgres', '-n', $aiNs, '--timeout=300s')
+    Invoke-Kubectl @('rollout', 'status', 'deployment/redis', '-n', $aiNs, '--timeout=180s')
+
     Write-Host '[ai-assistant] alembic migration job' -ForegroundColor Yellow
     Invoke-Kubectl @('delete', 'job', 'alembic-upgrade', '-n', $aiNs, '--ignore-not-found')
-    Invoke-Kubectl @('apply', '-f', 'stayledger-ai-assistant/base/app/alembic-upgrade-job.yaml')
+    $alembicRaw = Get-Content (Join-Path $InfraRoot 'stayledger-ai-assistant/base/app/alembic-upgrade-job.yaml') -Raw
+    $alembicRaw = $alembicRaw -replace 'putin111/ai-hotel-assistant:[^\s]+', "putin111/ai-hotel-assistant:$AiApiTag"
+    $alembicTmp = Join-Path $env:TEMP "stayledger-alembic-$aiNs.yaml"
+    Set-Content -Path $alembicTmp -Value $alembicRaw -Encoding UTF8
+    Invoke-Kubectl @('apply', '-f', $alembicTmp)
     Invoke-Kubectl @('wait', '--for=condition=complete', 'job/alembic-upgrade', '-n', $aiNs, '--timeout=600s')
 
-    Write-Host '[ai-assistant] apply production overlay' -ForegroundColor Yellow
-    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant/production/')
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-api', "api=putin111/stayledger-ai-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-channel-worker', "channel-worker=putin111/stayledger-ai-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-webhook-worker', "webhook-worker=putin111/stayledger-ai-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-metrics-aggregator', "metrics-aggregator=putin111/stayledger-ai-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-frontend', "frontend=putin111/stayledger-ai-assistant-frontend:$AiFrontendTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-api', "api=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-channel-worker', "channel-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-webhook-worker', "webhook-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-metrics-aggregator', "metrics-aggregator=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-frontend', "frontend=putin111/ai-hotel-assistant-frontend:$AiFrontendTag", '-n', $aiNs)
     Invoke-Kubectl @('rollout', 'status', 'deployment/hotel-assistant-api', '-n', $aiNs, '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/hotel-assistant-frontend', '-n', $aiNs, '--timeout=300s')
   }

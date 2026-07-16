@@ -30,6 +30,13 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: rag-eval
+        # Reasoning: embed worker/backfill poll kb_chunks via HOTEL_OPS_DSN → PgBouncer.
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-kb-embed-worker
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-kb-embed-backfill
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: postgres   # bootstrap job uses postgres SA
