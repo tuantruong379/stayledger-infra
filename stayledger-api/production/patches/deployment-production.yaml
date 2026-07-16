@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        version: "f1b2e27"
+        version: "bd2970c"
     spec:
       containers:
         - name: api

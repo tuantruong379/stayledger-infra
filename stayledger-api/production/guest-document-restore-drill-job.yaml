@@ -12,7 +12,7 @@ metadata:
   name: guest-doc-restore-drill
   namespace: stayledger
   labels:
-    app: stayledger-api
+    app: stayledger-document-restore-drill
     component: guest-documents-restore-drill
     environment: production
 spec:
@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       labels:
-        app: stayledger-api
+        app: stayledger-document-restore-drill
         component: guest-documents-restore-drill
         environment: production
     spec:
@@ -28,6 +28,13 @@ spec:
       containers:
         - name: restore
           image: alpine:3.20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
           command: ["/bin/sh", "-ec"]
           args:
             - |

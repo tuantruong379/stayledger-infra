@@ -86,6 +86,9 @@ kubectl rollout undo deployment/stayledger-ai-worker -n stayledger
 
 ```bash
 curl -fsS https://api.stayledger.io/api/ready          # 200 OK
+# MIG-01: after deploying a build that includes prismaMigration on ready:
+#   jq -r '.checks.prismaMigration'  → last applied migration name (or "none"/"unknown")
+curl -fsS https://api.stayledger.io/api/ready | jq -r '.checks.prismaMigration // "not-yet-deployed"'
 curl -I   https://api.stayledger.io/api/docs            # 403 or 404 (SWAGGER_ENABLED=false)
 curl -I -H "Origin: https://evil.example.com" https://api.stayledger.io/api/v1/auth/login
 # Access-Control-Allow-Origin header must be absent

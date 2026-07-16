@@ -1,3 +1,12 @@
+# Guest-document encrypted DR backup (production).
+# Schedule: 22:30 Asia/Ho_Chi_Minh (explicit timeZone).
+# Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
+#
+# Prerequisites:
+#   1. PVC stayledger-guest-documents bound
+#   2. Secret stayledger-document-backup-s3 present
+#   3. ConfigMap stayledger-backup-notify-script applied (apply-backup-notify.ps1)
+#   4. kubectl apply -f document-backup-offnode-cronjob.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -11,13 +20,49 @@ metadata:
 data:
   backup.sh: |
     #!/usr/bin/env sh
+    # Encrypt guest-documents PVC → S3, then signal notify sidecar via /shared/*.
     set -eu
+    SHARED="${SHARED_DIR:-/shared}"
+    mkdir -p "${SHARED}"
+
     SRC=/var/lib/stayledger/guest-documents
     TS="$(date -u +%Y%m%dT%H%M%SZ)"
     WORK="/tmp/guest-documents-${TS}"
     ARCHIVE="/tmp/guest-documents-${TS}.tar.gz"
     ENCRYPTED="${ARCHIVE}.enc"
-    PREFIX="${DOCUMENT_BACKUP_PREFIX:-production/guest-documents}"
+    PREFIX="${DOCUMENT_BACKUP_PREFIX:-guest-documents}"
+    STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    OBJECT=""
+
+    finish() {
+      ec=$?
+      echo "${ec}" > "${SHARED}/status"
+      if [ "${ec}" -eq 0 ]; then
+        echo "document S3 backup ${TS}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Guest Documents S3 (off-node) backup SUCCEEDED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "service=StayLedger Guest Documents"
+          echo "object=${OBJECT}"
+          echo "prefix=${PREFIX}"
+        } > "${SHARED}/body"
+      else
+        echo "document S3 backup FAILED ${TS}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Guest Documents S3 (off-node) backup FAILED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "service=StayLedger Guest Documents"
+          echo "exit_code=${ec}"
+          echo "bucket=${DOCUMENT_BACKUP_BUCKET:-unset} prefix=${PREFIX}"
+          echo "Check: kubectl logs -n stayledger job/<job-name> -c backup"
+        } > "${SHARED}/body"
+      fi
+      touch "${SHARED}/done"
+      exit "${ec}"
+    }
+    trap finish EXIT
 
     if [ ! -d "${SRC}" ]; then
       echo "[document-backup] source PVC path missing: ${SRC}"
@@ -36,7 +81,8 @@ data:
     fi
     tar -czf "${ARCHIVE}" -C "${SRC}" . -C "${WORK}" SHA256SUMS
     openssl enc -aes-256-cbc -pbkdf2 -salt -in "${ARCHIVE}" -out "${ENCRYPTED}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
-    aws s3 cp "${ENCRYPTED}" "s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
+    OBJECT="s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc"
+    aws s3 cp "${ENCRYPTED}" "${OBJECT}" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
     echo "[document-backup] uploaded encrypted DR copy ${PREFIX}/${TS}.tar.gz.enc"
 
 ---
@@ -46,11 +92,13 @@ metadata:
   name: stayledger-document-backup-offnode
   namespace: stayledger
   labels:
-    app: stayledger-api
+    app: stayledger-document-backup
     component: guest-documents-backup
     environment: production
 spec:
-  schedule: "30 19 * * *"
+  # 22:30 Asia/Ho_Chi_Minh
+  schedule: "30 22 * * *"
+  timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -60,7 +108,9 @@ spec:
       template:
         metadata:
           labels:
-            app: stayledger-api
+            # OBS-02: must not use app=stayledger-api — HPA/metrics-server would average
+            # backup pods into the API Deployment selector and yield cpu:<unknown>.
+            app: stayledger-document-backup
             component: guest-documents-backup
             environment: production
         spec:
@@ -79,9 +129,11 @@ spec:
                 - name: DOCUMENT_BACKUP_MODE
                   value: "disaster_recovery_only"
                 - name: DOCUMENT_BACKUP_PREFIX
-                  value: "production/guest-documents"
+                  value: "guest-documents"
                 - name: DOCUMENT_BACKUP_ENCRYPTION
                   value: "AES256"
+                - name: SHARED_DIR
+                  value: /shared
                 - name: DOCUMENT_BACKUP_BUCKET
                   valueFrom:
                     secretKeyRef:
@@ -114,11 +166,71 @@ spec:
                 - name: backup-script
                   mountPath: /scripts/backup.sh
                   subPath: backup.sh
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+            - name: notify
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BACKUP_NOTIFY_TO
+                  value: platform@stayledger.io
+                - name: EMAIL_FROM
+                  value: noreply@stayledger.io
+                - name: SMTP_HOST
+                  value: email-smtp.ap-southeast-1.amazonaws.com
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-secrets
+                      key: smtp-user
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-secrets
+                      key: smtp-password
+              command: ["python3", "/scripts/notify.py"]
+              volumeMounts:
+                - name: notify-script
+                  mountPath: /scripts/notify.py
+                  subPath: notify.py
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
           volumes:
             - name: guest-documents
               persistentVolumeClaim:
-                claimName: stayledger-production-guest-documents
+                claimName: stayledger-guest-documents
             - name: backup-script
               configMap:
                 name: stayledger-document-backup-offnode-script
                 defaultMode: 0755
+            - name: notify-script
+              configMap:
+                name: stayledger-backup-notify-script
+                defaultMode: 0755
+            - name: shared
+              emptyDir:
+                medium: Memory
+                sizeLimit: 8Mi

@@ -18,7 +18,7 @@ labels:
 # Release image from staging promote 2026-07-15 (verify:golive PASS)
 images:
   - name: putin111/stayledger-admin-web
-    newTag: c4fadf3
+    newTag: f0565de
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

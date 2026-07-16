@@ -14,6 +14,10 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
     traefik.ingress.kubernetes.io/router.tls: "true"
+    # SSE (/notifications/stream) works on Traefik origin. Cloudflare orange-cloud
+    # currently buffers the stream — keep DNS-only for api OR add CF Cache Rule
+    # Bypass + disable compression for path containing /notifications/stream.
+    # See artifacts/reports/production-full-test-20260716-095019/SUMMARY.md.
 spec:
   ingressClassName: traefik
   tls:

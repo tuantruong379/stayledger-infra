@@ -16,10 +16,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Release image from staging promote 2026-07-15 (verify:golive PASS)
+# Release image 2026-07-16 (API bd2970c MIG-01 ready check / admin-web f0565de INT-01)
 images:
   - name: putin111/stayledger-api
-    newTag: f1b2e27
+    newTag: bd2970c
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
