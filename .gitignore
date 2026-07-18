@@ -6,8 +6,18 @@
 **/*-secret.yaml
 **/*-secrets.yaml
 
-# Allow secret templates (no real values)
-!**/*.template.yaml
+# Local env / credential files (defense in depth)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+kubeconfig
+**/credentials.json
+id_rsa
+id_ed25519
+*.p12
+*.pfx
 
 # Scratch / debug artifacts
 tmp-*
@@ -16,5 +26,6 @@ tmp_*
 # Landing deploy manifests tracked in stayledger-landing repo (not infra)
 stayledger-landing/
 
-# Keep example/template files
+# Keep example/template files (must come after ignore rules)
 !**/*.example.yaml
+!**/*.template.yaml
