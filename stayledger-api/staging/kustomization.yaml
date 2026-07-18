@@ -15,12 +15,14 @@ labels:
       environment: staging
     includeSelectors: false
 
-# CI short-commit tags (no staging- prefix) — Release staging promote 2026-07-15
+# Staging rebuild 2026-07-18 — AI Center P0/P1 + revenue locale (release/1.2.34)
 images:
   - name: putin111/stayledger-api
-    newTag: f1b2e27
+    newTag: staging-09e48811
 
 patches:
   - path: patches/deployment-staging.yaml
   - path: patches/ai-worker-staging.yaml
   - path: patches/hpa-staging.yaml
+  # 22:30 VN + SES notify sidecar (base CronJob has neither).
+  - path: patches/document-backup-offnode-cronjob.yaml

@@ -50,7 +50,7 @@ spec:
       containers:
         - name: migrate
           # Run migrate deploy with the same release image as the API rollout
-          image: putin111/stayledger-api:f1b2e27
+          image: putin111/stayledger-api:staging-09e48811
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma
