@@ -22,6 +22,7 @@ resources:
 - allow-observability-scrape-api.yaml
 - allow-pgbouncer-egress.yaml
 - allow-pgbouncer-ingress.yaml
+- allow-postgres-backup-egress.yaml
 - allow-postgres-ingress.yaml
 - allow-rag-eval-egress.yaml
 - allow-redis-ingress-from-api.yaml

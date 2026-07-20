@@ -109,3 +109,64 @@ spec:
     - name: metrics
       port: 9121
       targetPort: 9121
+
+---
+# OBS-03: PgBouncer metrics. Requires secret pgbouncer-exporter-config (config.yml)
+# and stats_users = pgbouncer_exporter in stayledger-pgbouncer-config + userlist.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgbouncer-exporter
+  namespace: observability
+  labels:
+    app: pgbouncer-exporter
+    environment: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pgbouncer-exporter
+  template:
+    metadata:
+      labels:
+        app: pgbouncer-exporter
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9127"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: pgbouncer-exporter
+          image: spreaker/prometheus-pgbouncer-exporter:latest
+          args: ["--config", "/etc/pgbouncer-exporter/config.yml"]
+          ports:
+            - containerPort: 9127
+              name: metrics
+          volumeMounts:
+            - name: config
+              mountPath: /etc/pgbouncer-exporter
+              readOnly: true
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits:   { cpu: 100m, memory: 128Mi }
+      volumes:
+        - name: config
+          secret:
+            secretName: pgbouncer-exporter-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pgbouncer-exporter
+  namespace: observability
+  labels:
+    app: pgbouncer-exporter
+spec:
+  type: ClusterIP
+  selector:
+    app: pgbouncer-exporter
+  ports:
+    - name: metrics
+      port: 9127
+      targetPort: 9127

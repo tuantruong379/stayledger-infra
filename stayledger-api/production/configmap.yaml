@@ -39,6 +39,8 @@ data:
   AI_QUOTA_ALERT_EMAIL_ENABLED: "true"
   AI_DAILY_SUMMARY_LLM: "false"
   AI_REQUEST_TIMEOUT_MS: "30000"
+  # Purge staff Copilot conversations not updated in N days (daily 3AM cron).
+  AI_CONVERSATION_RETENTION_DAYS: "90"
   AI_EMBEDDING_PROVIDER: "azure"
   AI_EMBEDDING_MODEL: "text-embedding-3-small"
   AI_EMBEDDING_DIMENSIONS: "1536"

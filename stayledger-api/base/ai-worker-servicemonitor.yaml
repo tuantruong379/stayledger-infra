@@ -2,6 +2,9 @@
 # (ai_first_token_ms, ai_worker_inflight, ai_worker_failed_jobs_total, ai_stream_*).
 # Operator-native (the kube-prometheus-stack Prometheus has serviceMonitorSelector={} and a
 # namespaceSelector including stayledger-staging), so this takes effect WITHOUT a helm upgrade.
+#
+# OBS-03: when METRICS_AUTH_TOKEN is set on the worker, scrapes must send the same bearer
+# as the API ServiceMonitor (secret stayledger-metrics-auth in the SM namespace).
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -16,3 +19,6 @@ spec:
     - port: http
       path: /api/metrics
       interval: 15s
+      bearerTokenSecret:
+        name: stayledger-metrics-auth
+        key: token

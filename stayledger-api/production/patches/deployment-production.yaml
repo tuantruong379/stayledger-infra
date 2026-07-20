@@ -22,13 +22,15 @@ spec:
           env:
             - name: ALLOWED_ORIGINS
               value: "https://app.stayledger.io"
+          # Single replica (RWO guest-docs) — give this pod more CPU than landing.
+          # Request 350m / limit 1 CPU so API wins scheduling vs marketing site.
           resources:
             requests:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "350m"
+              memory: "768Mi"
             limits:
-              cpu: "2"
-              memory: "2Gi"
+              cpu: "1000m"
+              memory: "1536Mi"
           volumeMounts:
             - name: guest-documents
               mountPath: /var/lib/stayledger/guest-documents

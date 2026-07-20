@@ -152,13 +152,14 @@ spec:
         - name: postgres-config
           mountPath: /etc/postgresql/postgresql.conf
           subPath: postgresql.conf
+        # Live ~24m CPU / ~91Mi; keep modest headroom for backup/vacuum spikes.
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "250m"
+            memory: "384Mi"
+            cpu: "150m"
           limits:
-            memory: "2Gi"
-            cpu: "1000m"
+            memory: "1536Mi"
+            cpu: "500m"
         livenessProbe:
           exec:
             command: ["/bin/sh", "-c", "pg_isready -U stayledger -d stayledger"]

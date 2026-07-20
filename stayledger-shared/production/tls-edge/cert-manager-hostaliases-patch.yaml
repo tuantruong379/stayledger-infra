@@ -1,0 +1,18 @@
+# Apply with:
+#   kubectl --context stayledger -n cert-manager patch deploy cert-manager --type merge --patch-file stayledger-shared/production/tls-edge/cert-manager-hostaliases-patch.yaml
+#
+# Reasoning: cert-manager ACME HTTP-01 self-checks prefer Cloudflare AAAA; this
+# single-node has no IPv6 egress ("network is unreachable"). Pin stayledger hosts
+# to the Traefik origin IPv4 so self-checks hit the cluster directly.
+spec:
+  template:
+    spec:
+      hostAliases:
+        - ip: "103.20.96.122"
+          hostnames:
+            - assistant.stayledger.io
+            - api-assistant.stayledger.io
+            - app.stayledger.io
+            - api.stayledger.io
+            - stayledger.io
+            - www.stayledger.io

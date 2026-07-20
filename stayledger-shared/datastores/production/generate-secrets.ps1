@@ -67,7 +67,11 @@ param(
     [string]$DocumentBackupBucket = "prd-stayledger-pms",
     [string]$DocumentBackupS3AccessKeyId = "",
     [string]$DocumentBackupS3SecretAccessKey = "",
-    [string]$DocumentBackupS3Region = "ap-southeast-1"
+    [string]$DocumentBackupS3Region = "ap-southeast-1",
+
+    # Optional PgBouncer stats user password for prometheus-pgbouncer-exporter (OBS-03).
+    # If omitted, a random password is generated for new installs.
+    [string]$PgBouncerExporterPassword = ""
 )
 
 # Validation
@@ -152,7 +156,12 @@ if ($SmtpFrom -ne "") {
 & kubectl @SecretArgs | kubectl apply -f -
 
 Write-Host "Creating stayledger-pgbouncer-secret..." -ForegroundColor Cyan
-$UserlistContent = "`"stayledger`" `"$PostgresPassword`""
+if ([string]::IsNullOrWhiteSpace($PgBouncerExporterPassword)) {
+    $bytes = New-Object byte[] 24
+    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+    $PgBouncerExporterPassword = [Convert]::ToBase64String($bytes)
+}
+$UserlistContent = "`"stayledger`" `"$PostgresPassword`"`n`"pgbouncer_exporter`" `"$PgBouncerExporterPassword`""
 & kubectl create secret generic stayledger-pgbouncer-secret `
     --namespace=stayledger `
     --save-config `
@@ -160,6 +169,30 @@ $UserlistContent = "`"stayledger`" `"$PostgresPassword`""
     -o=yaml `
     "--from-literal=userlist.txt=$UserlistContent" `
     | kubectl apply -f -
+
+Write-Host "Creating observability/pgbouncer-exporter-config..." -ForegroundColor Cyan
+$obsNs = kubectl get namespace observability -o name 2>$null
+if (-not $obsNs) {
+    Write-Host "  Skipping pgbouncer-exporter-config (observability namespace not found). Create it during observability install." -ForegroundColor Yellow
+} else {
+    $PgEnc = [Uri]::EscapeDataString($PgBouncerExporterPassword)
+    $PgBouncerExporterConfig = @"
+exporter_host: 0.0.0.0
+exporter_port: 9127
+pgbouncers:
+  - dsn: postgresql://pgbouncer_exporter:${PgEnc}@stayledger-pgbouncer.stayledger.svc.cluster.local:5432/pgbouncer
+    connect_timeout: 5
+    exclude_databases:
+      - pgbouncer
+"@
+    & kubectl create secret generic pgbouncer-exporter-config `
+        --namespace=observability `
+        --save-config `
+        --dry-run=client `
+        -o=yaml `
+        "--from-literal=config.yml=$PgBouncerExporterConfig" `
+        | kubectl apply -f -
+}
 
 if ($DocumentBackupS3AccessKeyId -ne "") {
     Write-Host "Creating stayledger-document-backup-s3..." -ForegroundColor Cyan

@@ -47,7 +47,8 @@ metadata:
     component: guest-documents-backup
     environment: overlay
 spec:
-  schedule: "30 19 * * *"
+  # 22:30 Asia/Ho_Chi_Minh = 15:30 UTC (K8s CronJob schedule is UTC)
+  schedule: "30 15 * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3

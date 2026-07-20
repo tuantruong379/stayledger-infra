@@ -71,16 +71,19 @@ spec:
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
         - alert: AiWorkerScrapeMissing
-          # The ai-worker first-token histogram should exist once the worker is scraped.
-          # Until the helm upgrade adds the ai-worker job, this fires (observability gap).
-          expr: absent(ai_first_token_ms_count{job="stayledger-ai-worker"})
+          # OBS-03: scrape health — do not require ai_first_token_ms_count (histogram
+          # series only appear after a streamed AI job; idle workers would false-alarm).
+          expr: |
+            (absent(up{job="stayledger-ai-worker"}) == 1)
+            or
+            (up{job="stayledger-ai-worker"} == 0)
           for: 15m
           labels:
             severity: warning
             team: platform
           annotations:
             summary: "AI worker metrics not being scraped"
-            description: "ai_first_token_ms is absent — the stayledger-ai-worker scrape job is missing or the worker /api/metrics is unreachable. First-token latency + worker-side AI metrics are not collected."
+            description: "Prometheus target stayledger-ai-worker is down or missing. Check ServiceMonitor bearer auth (stayledger-metrics-auth) and worker /api/metrics."
 
     - name: stayledger.readiness.datastore
       interval: 30s
@@ -99,9 +102,11 @@ spec:
     - name: stayledger.readiness.backup
       interval: 1m
       rules:
+        # OBS-01: production CronJobs live in namespace=stayledger. Staging selectors caused
+        # absent()/stale false criticals while production Jobs were Complete.
         - alert: BackupJobFailed
           expr: |
-            kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-postgres-backup.*"} > 0
+            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-[0-9]+"} > 0
           for: 5m
           labels:
             severity: critical
@@ -115,9 +120,9 @@ spec:
           # Fires if no successful backup in >26h, OR if the cronjob has never succeeded
           # (last_successful_time series absent) — e.g. node backup dir not provisioned (BK-3).
           expr: |
-            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-postgres-backup"}) > 93600)
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) > 93600)
             or
-            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-postgres-backup"}) == 1)
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) == 1)
           for: 30m
           labels:
             severity: critical
@@ -128,13 +133,11 @@ spec:
             runbook_url: "docs/operations/stayledger-dr-runbook.md"
 
         - alert: BackupOffNodeCopyMissing
-          # BK-4: once the off-node copy job (stayledger-postgres-backup-offnode) is implemented,
-          # this fires if it has never run / not succeeded in >26h. Until BK-4 is implemented the
-          # job is absent and this fires — flagging the open DR gap (single-node local-only backup).
+          # BK-4: off-node copy CronJob stayledger-postgres-backup-offnode in production.
           expr: |
-            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
             or
-            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-postgres-backup-offnode"}) == 1)
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) == 1)
           for: 30m
           labels:
             severity: critical
@@ -142,6 +145,18 @@ spec:
           annotations:
             summary: "No off-node backup copy in >24h (BK-4)"
             description: "Backups exist only on the DB node (single-node SPOF). Implement + verify an off-node/off-site copy (BK-4). See DR runbook."
+            runbook_url: "docs/operations/stayledger-dr-runbook.md"
+
+        - alert: BackupOffNodeJobFailed
+          expr: |
+            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-offnode-.*"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "PostgreSQL off-node backup job failed"
+            description: "A stayledger-postgres-backup-offnode job failed. Check Job logs and off-node/S3 credentials."
             runbook_url: "docs/operations/stayledger-dr-runbook.md"
 
     - name: stayledger.readiness.security

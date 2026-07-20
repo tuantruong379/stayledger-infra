@@ -1,0 +1,20 @@
+# Right-size AI postgres for single-node stayledger k3s.
+# Live usage ~17m CPU / ~96Mi; base 500m/1Gi (limit 4/4Gi) oversubscribed the node.
+# Keep 512Mi request for pgvector / embed burst headroom.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: postgres
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "512Mi"
+            limits:
+              cpu: "500m"
+              memory: "2Gi"

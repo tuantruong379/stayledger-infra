@@ -55,6 +55,9 @@ spec:
             - secretRef:
                 name: hotel-assistant-api-secrets
           env:
+            # Script path puts /app/scripts on sys.path; app package lives at /app.
+            - name: PYTHONPATH
+              value: "/app"
             - name: RAG_CHUNK_PERSIST
               value: "1"
             - name: RAG_EMBEDDING_DIMENSIONS

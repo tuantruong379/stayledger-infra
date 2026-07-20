@@ -1,24 +1,20 @@
-# Guest-document encrypted DR backup (production).
-# Schedule: 22:30 Asia/Ho_Chi_Minh (explicit timeZone).
+# Guest-document encrypted DR backup (staging).
+# Schedule: 22:30 Asia/Ho_Chi_Minh (between local PG 22:00 and off-node 23:00).
 # Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
-# S3 object: s3://prd-stayledger-pms/production/guest-documents/<UTC-ts>.tar.gz.enc
-#   (staging uses prefix guest-documents/ — do not drop the production/ segment).
 #
-# Prerequisites:
-#   1. PVC stayledger-guest-documents bound
-#   2. Secret stayledger-document-backup-s3 present
-#   3. ConfigMap stayledger-backup-notify-script applied (apply-backup-notify.ps1)
-#   4. kubectl apply -f document-backup-offnode-cronjob.yaml
+# Apply:
+#   ..\production\apply-backup-notify.ps1 -Namespace stayledger-staging -Environment staging
+#   kubectl apply -f document-backup-offnode-cronjob.yaml
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stayledger-document-backup-offnode-script
-  namespace: stayledger
+  namespace: stayledger-staging
   labels:
-    app: stayledger-api
+    app: stayledger-document-backup
     component: guest-documents-backup
-    environment: production
+    environment: staging
 data:
   backup.sh: |
     #!/usr/bin/env sh
@@ -32,7 +28,7 @@ data:
     WORK="/tmp/guest-documents-${TS}"
     ARCHIVE="/tmp/guest-documents-${TS}.tar.gz"
     ENCRYPTED="${ARCHIVE}.enc"
-    PREFIX="${DOCUMENT_BACKUP_PREFIX:-production/guest-documents}"
+    PREFIX="${DOCUMENT_BACKUP_PREFIX:-guest-documents}"
     STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     OBJECT=""
 
@@ -48,6 +44,7 @@ data:
           echo "service=StayLedger Guest Documents"
           echo "object=${OBJECT}"
           echo "prefix=${PREFIX}"
+          echo "environment=Staging"
         } > "${SHARED}/body"
       else
         echo "document S3 backup FAILED ${TS}" > "${SHARED}/subject"
@@ -58,7 +55,8 @@ data:
           echo "service=StayLedger Guest Documents"
           echo "exit_code=${ec}"
           echo "bucket=${DOCUMENT_BACKUP_BUCKET:-unset} prefix=${PREFIX}"
-          echo "Check: kubectl logs -n stayledger job/<job-name> -c backup"
+          echo "environment=Staging"
+          echo "Check: kubectl logs -n stayledger-staging job/<job-name> -c backup"
         } > "${SHARED}/body"
       fi
       touch "${SHARED}/done"
@@ -86,19 +84,17 @@ data:
     OBJECT="s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc"
     aws s3 cp "${ENCRYPTED}" "${OBJECT}" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
     echo "[document-backup] uploaded encrypted DR copy ${PREFIX}/${TS}.tar.gz.enc"
-
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: stayledger-document-backup-offnode
-  namespace: stayledger
+  namespace: stayledger-staging
   labels:
     app: stayledger-document-backup
     component: guest-documents-backup
-    environment: production
+    environment: staging
 spec:
-  # 22:30 Asia/Ho_Chi_Minh
   schedule: "30 22 * * *"
   timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
@@ -110,13 +106,15 @@ spec:
       template:
         metadata:
           labels:
-            # OBS-02: must not use app=stayledger-api — HPA/metrics-server would average
-            # backup pods into the API Deployment selector and yield cpu:<unknown>.
             app: stayledger-document-backup
             component: guest-documents-backup
-            environment: production
+            environment: staging
         spec:
           restartPolicy: OnFailure
+          securityContext:
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: backup
               image: alpine:3.20
@@ -131,7 +129,7 @@ spec:
                 - name: DOCUMENT_BACKUP_MODE
                   value: "disaster_recovery_only"
                 - name: DOCUMENT_BACKUP_PREFIX
-                  value: "production/guest-documents"
+                  value: "guest-documents"
                 - name: DOCUMENT_BACKUP_ENCRYPTION
                   value: "AES256"
                 - name: SHARED_DIR
@@ -189,7 +187,7 @@ spec:
                   drop: ["ALL"]
               env:
                 - name: BACKUP_NOTIFY_ENV
-                  value: Production
+                  value: Staging
                 - name: BACKUP_NOTIFY_TO
                   value: platform@stayledger.io
                 - name: EMAIL_FROM
@@ -201,12 +199,12 @@ spec:
                 - name: SMTP_USER
                   valueFrom:
                     secretKeyRef:
-                      name: stayledger-secrets
+                      name: stayledger-staging-secrets
                       key: smtp-user
                 - name: SMTP_PASS
                   valueFrom:
                     secretKeyRef:
-                      name: stayledger-secrets
+                      name: stayledger-staging-secrets
                       key: smtp-password
               command: ["python3", "/scripts/notify.py"]
               volumeMounts:
@@ -217,7 +215,7 @@ spec:
                   mountPath: /shared
               resources:
                 requests:
-                  cpu: 50m
+                  cpu: 20m
                   memory: 64Mi
                 limits:
                   cpu: 200m

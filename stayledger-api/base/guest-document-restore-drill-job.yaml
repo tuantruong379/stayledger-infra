@@ -8,20 +8,27 @@ kind: Job
 metadata:
   name: guest-doc-restore-drill
   labels:
-    app: stayledger-api
+    app: stayledger-document-restore-drill
     component: guest-documents-restore-drill
 spec:
   backoffLimit: 1
   template:
     metadata:
       labels:
-        app: stayledger-api
+        app: stayledger-document-restore-drill
         component: guest-documents-restore-drill
     spec:
       restartPolicy: Never
       containers:
         - name: restore
           image: alpine:3.20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
           command: ["/bin/sh", "-ec"]
           args:
             - |

@@ -10,9 +10,40 @@ spec:
   policyTypes:
   - Ingress
   ingress:
+  # NodePort / external clients (Cilium: ipBlock alone does not cover in-cluster pods)
   - from:
     - ipBlock:
         cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 8000
+  # In-cluster frontend → API
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-frontend
+    ports:
+    - protocol: TCP
+      port: 8000
+  # PMS staging API → booking.confirmed / booking.cancelled webhooks (/internal/pms/...)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger-staging
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 8000
+  # PMS production API (same webhook path when deployed)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger
+      podSelector:
+        matchLabels:
+          app: stayledger-api
     ports:
     - protocol: TCP
       port: 8000

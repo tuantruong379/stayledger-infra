@@ -1,5 +1,5 @@
 # BK-4 — Off-node backup copy (S3) for production PostgreSQL.
-# Schedule: 15:00 UTC (22:00 Vietnam). Uploads latest local dump, verifies, prunes remote.
+# Schedule: 23:00 Asia/Ho_Chi_Minh (explicit timeZone). Uploads latest local dump, verifies, prunes remote.
 # Target node: stayledger (same PVC as local backup).
 # Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
 #
@@ -90,7 +90,8 @@ metadata:
     component: database-backup-offnode
     environment: production
 spec:
-  schedule: "0 15 * * *"
+  schedule: "0 23 * * *"
+  timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
@@ -159,6 +160,8 @@ spec:
                 capabilities:
                   drop: ["ALL"]
               env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Production
                 - name: BACKUP_NOTIFY_TO
                   value: platform@stayledger.io
                 - name: EMAIL_FROM

@@ -87,6 +87,47 @@ spec:
             summary: "StayLedger document backup not completed in 26 hours"
             description: "The guest document off-node backup CronJob has not completed successfully in over 26 hours."
 
+        # P1 — PostgreSQL local + off-node backups (OBS-01 production counterparts)
+        - alert: StayLedgerPostgresBackupStale
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) == 1)
+          for: 30m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger PostgreSQL backup not completed in 26 hours"
+            description: "CronJob stayledger-postgres-backup has not succeeded recently (or ever)."
+
+        - alert: StayLedgerPostgresOffNodeBackupStale
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) == 1)
+          for: 30m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "StayLedger PostgreSQL off-node backup not completed in 26 hours"
+            description: "CronJob stayledger-postgres-backup-offnode has not succeeded recently (or ever)."
+
+        # P1 — AI assistant Postgres backup never ran / stale (BKP-01)
+        - alert: StayLedgerAiPostgresBackupStale
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger-ai-assistant",cronjob="postgres-backup"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger-ai-assistant",cronjob="postgres-backup"}) == 1)
+          for: 30m
+          labels:
+            severity: critical
+            environment: production
+          annotations:
+            summary: "AI assistant PostgreSQL backup not completed in 26 hours"
+            description: "CronJob postgres-backup in stayledger-ai-assistant has not succeeded recently (or ever). Verify schedule, PVC bind, and host path."
+
         # P2 — High API latency
         - alert: StayLedgerAPIHighLatency
           expr: |

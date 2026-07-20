@@ -15,7 +15,7 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging rebuild 2026-07-18 — AI Center P0/P1 + revenue locale (release/1.2.34)
+# Staging rebuild 2026-07-20 — local working-tree rebuild (API + AI worker)
 images:
   - name: putin111/stayledger-api
     newTag: staging-09e48811

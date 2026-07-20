@@ -95,6 +95,45 @@ kubectl --context=$ctx -n observability create secret generic postgres-exporter-
   --from-literal=data-source-name=$dsn `
   --dry-run=client -o yaml | kubectl --context=$ctx apply -f -
 
+Write-Host "`n=== PgBouncer exporter secret (OBS-03) ===" -ForegroundColor Cyan
+# Prefer an existing pgbouncer_exporter password from stayledger-pgbouncer-secret if present;
+# otherwise generate one and merge into the userlist (requires postgres password already known).
+$userlistB64 = kubectl --context=$ctx get secret stayledger-pgbouncer-secret -n stayledger -o jsonpath='{.data.userlist\.txt}' 2>$null
+$pgExporterPass = $null
+if ($userlistB64) {
+  $userlist = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($userlistB64))
+  if ($userlist -match '"pgbouncer_exporter"\s+"([^"]+)"') {
+    $pgExporterPass = $Matches[1]
+  }
+}
+if (-not $pgExporterPass) {
+  $bytes = New-Object byte[] 24
+  [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+  $pgExporterPass = [Convert]::ToBase64String($bytes)
+  if (-not $userlistB64) { throw 'stayledger-pgbouncer-secret missing — create PgBouncer userlist before enabling exporter' }
+  $userlist = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($userlistB64)).TrimEnd()
+  if ($userlist -notmatch 'pgbouncer_exporter') {
+    $userlist = "$userlist`n`"pgbouncer_exporter`" `"$pgExporterPass`""
+    kubectl --context=$ctx -n stayledger create secret generic stayledger-pgbouncer-secret `
+      --from-literal=userlist.txt=$userlist `
+      --dry-run=client -o yaml | kubectl --context=$ctx apply -f -
+    Write-Host "Added pgbouncer_exporter to stayledger-pgbouncer-secret; restart PgBouncer to pick up userlist." -ForegroundColor Yellow
+  }
+}
+$pgEnc = [Uri]::EscapeDataString($pgExporterPass)
+$pgConfig = @"
+exporter_host: 0.0.0.0
+exporter_port: 9127
+pgbouncers:
+  - dsn: postgresql://pgbouncer_exporter:${pgEnc}@stayledger-pgbouncer.stayledger.svc.cluster.local:5432/pgbouncer
+    connect_timeout: 5
+    exclude_databases:
+      - pgbouncer
+"@
+kubectl --context=$ctx -n observability create secret generic pgbouncer-exporter-config `
+  --from-literal=config.yml=$pgConfig `
+  --dry-run=client -o yaml | kubectl --context=$ctx apply -f -
+
 if (-not $SkipHelm) {
   Write-Host "`n=== Helm repos ===" -ForegroundColor Cyan
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts 2>$null

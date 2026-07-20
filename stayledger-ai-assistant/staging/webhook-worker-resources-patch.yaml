@@ -1,0 +1,31 @@
+# Staging single-node: raise CPU request + readiness timeout so probe exec
+# is not CFS-throttled (same lesson as production CAP-01).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: webhook-worker
+          resources:
+            requests:
+              cpu: "400m"
+              memory: "128Mi"
+            limits:
+              cpu: "750m"
+              memory: "512Mi"
+          readinessProbe:
+            exec:
+              command:
+                [
+                  "/venv/bin/python",
+                  "-c",
+                  "from app.observability.health_checks import check_worker_readiness; import sys; sys.exit(0 if check_worker_readiness().get('ok') else 1)",
+                ]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 15
+            failureThreshold: 6

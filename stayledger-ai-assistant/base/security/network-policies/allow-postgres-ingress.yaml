@@ -16,6 +16,9 @@ spec:
           app.kubernetes.io/name: postgres
     - podSelector:
         matchLabels:
+          app.kubernetes.io/name: postgres-backup
+    - podSelector:
+        matchLabels:
           app.kubernetes.io/name: pgbouncer
     - podSelector:
         matchLabels:

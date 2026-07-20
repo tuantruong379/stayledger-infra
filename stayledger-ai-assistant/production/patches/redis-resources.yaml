@@ -1,0 +1,18 @@
+# Cap Redis CPU limit — request was fine; limit of 1 CPU was unnecessary on a packed node.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: redis
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "512Mi"

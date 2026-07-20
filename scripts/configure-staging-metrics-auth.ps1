@@ -51,11 +51,13 @@ Write-Host 'Patching stayledger-staging-secrets.metrics-auth-token...' -Foregrou
 $patchJson = (@{ stringData = @{ 'metrics-auth-token' = $MetricsAuthToken } } | ConvertTo-Json -Compress)
 kubectl patch secret stayledger-staging-secrets -n $Namespace --type=merge -p $patchJson | Out-Host
 
-Write-Host 'Creating observability secret stayledger-metrics-auth...' -ForegroundColor Cyan
-kubectl create secret generic stayledger-metrics-auth `
-  --namespace=$ObservabilityNamespace `
-  --from-literal=token=$MetricsAuthToken `
-  --dry-run=client -o yaml | kubectl apply -f - | Out-Host
+Write-Host 'Creating stayledger-metrics-auth secrets...' -ForegroundColor Cyan
+foreach ($ns in @($ObservabilityNamespace, $Namespace)) {
+  kubectl create secret generic stayledger-metrics-auth `
+    --namespace=$ns `
+    --from-literal=token=$MetricsAuthToken `
+    --dry-run=client -o yaml | kubectl apply -f - | Out-Host
+}
 
 if (-not $SkipIngressApply) {
   $ingressFile = Join-Path $RepoRoot 'stayledger-infra\stayledger-shared\staging\ingress.yaml'

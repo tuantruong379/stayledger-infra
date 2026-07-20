@@ -19,12 +19,12 @@ spec:
     spec:
       containers:
         - name: admin-web
-          # Sized to live usage (~3m / ~100Mi) with SSR headroom; HPA scales pods
+          # Sized to live usage (~2m / ~80Mi) with SSR headroom; HPA scales pods
           # on CPU% of request before vertical inflation.
           resources:
             requests:
               cpu: "100m"
-              memory: "256Mi"
+              memory: "128Mi"
             limits:
               cpu: "500m"
-              memory: "512Mi"
+              memory: "384Mi"

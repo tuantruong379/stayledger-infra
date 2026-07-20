@@ -1,5 +1,6 @@
 # pg_dump backup CronJob for StayLedger PMS PostgreSQL (production).
-# Schedule: 02:00 Asia/Ho_Chi_Minh = 19:00 UTC — align with BACKUP_SCHEDULE in stayledger-api ConfigMap.
+# Schedule: 22:00 Asia/Ho_Chi_Minh (explicit timeZone) — align with BACKUP_SCHEDULE in stayledger-api ConfigMap.
+# Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
 #
 # Target node: stayledger (local-storage-stayledger), matching postgres/redis PVs.
 # Prerequisites on node stayledger (SSH):
@@ -8,9 +9,8 @@
 #   sudo chmod 750 /mnt/data/stayledger/postgres-backup
 #
 # Apply:
-#   kubectl apply -f backup-notify-configmap.yaml
+#   .\apply-backup-notify.ps1
 #   kubectl apply -f postgres-backup-cronjob.yaml
-# Email on success/fail → BACKUP_NOTIFY_TO (default platform@stayledger.io) via SES SMTP.
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -148,7 +148,8 @@ metadata:
     component: database-backup
     environment: production
 spec:
-  schedule: "0 19 * * *"
+  schedule: "0 22 * * *"
+  timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
@@ -224,6 +225,8 @@ spec:
                 capabilities:
                   drop: ["ALL"]
               env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Production
                 - name: BACKUP_NOTIFY_TO
                   value: platform@stayledger.io
                 - name: EMAIL_FROM

@@ -11,12 +11,11 @@ spec:
     spec:
       containers:
         - name: ai-worker
-          # Idle CPU was ~8m with 500m request; memory sits ~472Mi so keep
-          # memory request near observed usage with modest headroom.
+          # Idle CPU ~7m; memory sits ~421Mi — keep mem, hard-cap CPU at 500m.
           resources:
             requests:
-              cpu: "200m"
+              cpu: "100m"
               memory: "768Mi"
             limits:
-              cpu: "1"
+              cpu: "500m"
               memory: "1536Mi"

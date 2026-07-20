@@ -40,6 +40,11 @@ data:
     log_stats = 1
     stats_period = 60
 
+    ; OBS-03: allow the Prometheus pgbouncer-exporter to read SHOW STATS/POOLS via the
+    ; admin console. The `pgbouncer_exporter` user must also exist in the mounted
+    ; userlist.txt secret (stayledger-pgbouncer-secret) for auth to succeed.
+    stats_users = pgbouncer_exporter
+
     server_tls_sslmode = disable
     client_tls_sslmode = disable
 

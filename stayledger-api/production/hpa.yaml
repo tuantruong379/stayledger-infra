@@ -1,6 +1,8 @@
 ---
-# HPA capped at maxReplicas: 1 — enforced by the RWO guest-documents PVC.
-# Raise maxReplicas and remove this comment after migrating to RWX/object storage.
+# API is highest-priority PMS workload, but maxReplicas MUST stay 1 while the
+# serving pod mounts guest-documents (RWO PVC). A 2nd replica would stay Pending.
+# Prefer more CPU per pod (see deployment-production resources) over scale-out
+# until storage is RWX or object-backed. Then raise maxReplicas here.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:

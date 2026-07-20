@@ -2,6 +2,21 @@
 
 Central Kubernetes infrastructure repository for the StayLedger platform. All manifests for every project are organised here by project, with shared cluster-wide components in `stayledger-shared/`.
 
+## Clusters
+
+| Environment | kubectl context | Typical namespaces | Overlay / install |
+|---|---|---|---|
+| **Staging** | `HK-HUB-Cluster` | `stayledger-staging`, `stayledger-ai-assistant`, `observability` | `**/staging/`, `observability/install.ps1` |
+| **Production** | `stayledger` | `stayledger`, `stayledger-ai-assistant`, `observability` | `**/production/`, `observability/install-production.ps1` |
+
+Always confirm context before apply:
+
+```powershell
+kubectl config current-context   # expect HK-HUB-Cluster (staging) or stayledger (production)
+kubectl config use-context stayledger          # production
+kubectl config use-context HK-HUB-Cluster      # staging
+```
+
 ## Structure
 
 ```text
@@ -30,12 +45,14 @@ stayledger-infra/
 │       └── redis-local.conf
 │
 ├── stayledger-api/                 # StayLedger PMS backend API
-│   ├── prd/                        # Production deployment
-│   └── staging/                    # Staging deployment
+│   ├── base/                       # Kustomize base
+│   ├── production/                 # Production overlay → kubectl apply -k
+│   └── staging/                    # Staging overlay → kubectl apply -k
 │
-├── stayledger-admin-web/           # StayLedger admin web frontend
-│   ├── prd/
-│   └── staging/
+├── stayledger-admin-web/           # StayLedger admin web frontend (env-inject init container)
+│   ├── base/                       # Kustomize base (env-inject + admin-web share one image)
+│   ├── production/                 # Production overlay → kubectl apply -k
+│   └── staging/                    # Staging overlay → kubectl apply -k
 │
 └── stayledger-ai-assistant/        # StayLedger AI Assistant (hotel chatbot)
     ├── base/                       # Kustomize root → kubectl apply -k stayledger-ai-assistant/base/
@@ -105,12 +122,18 @@ kubectl apply -f stayledger-shared/datastores/prd/
 
 ### 3. Per-project workloads
 
-**stayledger-api / stayledger-admin-web:**
+**stayledger-api / stayledger-admin-web (Kustomize overlays):**
 
 ```powershell
-kubectl apply -f stayledger-api/prd/
-kubectl apply -f stayledger-admin-web/prd/
+kubectl apply -k stayledger-api/production/
+kubectl apply -k stayledger-admin-web/production/
 ```
+
+> **Always use `-k` (Kustomize), never `-f`, for `stayledger-admin-web`.** Its Deployment runs an
+> `env-inject` init container that serves the bundle; the `images:` transformer keeps that init
+> container and the main container on the same image. `kubectl apply -f` or `kubectl set image admin-web=…`
+> alone updates only one of them and the pod silently serves stale JS. See
+> `stayledger-admin-web/README.md` → "CRITICAL — the `env-inject` init container serves the bundle".
 
 **stayledger-ai-assistant (Kustomize):**
 
@@ -151,8 +174,8 @@ kubectl patch secret stayledger-staging-secrets -n stayledger-staging --type mer
 
 kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
 kubectl apply -f stayledger-shared/staging/ingress.yaml
-kubectl apply -f stayledger-api/staging/
-kubectl apply -f stayledger-admin-web/staging/
+kubectl apply -k stayledger-api/staging/
+kubectl apply -k stayledger-admin-web/staging/   # -k (not -f): keeps env-inject + admin-web in sync
 ```
 
 Verify:

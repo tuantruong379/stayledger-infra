@@ -136,7 +136,10 @@ try {
     Invoke-Kubectl @('apply', '-k', 'stayledger-admin-web/production/')
     Invoke-Kubectl @('set', 'image', 'deployment/stayledger-api', "api=putin111/stayledger-api:$PmsApiTag", '-n', 'stayledger')
     Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-worker', "ai-worker=putin111/stayledger-api:$PmsApiTag", '-n', 'stayledger')
-    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-admin-web', "admin-web=putin111/stayledger-admin-web:$PmsAdminWebTag", '-n', 'stayledger')
+    # admin-web runs env-inject (init) + admin-web (main) off the SAME image; the init
+    # container's /app/.next is what gets served. Both MUST be set together or the pod
+    # reports the new tag but serves stale JS. See stayledger-admin-web/README.md.
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-admin-web', "env-inject=putin111/stayledger-admin-web:$PmsAdminWebTag", "admin-web=putin111/stayledger-admin-web:$PmsAdminWebTag", '-n', 'stayledger')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-api', '-n', 'stayledger', '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-ai-worker', '-n', 'stayledger', '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-admin-web', '-n', 'stayledger', '--timeout=300s')

@@ -5,19 +5,20 @@ metadata:
   name: stayledger-guest-documents-alerts
   namespace: observability
   labels:
-    release: kube-prometheus-stack
+    release: kps
     app: stayledger-api
     component: guest-documents
 spec:
   groups:
     - name: stayledger.guest-documents.storage
       rules:
+        # OBS-01: production guest-document CronJobs/PVC live in namespace=stayledger.
         - alert: GuestDocumentsPvcUsageHigh
           expr: |
             (
-              kubelet_volume_stats_used_bytes{namespace="stayledger-staging",persistentvolumeclaim="stayledger-guest-documents"}
+              kubelet_volume_stats_used_bytes{namespace="stayledger",persistentvolumeclaim="stayledger-production-guest-documents"}
               /
-              kubelet_volume_stats_capacity_bytes{namespace="stayledger-staging",persistentvolumeclaim="stayledger-guest-documents"}
+              kubelet_volume_stats_capacity_bytes{namespace="stayledger",persistentvolumeclaim="stayledger-production-guest-documents"}
             ) > 0.80
           for: 15m
           labels:
@@ -28,7 +29,7 @@ spec:
             description: "The R1 guest-documents PVC is above 80% used. Increase capacity or shorten retention before uploads fail."
 
         - alert: GuestDocumentsBackupJobFailed
-          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-backup-offnode.*"} > 0
+          expr: kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-document-backup-offnode.*"} > 0
           for: 5m
           labels:
             severity: p1
@@ -39,9 +40,9 @@ spec:
 
         - alert: GuestDocumentsBackupStale
           expr: |
-            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-document-backup-offnode"}) > 93600)
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-document-backup-offnode"}) > 93600)
             or
-            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger-staging",cronjob="stayledger-document-backup-offnode"}) == 1)
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-document-backup-offnode"}) == 1)
           for: 15m
           labels:
             severity: p1
@@ -51,7 +52,7 @@ spec:
             description: "S3 is disaster-recovery backup only, but RPO is at risk because the encrypted off-node copy has not succeeded recently."
 
         - alert: GuestDocumentsRetentionCleanupFailed
-          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-retention.*"} > 0
+          expr: kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-document-retention.*"} > 0
           for: 5m
           labels:
             severity: p2
@@ -61,7 +62,7 @@ spec:
             description: "A retention cleanup job failed. Check API retention logs and verify expired document objects were removed from the PVC."
 
         - alert: GuestDocumentsRestoreDrillFailed
-          expr: kube_job_status_failed{namespace="stayledger-staging",job_name=~"stayledger-document-restore-drill.*"} > 0
+          expr: kube_job_status_failed{namespace="stayledger",job_name=~"guest-doc-restore-drill.*|stayledger-document-restore-drill.*"} > 0
           for: 5m
           labels:
             severity: p1

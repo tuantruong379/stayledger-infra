@@ -98,6 +98,17 @@ spec:
       ports:
         - protocol: TCP
           port: 6379
+    # StayLedger AI Assistant — PMS booking.confirmed / booking.cancelled webhook delivery
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-api
+      ports:
+        - protocol: TCP
+          port: 8000
     # OTEL collector (in-cluster)
     - to:
         - namespaceSelector:

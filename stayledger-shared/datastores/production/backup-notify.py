@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
-"""SMTP notifier for StayLedger backup jobs — never logs credentials.
+"""SMTP notifier for StayLedger backup jobs - never logs credentials.
 
 Visual tokens mirrored from stayledger-api email-theme.ts (cannot import TS).
+
+Output is intentionally ASCII-only (HTML numeric entities for the check mark and
+copyright glyph). The ConfigMap apply pipeline runs through a PowerShell pipe on
+Windows hosts, which can transcode non-ASCII source bytes to "?"; keeping the
+rendered email ASCII makes it byte-stable across every host that applies it.
 """
 from __future__ import annotations
 
@@ -49,6 +54,19 @@ SECRET_PATTERNS = [
 ]
 
 
+def notify_environment() -> str:
+    """Label used in subject/body - set BACKUP_NOTIFY_ENV=Staging|Production on the sidecar."""
+    raw = (os.environ.get("BACKUP_NOTIFY_ENV") or "Production").strip()
+    if not raw:
+        return "Production"
+    key = raw.lower()
+    if key in ("staging", "stg"):
+        return "Staging"
+    if key in ("production", "prod", "prd"):
+        return "Production"
+    return raw[:1].upper() + raw[1:]
+
+
 def wait_done(timeout_s: int = 600) -> None:
     deadline = time.time() + timeout_s
     while time.time() < deadline:
@@ -91,15 +109,77 @@ def human_label(key: str) -> str:
         "size": "Dump size",
         "retention_days": "Retention (days)",
         "node_path": "Node path",
-        "object": "S3 object",
+        "object": "Destination",
         "exit_code": "Exit code",
         "bucket": "Bucket",
         "prefix": "Prefix",
         "environment": "Environment",
         "backup_type": "Backup type",
         "service": "Service",
+        "stage": "Backup stage",
+        "integrity": "Integrity check",
+        "checksum": "Checksum",
+        "md5": "Checksum (md5)",
+        "sha256": "Checksum (sha256)",
+        "verified": "Integrity verified",
+        "restore_tested": "Restore tested",
+        "restore_result": "Restore result",
     }
     return labels.get(key, key.replace("_", " ").title())
+
+
+# Fields the cronjob MAY emit to distinguish backup stages. Absence is meaningful:
+# we report "Not reported" rather than implying an unperformed check succeeded.
+CHECKSUM_KEYS = ("checksum", "md5", "sha256")
+VERIFIED_KEYS = ("verified", "integrity_verified")
+RESTORE_KEYS = ("restore_tested", "restore_result", "restore_verified")
+
+
+def _truthy(value: str) -> bool:
+    return value.strip().lower() in ("1", "true", "yes", "ok", "verified", "success", "passed")
+
+
+def sanitize_object(value: str) -> str:
+    """Reduce an S3 destination to bucket + object name only.
+
+    Drops any query string (presigned URL params) and the middle key path so the
+    email never leaks the full object layout, credentials, or a usable link.
+    """
+    v = value.split("?", 1)[0].strip()
+    if not v.startswith("s3://"):
+        return v
+    rest = v[len("s3://"):]
+    parts = [p for p in rest.split("/") if p != ""]
+    if not parts:
+        return "s3://(bucket)"
+    bucket = parts[0]
+    if len(parts) == 1:
+        return f"s3://{bucket}"
+    basename = parts[-1]
+    if len(parts) > 2:
+        return f"s3://{bucket}/.../{basename}"
+    return f"s3://{bucket}/{basename}"
+
+
+def resolve_stage(fields: list[tuple[str, str]]) -> str:
+    """Distinguish backup lifecycle stage strictly by fields present."""
+    keys = {k for k, _ in fields}
+    if keys & set(RESTORE_KEYS):
+        return "Created, integrity verified, restore tested"
+    if (keys & set(CHECKSUM_KEYS)) or (keys & set(VERIFIED_KEYS)):
+        return "Created, integrity verified"
+    return "Created"
+
+
+def resolve_integrity(fields: list[tuple[str, str]]) -> str:
+    by_key = {k: v for k, v in fields}
+    for k in CHECKSUM_KEYS:
+        if by_key.get(k, "").strip():
+            return f"Verified ({k} {by_key[k].strip()})"
+    for k in VERIFIED_KEYS:
+        if k in by_key and _truthy(by_key[k]):
+            return "Verified"
+    return "Not reported"
 
 
 def parse_iso(value: str) -> datetime | None:
@@ -123,21 +203,48 @@ def format_duration(seconds: float) -> str:
     return f"{mins}m {rem}s" if rem else f"{mins}m"
 
 
-def enrich_fields(fields: list[tuple[str, str]]) -> list[tuple[str, str]]:
+def is_document_backup(headline: str, fields: list[tuple[str, str]]) -> bool:
+    by_key = {k: v for k, v in fields}
+    service = by_key.get("service", "").lower()
+    text = f"{headline} {service}".lower()
+    return "document" in text or "guest" in text
+
+
+def backup_kind_label(headline: str, fields: list[tuple[str, str]]) -> str:
+    return "Document backup" if is_document_backup(headline, fields) else "Database backup"
+
+
+def enrich_fields(
+    fields: list[tuple[str, str]], headline: str = "", ok: bool = True
+) -> list[tuple[str, str]]:
     by_key = {k: v for k, v in fields}
     started = parse_iso(by_key.get("started_at", ""))
     finished = parse_iso(by_key.get("finished_at", ""))
-    out = list(fields)
+    # Sanitize any S3 destination to bucket + object name only (no full key/URL).
+    out = [(k, sanitize_object(v) if k == "object" else v) for k, v in fields]
     if started and finished and "duration" not in by_key:
         insert_at = next(
             (i + 1 for i, (k, _) in enumerate(out) if k == "finished_at"),
             len(out),
         )
         out.insert(insert_at, ("duration", format_duration((finished - started).total_seconds())))
+    env_name = notify_environment()
     if "environment" not in by_key:
-        out.insert(0, ("environment", "Production"))
+        out.insert(0, ("environment", env_name))
     if "service" not in by_key:
-        out.insert(1, ("service", "StayLedger Postgres"))
+        default_service = (
+            "StayLedger Guest Documents"
+            if is_document_backup(headline, out)
+            else "StayLedger Postgres"
+        )
+        out.insert(1, ("service", default_service))
+    # Stage/integrity are only meaningful for a successful run. Absence of a
+    # checksum/verify field is reported as "Not reported" (never assumed).
+    if ok:
+        if not any(k == "stage" for k, _ in out):
+            out.append(("stage", resolve_stage(fields)))
+        if not any(k == "integrity" for k, _ in out):
+            out.append(("integrity", resolve_integrity(fields)))
     return out
 
 
@@ -147,23 +254,33 @@ def resolve_backup_type(fields: list[tuple[str, str]], headline: str) -> str:
         return "Off-site S3"
     if "dump" in keys or "local" in headline.lower():
         return "Local PVC"
+    if is_document_backup(headline, fields):
+        return "Document backup"
     return "Database backup"
 
 
-def build_subject(ok: bool, subject_tail: str) -> str:
+def build_subject(ok: bool, subject_tail: str, headline: str = "", fields: list[tuple[str, str]] | None = None) -> str:
+    kind = backup_kind_label(headline or subject_tail, fields or [])
+    env_name = notify_environment()
     if ok:
-        return "[StayLedger][Production] Database backup succeeded"
-    return "[StayLedger][Production][ACTION REQUIRED] Database backup failed"
+        return f"[StayLedger][{env_name}] {kind} succeeded"
+    return f"[StayLedger][{env_name}][ACTION REQUIRED] {kind} failed"
 
 
-def build_summary(ok: bool, backup_type: str) -> str:
+def build_summary(ok: bool, backup_type: str, headline: str = "", fields: list[tuple[str, str]] | None = None) -> str:
+    doc = is_document_backup(headline, fields or [])
+    env_word = notify_environment().lower()
     if ok:
+        if doc:
+            return f"Guest document {env_word} backup was uploaded to off-site S3 successfully."
         if "S3" in backup_type:
-            return "PostgreSQL production backup was uploaded to off-site S3 successfully."
-        return "PostgreSQL production backup completed successfully on local storage."
+            return f"PostgreSQL {env_word} backup was uploaded to off-site S3 successfully."
+        return f"PostgreSQL {env_word} backup completed successfully on local storage."
+    if doc:
+        return f"The guest document {env_word} backup failed before or during upload to off-site storage."
     if "S3" in backup_type:
-        return "The PostgreSQL production backup failed before or during upload to off-site storage."
-    return "The PostgreSQL production backup failed on the local backup path."
+        return f"The PostgreSQL {env_word} backup failed before or during upload to off-site storage."
+    return f"The PostgreSQL {env_word} backup failed on the local backup path."
 
 
 def failure_actions() -> list[str]:
@@ -176,16 +293,23 @@ def failure_actions() -> list[str]:
 
 
 def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
-    enriched = enrich_fields(fields)
+    enriched = enrich_fields(fields, headline, ok)
     backup_type = resolve_backup_type(enriched, headline)
+    kind = backup_kind_label(headline, enriched)
     if not any(k == "backup_type" for k, _ in enriched):
         enriched.insert(2, ("backup_type", backup_type))
 
+    env_name = notify_environment()
     accent = SUCCESS if ok else ERROR
     badge_bg = "#DCFCE7" if ok else "#FEE2E2"
     badge_fg = SUCCESS if ok else ERROR
-    badge_text = "Backup succeeded" if ok else "Backup failed — action required"
-    summary = build_summary(ok, backup_type)
+    badge_text = "Backup succeeded" if ok else "Backup failed - action required"
+    summary = build_summary(ok, backup_type, headline, enriched)
+    footer = (
+        f"Automated operational notification for StayLedger {env_name.lower()} backups "
+        "(Postgres local PVC, Postgres S3 off-node, and guest documents S3). "
+        "Times are UTC unless noted."
+    )
 
     row_html: list[str] = []
     for i, (k, v) in enumerate(enriched):
@@ -250,7 +374,9 @@ def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
         '<meta name="color-scheme" content="light only">'
         '<meta name="supported-color-schemes" content="light">'
-        "<title>StayLedger database backup</title>"
+        "<title>StayLedger "
+        + html.escape(kind.lower())
+        + "</title>"
         "<!--[if mso]><style>body,table,td{font-family:Arial,Helvetica,sans-serif!important;}</style><![endif]-->"
         "</head>"
         '<body style="margin:0;padding:0;background:'
@@ -288,12 +414,14 @@ def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
         + FONT_DISPLAY
         + ";font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:"
         + CYAN
-        + ';font-weight:600;margin-top:10px;">Production infrastructure</div>'
+        + f';font-weight:600;margin-top:10px;">{env_name} infrastructure</div>'
         '<h1 style="margin:8px 0 0;font-family:'
         + FONT_DISPLAY
         + ";font-size:22px;line-height:1.3;color:"
         + WHITE
-        + ';font-weight:700;">Database backup</h1>'
+        + ';font-weight:700;">'
+        + html.escape(kind)
+        + "</h1>"
         '<p style="margin:14px 0 0;"><span style="display:inline-block;background:'
         + badge_bg
         + ";color:"
@@ -301,7 +429,7 @@ def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
         + ";border:1px solid "
         + accent
         + ';font-size:12px;font-weight:700;letter-spacing:0.04em;padding:6px 12px;border-radius:999px;">'
-        + ("✓ " if ok else "! ")
+        + ("&#10003; " if ok else "! ")
         + badge_text
         + "</span></p></div></td></tr>"
         '<tr><td style="padding:28px 24px;background:'
@@ -337,10 +465,12 @@ def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
         + GRAY500
         + ";font-family:"
         + FONT
-        + ';">Automated operational notification for StayLedger Postgres backups (local PVC and S3 off-node). Times are UTC unless noted.</p>'
+        + ';">'
+        + html.escape(footer)
+        + "</p>"
         '<p style="margin:14px 0 0;font-size:12px;color:'
         + NAVY
-        + ';text-align:center;opacity:0.45;">© '
+        + ';text-align:center;opacity:0.45;">&#169; '
         + str(year)
         + " StayLedger</p>"
         "</td></tr></table></td></tr></table></body></html>"
@@ -348,14 +478,15 @@ def build_html(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
 
 
 def build_text(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
-    enriched = enrich_fields(fields)
+    enriched = enrich_fields(fields, headline, ok)
     backup_type = resolve_backup_type(enriched, headline)
+    kind = backup_kind_label(headline, enriched)
     lines = [
         "StayLedger",
-        "Database backup",
-        "Status: " + ("succeeded" if ok else "FAILED — action required"),
+        kind,
+        "Status: " + ("succeeded" if ok else "FAILED - action required"),
         "",
-        build_summary(ok, backup_type),
+        build_summary(ok, backup_type, headline, enriched),
         headline,
         "",
     ]
@@ -367,7 +498,10 @@ def build_text(ok: bool, headline: str, fields: list[tuple[str, str]]) -> str:
         for action in failure_actions():
             lines.append("- " + action)
     lines.append("")
-    lines.append("Automated operational notification for StayLedger Postgres backups. Times are UTC.")
+    lines.append(
+        f"Automated operational notification for StayLedger {notify_environment().lower()} backups "
+        "(Postgres local/S3 and guest documents S3). Times are UTC."
+    )
     return "\n".join(lines)
 
 
@@ -402,7 +536,7 @@ def main() -> int:
     fields = parse_fields(body)
 
     msg = EmailMessage()
-    msg["Subject"] = build_subject(ok, subject_tail)
+    msg["Subject"] = build_subject(ok, subject_tail, headline, fields)
     msg["From"] = from_addr
     msg["To"] = to_addr
     msg.set_content(build_text(ok, headline, fields))

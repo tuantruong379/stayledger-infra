@@ -1,68 +1,83 @@
-# BK-4 — Off-node backup copy (S3-compatible, recommended option).
-#
-# STATUS: LIVE — verified working end-to-end 2026-06-30. Runs daily at 15:00 UTC (22:00
-# Vietnam time, owner-requested slot — ~13h after the local pg_dump at 19:00 UTC same prior
-# cycle / 02:00 Vietnam), uploads the latest dump to object storage, verifies it exists, and
-# prunes old remote copies. Monitored by the `BackupOffNodeCopyMissing` alert.
+# BK-4 — Off-node backup copy (S3-compatible) for staging PostgreSQL.
+# Schedule: 23:00 Asia/Ho_Chi_Minh (after local dump at 22:00 and docs at 22:30).
+# Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
 #
 # Prerequisites:
-#   1. BK-3 done (local backup operational — there must be a dump on the backup PV to copy).
-#   2. Create the Secret (owner-provided values; example keys below):
-#        kubectl create secret generic backup-offnode-s3 -n stayledger-staging \
-#          --from-literal=S3_ENDPOINT=https://s3.<region>.amazonaws.com \
-#          --from-literal=S3_BUCKET=<bucket> \
-#          --from-literal=S3_PREFIX=stayledger/staging/postgres/ \
-#          --from-literal=S3_ACCESS_KEY_ID=<key> \
-#          --from-literal=S3_SECRET_ACCESS_KEY=<secret> \
-#          --from-literal=RETENTION_DAYS=30
-#      IMPORTANT (AWS S3 only): S3_ENDPOINT must be the GENERIC regional endpoint
-#      (https://s3.<region>.amazonaws.com), NOT a bucket-specific vhost URL. mc always expects
-#      `alias/bucket/key...` addressing; combined with `mc alias set ... --path on` (forced
-#      path-style, in the script below) this is the only combination that's consistently
-#      correct. Both alternatives were tried and are broken: a generic endpoint with mc's
-#      *auto* path/virtual-style detection silently promotes the Host to virtual-hosted while
-#      *also* keeping the bucket in the path (doubles the bucket into the object key); a
-#      bucket-vhost endpoint makes mc misinterpret the first segment of S3_PREFIX as a second,
-#      nonexistent "bucket". In both broken cases `mc cp` reports success (because S3 resolves
-#      the real bucket from the Host header and writes whatever full path it's given as the
-#      key) but `mc stat`/`mc find` then fail with a false "key does not exist", since their
-#      list/stat path-splitting logic is what's actually wrong — verified via `mc --debug`.
-#   3. kubectl apply -f postgres-backup-offnode-cronjob.yaml
-#   4. kubectl create job -n stayledger-staging --from=cronjob/stayledger-postgres-backup-offnode offnode-verify
-#      → confirm logs show upload + remote verification OK; then BackupOffNodeCopyMissing resolves.
+#   1. Local backup CronJob + PVC applied; at least one dump on PVC
+#   2. Secret backup-offnode-s3 present
+#   3. ..\production\apply-backup-notify.ps1 -Namespace stayledger-staging -Environment staging
+#   4. kubectl apply -f postgres-backup-offnode-cronjob.yaml
+#
+# IMPORTANT (AWS S3): S3_ENDPOINT must be https://s3.<region>.amazonaws.com
+# (generic regional) with mc --path on. Do not use bucket vhost URLs.
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: stayledger-postgres-backup-offnode-script
   namespace: stayledger-staging
-  labels: { app: stayledger-postgres, component: database-backup-offnode }
+  labels:
+    app: stayledger-postgres
+    component: database-backup-offnode
+    environment: staging
 data:
   offnode.sh: |
     #!/bin/sh
+    # Upload latest dump to S3, then signal notify sidecar via /shared/*.
     set -eu
+    SHARED="${SHARED_DIR:-/shared}"
+    mkdir -p "${SHARED}"
     BACKUP_DIR=/backup
     RETENTION_DAYS="${RETENTION_DAYS:-30}"
+    STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    NAME=""
+    REMOTE_KEY=""
+
+    finish() {
+      ec=$?
+      echo "${ec}" > "${SHARED}/status"
+      if [ "${ec}" -eq 0 ]; then
+        echo "postgres S3 backup ${NAME}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres S3 (off-node) backup SUCCEEDED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "object=s3://${S3_BUCKET}/${REMOTE_KEY}"
+          echo "retention_days=${RETENTION_DAYS}"
+          echo "environment=Staging"
+        } > "${SHARED}/body"
+      else
+        echo "postgres S3 backup FAILED" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres S3 (off-node) backup FAILED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "exit_code=${ec}"
+          echo "bucket=${S3_BUCKET:-unset} prefix=${S3_PREFIX:-unset}"
+          echo "environment=Staging"
+          echo "Check: kubectl logs -n stayledger-staging job/<job-name> -c offnode-copy"
+        } > "${SHARED}/body"
+      fi
+      touch "${SHARED}/done"
+      exit "${ec}"
+    }
+    trap finish EXIT
+
     LATEST=$(ls -1t ${BACKUP_DIR}/stayledger_*.dump 2>/dev/null | head -1 || true)
     if [ -z "${LATEST}" ]; then
-      echo "[offnode] ERROR: no local backup dump found in ${BACKUP_DIR} (run BK-3 local backup first)"; exit 1
+      echo "[offnode] ERROR: no local backup dump found in ${BACKUP_DIR} (run local backup first)"
+      exit 1
     fi
     NAME=$(basename "${LATEST}")
-    echo "[offnode] uploading ${NAME} to ${S3_BUCKET}/${S3_PREFIX} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-    # checksum (recorded alongside for restore-time verification)
-    # NOTE: minio/mc:latest has no awk/cut — use POSIX parameter expansion instead.
+    REMOTE_KEY="${S3_PREFIX}${NAME}"
+    echo "[offnode] uploading ${NAME} to ${S3_BUCKET}/${S3_PREFIX} at ${STARTED_AT}"
     SUM=$(md5sum "${LATEST}")
     echo "${SUM%% *}" > "/tmp/${NAME}.md5"
-    # --path on: force path-style addressing consistently (see prerequisites above for why).
     mc alias set offnode "${S3_ENDPOINT}" "${S3_ACCESS_KEY_ID}" "${S3_SECRET_ACCESS_KEY}" --path on
-    # --quiet: non-interactive script, also avoids mc's progress-bar fsnotify watcher
-    # (which can exhaust inotify instances on constrained nodes).
     mc cp --quiet "${LATEST}" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}"
     mc cp --quiet "/tmp/${NAME}.md5" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}.md5"
-    # verify the remote object exists
     mc stat "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}" >/dev/null
     echo "[offnode] verified remote ${S3_PREFIX}${NAME}"
-    # prune remote copies older than retention
     mc find "offnode/${S3_BUCKET}/${S3_PREFIX}" --name "stayledger_*.dump" --older-than "${RETENTION_DAYS}d" --exec "mc rm {}" || true
     echo "[offnode] done at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ---
@@ -71,36 +86,128 @@ kind: CronJob
 metadata:
   name: stayledger-postgres-backup-offnode
   namespace: stayledger-staging
-  labels: { app: stayledger-postgres, component: database-backup-offnode, environment: staging }
+  labels:
+    app: stayledger-postgres
+    component: database-backup-offnode
+    environment: staging
 spec:
-  schedule: "0 15 * * *"            # 22:00 Vietnam time (owner-requested), ~13h after the local pg_dump (19:00 UTC)
+  schedule: "0 23 * * *"
+  timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 2
   failedJobsHistoryLimit: 2
   jobTemplate:
     spec:
       backoffLimit: 2
-      activeDeadlineSeconds: 600
+      activeDeadlineSeconds: 900
       template:
+        metadata:
+          labels:
+            app: stayledger-postgres
+            component: database-backup-offnode
+            environment: staging
         spec:
           restartPolicy: OnFailure
-          nodeSelector: { kubernetes.io/hostname: hkk8s-hub-master }
-          securityContext: { runAsNonRoot: true, runAsUser: 999, runAsGroup: 999, fsGroup: 999, seccompProfile: { type: RuntimeDefault } }
+          nodeSelector:
+            kubernetes.io/hostname: hkk8s-hub-master
+          securityContext:
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: offnode-copy
               image: minio/mc:latest
               command: ["/bin/sh", "/scripts/offnode.sh"]
               env:
-                - { name: HOME, value: /tmp }
+                - name: HOME
+                  value: /tmp
+                - name: SHARED_DIR
+                  value: /shared
               envFrom:
-                - secretRef: { name: backup-offnode-s3 }
+                - secretRef:
+                    name: backup-offnode-s3
               volumeMounts:
-                - { name: backup-data, mountPath: /backup, readOnly: true }
-                - { name: script, mountPath: /scripts/offnode.sh, subPath: offnode.sh }
-              securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: false, capabilities: { drop: ["ALL"] } }
-              resources: { requests: { cpu: 50m, memory: 64Mi }, limits: { cpu: 250m, memory: 256Mi } }
+                - name: backup-data
+                  mountPath: /backup
+                  readOnly: true
+                - name: script
+                  mountPath: /scripts/offnode.sh
+                  subPath: offnode.sh
+                - name: shared
+                  mountPath: /shared
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                runAsGroup: 999
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 64Mi
+                limits:
+                  cpu: 250m
+                  memory: 256Mi
+            - name: notify
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Staging
+                - name: BACKUP_NOTIFY_TO
+                  value: platform@stayledger.io
+                - name: EMAIL_FROM
+                  value: noreply@stayledger.io
+                - name: SMTP_HOST
+                  value: email-smtp.ap-southeast-1.amazonaws.com
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-user
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-password
+              command: ["python3", "/scripts/notify.py"]
+              volumeMounts:
+                - name: notify-script
+                  mountPath: /scripts/notify.py
+                  subPath: notify.py
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
           volumes:
             - name: backup-data
-              persistentVolumeClaim: { claimName: stayledger-postgres-backup-pvc }
+              persistentVolumeClaim:
+                claimName: stayledger-postgres-backup-pvc
             - name: script
-              configMap: { name: stayledger-postgres-backup-offnode-script, defaultMode: 0755 }
+              configMap:
+                name: stayledger-postgres-backup-offnode-script
+                defaultMode: 0755
+            - name: notify-script
+              configMap:
+                name: stayledger-backup-notify-script
+                defaultMode: 0755
+            - name: shared
+              emptyDir:
+                medium: Memory
+                sizeLimit: 8Mi

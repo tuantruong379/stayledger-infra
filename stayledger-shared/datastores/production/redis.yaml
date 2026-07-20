@@ -105,13 +105,14 @@ spec:
         - name: redis-config
           mountPath: /usr/local/etc/redis/redis.conf
           subPath: redis.conf
+        # Live ~13m CPU / ~11Mi; request was oversized vs PMS Redis working set.
         resources:
           requests:
-            memory: "256Mi"
-            cpu: "100m"
+            memory: "128Mi"
+            cpu: "50m"
           limits:
-            memory: "1Gi"
-            cpu: "500m"
+            memory: "512Mi"
+            cpu: "250m"
         livenessProbe:
           exec:
             command: ["redis-cli", "ping"]

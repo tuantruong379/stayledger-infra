@@ -1,0 +1,32 @@
+# CAP-01: live steady ~310–350m CPU. Request 400m avoids throttle + Lens warnings;
+# limit 750m (not 1 CPU) so a stuck rollout cannot peg the node. HPA maxReplicas=1.
+# Probe timeout 15s: python readiness exec exceeds 6s when CFS-throttled.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: webhook-worker
+          resources:
+            requests:
+              cpu: "400m"
+              memory: "192Mi"
+            limits:
+              cpu: "750m"
+              memory: "768Mi"
+          readinessProbe:
+            exec:
+              command:
+                [
+                  "/venv/bin/python",
+                  "-c",
+                  "from app.observability.health_checks import check_worker_readiness; import sys; sys.exit(0 if check_worker_readiness().get('ok') else 1)",
+                ]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 15
+            failureThreshold: 6

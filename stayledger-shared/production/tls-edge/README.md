@@ -16,3 +16,9 @@
 # Cloudflare (orange cloud) + HTTP-01:
 # - SSL/TLS mode: Full or Full (strict) after a real cert is Ready
 # - "Always Use HTTPS" can break ACME HTTP-01 — leave off until Ready, or use DNS-01
+#
+# 5. (stayledger single-node) Prefer IPv4 for ACME self-checks when Cloudflare AAAA
+#    is unreachable from the node:
+#    kubectl --context stayledger -n cert-manager patch deploy cert-manager --type merge \
+#      --patch-file stayledger-shared/production/tls-edge/cert-manager-hostaliases-patch.yaml
+#    kubectl --context stayledger -n cert-manager rollout status deploy/cert-manager

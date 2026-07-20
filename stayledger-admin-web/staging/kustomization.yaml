@@ -14,7 +14,7 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging rebuild 2026-07-18 — AI Center UX remediation (release/1.2.31)
+# Staging rebuild 2026-07-20 — local working-tree rebuild
 images:
   - name: putin111/stayledger-admin-web
     newTag: staging-1d8e6469
