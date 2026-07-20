@@ -14,10 +14,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging rebuild 2026-07-20 — local working-tree rebuild
+# Admin-web release/1.2.33 (d6fda35) — Phase 0–2 UI/UX polish
 images:
   - name: putin111/stayledger-admin-web
-    newTag: staging-1d8e6469
+    newTag: "1.2.33"
 
 patches:
   - path: patches/deployment-staging.yaml

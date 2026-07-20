@@ -15,7 +15,7 @@ spec:
   template:
     metadata:
       labels:
-        version: "f0565de"
+        version: "1.2.33"
     spec:
       containers:
         - name: admin-web

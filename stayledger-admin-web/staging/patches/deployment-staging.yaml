@@ -8,4 +8,4 @@ spec:
     metadata:
       labels:
         # Align pod version label with deployed admin-web image tag
-        version: "staging-20260720a"
+        version: "1.2.33"
