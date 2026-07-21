@@ -46,11 +46,11 @@ patches:
 
 # Pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
 # Match post-base-transform image names, then remap to published repos.
-# 2026-07-20: promote RAG precision + X2 promo-scope fixes validated on staging.
+# 2026-07-20: score90 — promo% sync, M2/I1 multiturn, conditional rerank, Ops P95 truth.
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    newTag: "prod-20260720-ragprec2"
+    newTag: "score90-20260720"
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
-    newTag: "25f29a0"
+    newTag: "b7f47aa"

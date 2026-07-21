@@ -94,23 +94,25 @@ spec:
               cp -r /app/.next/. /next-patched/
               # Strip /api or /api-proxy suffix so CSP connect-src uses the page origin.
               API_ORIGIN=$(echo "${NEXT_PUBLIC_API_URL}" | sed -E 's|/api(-proxy)?$||')
-              LEGACY_API_URLS="http://10.89.1.40:30010/api-proxy http://10.89.1.40:30010/api http://10.89.1.40:30010 https://api-staging.stayledger.tekcent.com/api https://admin-staging.stayledger.tekcent.com/api-proxy"
-              LEGACY_BOOKING_URLS="http://10.89.1.40:30010 https://admin-staging.stayledger.tekcent.com https://booking-staging.stayledger.tekcent.com"
-              find /next-patched -type f -name "*.js" -print0 | \
+              LEGACY_API_URLS="http://10.89.1.40:30010/api-proxy http://10.89.1.40:30010/api http://10.89.1.40:30010 https://api-staging.stayledger.tekcent.com/api https://admin-staging.stayledger.tekcent.com/api-proxy https://stg-app.stayledger.io/api-proxy https://stg-api.stayledger.io/api-proxy https://stg-api.stayledger.io/api https://stg-app.stayledger.io/api"
+              LEGACY_BOOKING_URLS="http://10.89.1.40:30010 https://admin-staging.stayledger.tekcent.com https://booking-staging.stayledger.tekcent.com https://stg-app.stayledger.io"
+              find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
                 xargs -0 sed -i \
                   -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
                   -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
               for legacy in $LEGACY_API_URLS; do
-                find /next-patched -type f -name "*.js" -print0 | \
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
                   xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_API_URL}|g"
               done
               for legacy in $LEGACY_BOOKING_URLS; do
-                find /next-patched -type f -name "*.js" -print0 | \
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
                   xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
               done
               find /next-patched -name "routes-manifest.json" -print0 | \
                 xargs -0 sed -i \
                   -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
                   -e "s|https://placeholder-api.invalid|${API_ORIGIN}|g" \
                   -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g" \
                   -e "s|script-src 'self'|script-src 'self' 'unsafe-inline'|g"
@@ -167,6 +169,18 @@ spec:
                 configMapKeyRef:
                   name: stayledger-admin-web-config
                   key: NODE_ENV
+            # Needed by server-side code (SSR/route handlers) to avoid falling back
+            # to http://localhost:3001/api in production.
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_API_URL
+            - name: NEXT_PUBLIC_BOOKING_WEB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_BOOKING_WEB_URL
             - name: INTERNAL_API_URL
               valueFrom:
                 configMapKeyRef:

@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging rebuild 2026-07-20 — local working-tree rebuild (API + AI worker)
+# Match production release score90 2026-07-20 (discountPercent on promotions/available for AI catalog sync)
 images:
   - name: putin111/stayledger-api
-    newTag: staging-09e48811
+    newTag: score90-20260720
 
 patches:
   - path: patches/deployment-staging.yaml

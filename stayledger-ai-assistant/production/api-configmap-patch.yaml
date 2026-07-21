@@ -29,6 +29,8 @@ data:
   # Canary: LLM listwise rerank for Cupid only (same as staging validation).
   FEATURE_RERANKER_ENABLED: "1"
   RAG_RERANK_TENANT_ALLOWLIST: "cupid_hotel"
+  # Skip Azure listwise rerank when top vector hit is already confident (latency).
+  RAG_RERANK_SKIP_VECTOR_SCORE: "0.82"
   # Bounded multi-turn history in RAG messages (Redis envelope).
   AI_MULTITURN_MEMORY_ENABLED: "1"
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"

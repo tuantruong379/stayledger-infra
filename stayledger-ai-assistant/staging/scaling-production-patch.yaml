@@ -1,0 +1,120 @@
+# Single-node production sizing for stayledger k3s cluster.
+# Keep API/frontend at 1 replica baseline: node CPU requests are tight with PMS + observability.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+# Baseline 1 replica; HPA can add one more under load after CPU requests were
+# lowered (api 200m / workers 250m). max=2 stays within single-node budget and
+# still leaves headroom for nightly backup Jobs (~120–200m).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  minReplicas: 1
+  maxReplicas: 2
+
+---
+# Workers stay max=1 — a 2nd channel/webhook pod still risks starving PMS backups.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 85
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Avoid maxUnavailable:0 + maxSurge:1 double-running workers on one node.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0

@@ -8,7 +8,7 @@ spec:
     metadata:
       labels:
         # Align pod version label with deployed API image tag
-        version: "staging-cb276d02"
+        version: "score90-20260720"
     spec:
       containers:
         - name: api

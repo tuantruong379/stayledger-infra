@@ -33,11 +33,16 @@ $ErrorActionPreference = 'Stop'
 $InfraRoot = Resolve-Path (Join-Path $PSScriptRoot '..')
 
 function Invoke-Kubectl {
-  param([string[]]$Args)
-  $display = @('kubectl', "--context=$KubectlContext") + $Args
+  # Do not name the parameter $Args — it collides with PowerShell's automatic $args
+  # and silently drops real kubectl arguments (script prints help and exits 0).
+  param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$KubectlArgs
+  )
+  $display = @('kubectl', "--context=$KubectlContext") + $KubectlArgs
   Write-Host ">> $($display -join ' ')" -ForegroundColor DarkGray
   if ($DryRun) { return }
-  & kubectl --context=$KubectlContext @Args
+  & kubectl --context=$KubectlContext @KubectlArgs
   if ($LASTEXITCODE -ne 0) { throw "kubectl failed: $($display -join ' ')" }
 }
 

@@ -16,10 +16,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Release image 2026-07-16 (API bd2970c MIG-01 ready check / admin-web f0565de INT-01)
+# Promote score90 2026-07-20 (discountPercent on promotions/available for AI catalog sync)
 images:
   - name: putin111/stayledger-api
-    newTag: bd2970c
+    newTag: score90-20260720
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

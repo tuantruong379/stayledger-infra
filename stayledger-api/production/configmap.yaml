@@ -22,6 +22,7 @@ data:
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-secrets.
   EMAIL_ENABLED: "true"
   EMAIL_FROM: "noreply@stayledger.io"
+  EMAIL_FROM_NAME: "StayLedger"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "465"
   SMTP_SECURE: "true"

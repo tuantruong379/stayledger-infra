@@ -20,13 +20,14 @@ patches:
   # CAP-01: probe timeout 15s — Redis+Postgres readiness often ~8–12s under hub load.
   - path: channel-worker-resources-patch.yaml
   - path: webhook-worker-resources-patch.yaml
+  # Match production single-node replica + HPA caps (prevents worker scale-out storm).
+  - path: scaling-production-patch.yaml
 
-# Match post-base-transform image names (base kustomization renames to stayledger-*),
-# then pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
+# Match production release score90 2026-07-20 (promo% sync, M2/I1 multiturn, conditional rerank).
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    newTag: "stg-20260720-x2promo3"
+    newTag: "score90-20260720"
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
-    newTag: "stg-20260720a"
+    newTag: "b7f47aa"
