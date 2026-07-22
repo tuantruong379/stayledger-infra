@@ -1,0 +1,25 @@
+# Keep recovery freeze on mutating workers after overlay apply.
+# Re-enable only via Phase 9 controlled sequence.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-kb-embed-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0

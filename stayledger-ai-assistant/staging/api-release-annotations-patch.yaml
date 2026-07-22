@@ -5,8 +5,8 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7fb3a60fa7409e7bc00198c1b0536bc5f0929692"
-    stayledger.io/image-digest: "sha256:c9271f94544b59aa6927bc668e052f0561cb9f878a7269884704d21285e32d64"
+    stayledger.io/git-sha: "7177a689985e39809e099eb948e5c8f7d82e3b9f"
+    stayledger.io/image-digest: "sha256:798eb9fded60bf7f9af00443b9931ccfcb0c69c43a2abf4cb01662a3331e4f6f"
     stayledger.io/schema-head: "0048"
-    stayledger.io/rollback-digest: "sha256:4c2669edf8a210e7d71f62e7ac2225427218e3d91290ba7414b7789a30216da4"
-    kubernetes.io/change-cause: "Deploy 7fb3a60 isolation/DDL/analytics/worker remediation"
+    stayledger.io/rollback-digest: "sha256:c9271f94544b59aa6927bc668e052f0561cb9f878a7269884704d21285e32d64"
+    kubernetes.io/change-cause: "Deploy 7177a68 metrics recompute RLS GUC fix"
