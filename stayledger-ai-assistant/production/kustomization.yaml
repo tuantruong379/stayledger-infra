@@ -46,11 +46,11 @@ patches:
 
 # Pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
 # Match post-base-transform image names, then remap to published repos.
-# 2026-07-20: score90 — promo% sync, M2/I1 multiturn, conditional rerank, Ops P95 truth.
+# 2026-07-21: fb-book-c — deterministic branch-count FAQ for "mấy chi nhánh" (FB/webhook parity).
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    newTag: "score90-20260720"
+    newTag: "fb-book-20260721c"
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     newTag: "b7f47aa"

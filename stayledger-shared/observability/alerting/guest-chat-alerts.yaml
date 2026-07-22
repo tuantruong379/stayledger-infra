@@ -1,0 +1,45 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-guest-chat-alerts
+  namespace: observability
+  labels:
+    release: kps
+    app: stayledger-api
+    component: guest-chat
+spec:
+  groups:
+    - name: stayledger_guest_chat
+      rules:
+        - alert: GuestChatBlockedSpike
+          expr: increase(guest_chat_requests_total{outcome="blocked"}[15m]) > 50
+          for: 10m
+          labels:
+            severity: warning
+            component: guest_chat
+          annotations:
+            summary: Guest chat blocked request spike
+            description: More than 50 blocked guest chat requests in 15 minutes.
+
+        - alert: GuestChatEnabledNoAcceptedTraffic
+          expr: |
+            increase(guest_chat_requests_total{outcome="accepted"}[2h]) == 0
+            and increase(module_entitlement_total{module="AI_GUEST_CHAT"}[2h]) > 0
+          for: 2h
+          labels:
+            severity: warning
+            component: guest_chat
+          annotations:
+            summary: Guest chat enabled but no accepted traffic
+            description: AI_GUEST_CHAT entitlement activity without accepted guest chat requests.
+
+        - alert: GuestChatRagSearchFailures
+          expr: increase(ai_rag_search_total{status!="ok"}[30m]) > 10
+          for: 15m
+          labels:
+            severity: warning
+            component: guest_chat_rag
+          annotations:
+            summary: RAG search errors elevated
+            description: Guest Chat knowledge retrieval errors increased in the last 30 minutes.
