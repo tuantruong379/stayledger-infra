@@ -48,6 +48,9 @@ resources:
   # Manual/operator Job — apply when running a one-shot backfill (not always running).
   - app/hotel-assistant-kb-embed-backfill-job.yaml
   - app/hotel-assistant-metrics-aggregator.yaml
+  # Singleton PMS workers (replicas=0 until controlled re-enable). Keep API PMS_WORKERS_IN_API=0.
+  - app/hotel-assistant-pms-catalog-sync.yaml
+  - app/hotel-assistant-pms-outbox.yaml
   - app/rag-eval-cronjob.yaml
   # --- Frontend (Next.js admin dashboard) ---
   - app/hotel-assistant-frontend-configmap.yaml

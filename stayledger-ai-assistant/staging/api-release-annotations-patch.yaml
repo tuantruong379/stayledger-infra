@@ -1,0 +1,12 @@
+# Pin release identity annotations for staging digest rollout.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-api
+  namespace: stayledger-ai-assistant
+  annotations:
+    stayledger.io/git-sha: "7fb3a60fa7409e7bc00198c1b0536bc5f0929692"
+    stayledger.io/image-digest: "sha256:c9271f94544b59aa6927bc668e052f0561cb9f878a7269884704d21285e32d64"
+    stayledger.io/schema-head: "0048"
+    stayledger.io/rollback-digest: "sha256:4c2669edf8a210e7d71f62e7ac2225427218e3d91290ba7414b7789a30216da4"
+    kubernetes.io/change-cause: "Deploy 7fb3a60 isolation/DDL/analytics/worker remediation"
