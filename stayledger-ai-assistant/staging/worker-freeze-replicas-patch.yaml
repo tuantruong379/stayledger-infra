@@ -23,3 +23,20 @@ metadata:
   namespace: stayledger-ai-assistant
 spec:
   replicas: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-catalog-sync
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-outbox
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0

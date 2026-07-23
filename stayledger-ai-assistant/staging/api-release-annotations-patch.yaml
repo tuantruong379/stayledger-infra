@@ -5,8 +5,9 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7177a689985e39809e099eb948e5c8f7d82e3b9f"
-    stayledger.io/image-digest: "sha256:798eb9fded60bf7f9af00443b9931ccfcb0c69c43a2abf4cb01662a3331e4f6f"
+    stayledger.io/git-sha: "6fdfb93347cc511eb1ae90a8a9c0d39ea52e5a52"
+    stayledger.io/image-digest: "sha256:ad03a7a2afbe075e8f6dc62dcf1be6dea8c9cacf2d9bb0131acb3c8a321d36cf"
     stayledger.io/schema-head: "0048"
-    stayledger.io/rollback-digest: "sha256:c9271f94544b59aa6927bc668e052f0561cb9f878a7269884704d21285e32d64"
-    kubernetes.io/change-cause: "Deploy 7177a68 metrics recompute RLS GUC fix"
+    stayledger.io/rollback-digest: "sha256:d0b137fe99ecdc73cb4609fc504655a5b8431adaf496018548753f15315209d9"
+    kubernetes.io/change-cause: "Deploy committed FORCE-RLS hotfix 6fdfb93 (tenant config/channel secrets/usage_events)"
+    stayledger.io/hotfix: "tenant-config-rls-usage-events-20260723"
