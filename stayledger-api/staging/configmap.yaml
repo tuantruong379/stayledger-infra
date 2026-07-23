@@ -28,6 +28,11 @@ data:
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "465"
   SMTP_SECURE: "true"
+  # Reasoning (Cycle 8): SES sandbox rejects unverified *@stayledger.test and burns daily quota
+  # when booking fan-out emails every fixture user. Allow only verified ops domains; suppress
+  # synthetic fixture suffixes. Production overlay leaves these unset (no allowlist).
+  EMAIL_RECIPIENT_ALLOWLIST_DOMAINS: "flownexa.ai,stayledger.io"
+  EMAIL_SUPPRESS_RECIPIENT_SUFFIXES: "@stayledger.test"
   APP_ENV: "staging"
   THROTTLE_STORAGE: "redis"
   # k6 baseline (~20 VUs) needs headroom above default 100 req/min per client IP.
