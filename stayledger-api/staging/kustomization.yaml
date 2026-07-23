@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 3 staging 2026-07-23 — c69be7c fail-closed dates/JWT/quota; digest sha256:1f57bfd4…
+# Cycle 3 staging 2026-07-23 — 0b0ceaa rawBody idempotency hash; digest sha256:21b66137…
 images:
   - name: putin111/stayledger-api
-    newTag: staging-c69be7c
+    newTag: staging-0b0ceaa
 
 patches:
   - path: patches/deployment-staging.yaml
