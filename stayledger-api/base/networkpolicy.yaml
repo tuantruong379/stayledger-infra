@@ -34,6 +34,17 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
+    # StayLedger AI Assistant — JWKS fetch, External API quote/draft, aggregate callbacks
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-api
+      ports:
+        - protocol: TCP
+          port: 3001
     # NodePort traffic from kube-proxy (direct staging access via port 30011)
     - ports:
         - protocol: TCP

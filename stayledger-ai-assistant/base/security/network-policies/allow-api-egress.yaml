@@ -33,6 +33,27 @@ spec:
       port: 4318
     - protocol: TCP
       port: 4317
+  # Reasoning: ClusterIP PMS for JWKS + External API (egress except 10/8 previously blocked this).
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger-staging
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 3001
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 3001
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0
