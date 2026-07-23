@@ -4,7 +4,8 @@ metadata:
   name: stayledger-alertmanager
   namespace: observability
   labels:
-    release: kube-prometheus-stack
+    release: kps
+    app: stayledger
 spec:
   route:
     receiver: slack-warnings
@@ -23,8 +24,10 @@ spec:
     - name: slack-warnings
       slackConfigs:
         - apiURL:
-            name: alertmanager-slack-secret
-            key: webhook-url
+            # Reasoning: hub cluster already has `alertmanager-secrets` with
+            # `slack_api_url`; do not invent a second secret name that never existed.
+            name: alertmanager-secrets
+            key: slack_api_url
           channel: "#stayledger-alerts"
           title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
           text: |
@@ -40,8 +43,8 @@ spec:
     - name: slack-critical
       slackConfigs:
         - apiURL:
-            name: alertmanager-slack-secret
-            key: webhook-url
+            name: alertmanager-secrets
+            key: slack_api_url
           channel: "#stayledger-oncall"
           title: ':rotating_light: [CRITICAL] {{ .CommonLabels.alertname }}'
           text: |
@@ -53,6 +56,5 @@ spec:
             {{ end }}
           sendResolved: true
 
-# Create the Slack webhook secret:
-# kubectl create secret generic alertmanager-slack-secret -n observability \
-#   --from-literal=webhook-url=https://hooks.slack.com/services/T.../B.../...
+# Slack webhook lives in secret `alertmanager-secrets` key `slack_api_url` (observability ns).
+# Do not commit webhook URLs.
