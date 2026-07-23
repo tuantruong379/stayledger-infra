@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 3 staging 2026-07-23 — e8d6a7d skip Redis blind replay on ExternalReplaySensitive; digest sha256:65b526e6…
+# Cycle 6 staging 2026-07-23 — c349d43 register guest_chat Prometheus counters; digest sha256:96583316…
 images:
   - name: putin111/stayledger-api
-    newTag: staging-e8d6a7d
+    newTag: staging-c349d43
 
 patches:
   - path: patches/deployment-staging.yaml
