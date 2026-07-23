@@ -1,0 +1,120 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: iso-restore-20260723t0325
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/purpose: isolated-restore-drill
+  annotations:
+    stayledger.io/purpose: "Isolated restore of hotel_ops_2026-07-23.dump into hotel_ops_iso_20260723 — never touches live hotel_ops"
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: postgres-backup
+        app.kubernetes.io/component: database-backup
+        stayledger.io/purpose: isolated-restore-drill
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: restore
+          image: postgres:16
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: PGHOST
+              value: postgres
+            - name: PGPORT
+              value: "5432"
+            - name: SOURCE_DUMP
+              value: /backup/hotel_ops_2026-07-23.dump
+            - name: TARGET_DB
+              value: hotel_ops_iso_20260723
+            - name: EXPECTED_SHA256
+              value: 4d27ddbe866825a6c6ef4695c5557136d24732b69b951571dca576e9d5f94bab
+          command: ["/bin/bash", "-lc"]
+          args:
+            - |
+              set -euo pipefail
+              START=$(date +%s)
+              echo "[iso] listing dump"
+              ls -lh "$SOURCE_DUMP"
+              test -s "$SOURCE_DUMP"
+              ACTUAL=$(sha256sum "$SOURCE_DUMP" | awk '{print $1}')
+              echo "[iso] sha256=$ACTUAL"
+              test "$ACTUAL" = "$EXPECTED_SHA256"
+              case "$TARGET_DB" in
+                hotel_ops|postgres|template0|template1)
+                  echo "REFUSE: TARGET_DB=$TARGET_DB is protected" >&2; exit 3 ;;
+              esac
+              echo "[iso] drop/create isolated DB (not hotel_ops)"
+              psql -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${TARGET_DB}' AND pid <> pg_backend_pid();" || true
+              psql -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ${TARGET_DB};"
+              psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${TARGET_DB} TEMPLATE template0;"
+              echo "[iso] pg_restore into ${TARGET_DB}"
+              set +e
+              pg_restore -d "$TARGET_DB" --no-owner --no-acl "$SOURCE_DUMP"
+              rc=$?
+              set -e
+              echo "[iso] pg_restore exit=$rc"
+              psql -d "$TARGET_DB" -v ON_ERROR_STOP=1 -c "SELECT current_database(), (SELECT count(*) FROM information_schema.tables WHERE table_schema='public') AS public_tables;"
+              psql -d "$TARGET_DB" -v ON_ERROR_STOP=1 -c "SELECT version_num FROM alembic_version;"
+              psql -d "$TARGET_DB" -v ON_ERROR_STOP=1 -c "
+              SELECT 'kb_documents_cupid' AS t, count(*)::text FROM kb_documents WHERE tenant_id='cupid_hotel'
+              UNION ALL SELECT 'kb_chunks_cupid', count(*)::text FROM kb_chunks WHERE tenant_id='cupid_hotel' AND deleted_at IS NULL
+              UNION ALL SELECT 'runtime_config_cupid', count(*)::text FROM tenant_runtime_config WHERE tenant_id='cupid_hotel'
+              UNION ALL SELECT 'bookings_cupid', count(*)::text FROM bookings WHERE tenant_id='cupid_hotel'
+              UNION ALL SELECT 'conversations', count(*)::text FROM conversations
+              UNION ALL SELECT 'feedback_null', count(*)::text FROM feedback_item WHERE tenant_id IS NULL
+              UNION ALL SELECT 'channel_bindings', count(*)::text FROM channel_bindings
+              UNION ALL SELECT 'tenants', count(*)::text FROM tenants
+              ORDER BY 1;"
+              END=$(date +%s)
+              echo "[iso] restore_elapsed_s=$((END-START))"
+              echo "[iso] DONE"
+          volumeMounts:
+            - name: backup-data
+              mountPath: /backup
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+      volumes:
+        - name: backup-data
+          persistentVolumeClaim:
+            claimName: postgres-backup
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

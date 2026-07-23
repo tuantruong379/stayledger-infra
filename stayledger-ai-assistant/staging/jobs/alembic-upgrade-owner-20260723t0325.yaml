@@ -25,7 +25,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: alembic-upgrade-owner-TEMPLATE
+  name: alembic-upgrade-owner-20260723t0325
   namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: alembic-upgrade
@@ -57,7 +57,7 @@ spec:
       containers:
         - name: alembic
           # Replace with candidate digest before apply.
-          image: putin111/ai-hotel-assistant@sha256:d0b137fe99ecdc73cb4609fc504655a5b8431adaf496018548753f15315209d9
+          image: putin111/ai-hotel-assistant@sha256:ad03a7a2afbe075e8f6dc62dcf1be6dea8c9cacf2d9bb0131acb3c8a321d36cf
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -105,3 +105,4 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 32Mi
+

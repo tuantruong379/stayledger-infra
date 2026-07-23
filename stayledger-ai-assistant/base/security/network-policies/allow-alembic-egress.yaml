@@ -1,4 +1,5 @@
-# Alembic Job uses HOTEL_OPS_DSN → PgBouncer (not direct postgres).
+# Alembic owner Job prefers direct Postgres (DDL-safe). PgBouncer remains
+# allowed for legacy app-DSN alembic jobs that still target the pooler.
 # DNS egress is covered by allow-egress-dns (namespace-wide).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -12,6 +13,13 @@ spec:
   policyTypes:
   - Egress
   egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: postgres
+    ports:
+    - protocol: TCP
+      port: 5432
   - to:
     - podSelector:
         matchLabels:
