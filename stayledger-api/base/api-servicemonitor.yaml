@@ -1,0 +1,23 @@
+# MON-3: scrape all API pods' /api/metrics (not only ClusterIP single-endpoint
+# additionalScrapeConfigs). Operator-native — takes effect without helm upgrade
+# when Prometheus namespaceSelector includes stayledger-staging.
+#
+# OBS-03: bearer auth must match METRICS_AUTH_TOKEN via stayledger-metrics-auth
+# secret in this namespace (key: token).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stayledger-api
+  labels:
+    release: kps
+spec:
+  selector:
+    matchLabels:
+      app: stayledger-api
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s
+      bearerTokenSecret:
+        name: stayledger-metrics-auth
+        key: token

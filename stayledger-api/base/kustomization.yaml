@@ -14,3 +14,4 @@ resources:
   - guest-documents-pvc.yaml
   - document-backup-offnode-cronjob.yaml
   - ai-worker-servicemonitor.yaml
+  - api-servicemonitor.yaml
