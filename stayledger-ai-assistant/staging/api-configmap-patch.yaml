@@ -70,3 +70,7 @@ data:
   # HAI-005: staging inventory 2026-07-23 — all 5 active tenants have webhook_api_key set in
   # tenant_channel_secrets. Require per-tenant keys; do not change base (other overlays/local).
   WEBHOOK_REQUIRE_TENANT_API_KEY: "1"
+  # Release gate: observe is insufficient — unknown bindings must drop, not enqueue.
+  CHANNEL_BINDING_ENFORCEMENT: "enforce"
+  # Zalo MAC required when channel path is exercised; live delivery remains deferred by scope.
+  ZALO_WEBHOOK_REQUIRE_MAC: "1"

@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "03fa53fafbd87ed8c74c7ebaa026468b1678de35"
-    stayledger.io/git-sha-short: "03fa53f"
-    stayledger.io/image-tag: "release-1.2.38-03fa53f"
-    stayledger.io/image-digest: "sha256:03407521e6ad9067752751903cc9e879db358f621ceed5e831dceef47c0d8001"
+    stayledger.io/git-sha: "c832c0ed6f26fa29b08bb3d7f037920a57405b3f"
+    stayledger.io/git-sha-short: "c832c0e"
+    stayledger.io/image-tag: "closure-p13c-c832c0e-202607231712"
+    stayledger.io/image-digest: "sha256:049f92a5caad635172ff736ddaf76c438c84c4ce42f3192c4b2075b8e0a74103"
     stayledger.io/schema-head: "0049"
-    stayledger.io/rollback-digest: "sha256:f8c419e99cdad7b1fb3c8ba903135ea26de9f4842d1b1c1d1aea73f3985341d6"
-    kubernetes.io/change-cause: "HAI-007/014 fail-closed + WEBHOOK_REQUIRE_TENANT_API_KEY=1 03fa53f"
-    stayledger.io/build-provenance: "local-buildkit-staging-authorized"
+    stayledger.io/rollback-digest: "sha256:03407521e6ad9067752751903cc9e879db358f621ceed5e831dceef47c0d8001"
+    kubernetes.io/change-cause: "WH-AI-002 answerability 0.50 + no citations on abstention"
+    stayledger.io/build-provenance: "local-buildkit-staging-authorized-dirty-tree"
