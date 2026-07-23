@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 6c — PD-OCC-01 occupancy fail-closed (79170bd).
-# Digest: sha256:acd041c5e882b0016f185485353c2ea64c6ee17a83503ff0f2106f2b52ac1516
+# Cycle 6c — XB-MAP lifecycle APIs (350a095).
+# Digest: sha256:4a7fb77648eae0287d1e1e680b9d4515dbd68e1939635ee51b9a68de1783118c
 images:
   - name: putin111/stayledger-api
-    digest: sha256:acd041c5e882b0016f185485353c2ea64c6ee17a83503ff0f2106f2b52ac1516
+    digest: sha256:4a7fb77648eae0287d1e1e680b9d4515dbd68e1939635ee51b9a68de1783118c
 
 patches:
   - path: patches/deployment-staging.yaml
