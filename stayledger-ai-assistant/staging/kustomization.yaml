@@ -17,24 +17,19 @@ patches:
   - path: api-configmap-patch.yaml
   - path: frontend-configmap-patch.yaml
   - path: frontend-deployment-patch.yaml
-  # CAP-01: probe timeout 15s - Redis+Postgres readiness often ~8-12s under hub load.
   - path: channel-worker-resources-patch.yaml
   - path: webhook-worker-resources-patch.yaml
-  # Match production single-node replica + HPA caps (prevents worker scale-out storm).
   - path: scaling-production-patch.yaml
-  # Persist frontend HPA maxReplicas=1 + right-sized requests after 2026-07-23 OOM.
   - path: frontend-hpa-oom-mitigation-patch.yaml
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — clean commit 9078563 (canonical webhook + WH-AI-002).
-# API digest: sha256:a1866dc64a2c9f580f84c29d1ce8c4b085ea39b14c895398d5b72df695cfdc18
-# Frontend unchanged from prior pin.
-# NOTE: local BuildKit authorized for staging closure; CI deferred pre-production.
+# Immutable digest pin — 052d84a history endpoint + WH-AI-002/canonical webhook.
+# API digest: sha256:8dba18e4def212d63689b598dcc8eb4e4db58a275bbfc603ed6bd58a20d5bf77
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:a1866dc64a2c9f580f84c29d1ce8c4b085ea39b14c895398d5b72df695cfdc18
+    digest: sha256:8dba18e4def212d63689b598dcc8eb4e4db58a275bbfc603ed6bd58a20d5bf77
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

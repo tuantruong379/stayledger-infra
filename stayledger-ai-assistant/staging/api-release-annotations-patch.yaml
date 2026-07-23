@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "90785635f965524535a17d6f45a16a17b5e00f16"
-    stayledger.io/git-sha-short: "9078563"
-    stayledger.io/image-tag: "release-1.2.39-9078563"
-    stayledger.io/image-digest: "sha256:a1866dc64a2c9f580f84c29d1ce8c4b085ea39b14c895398d5b72df695cfdc18"
+    stayledger.io/git-sha: "052d84a69cfeb166af57f3fd70dd60ad987525b2"
+    stayledger.io/git-sha-short: "052d84a"
+    stayledger.io/image-tag: "release-1.2.39-052d84a"
+    stayledger.io/image-digest: "sha256:8dba18e4def212d63689b598dcc8eb4e4db58a275bbfc603ed6bd58a20d5bf77"
     stayledger.io/schema-head: "0049"
     stayledger.io/rollback-digest: "sha256:03407521e6ad9067752751903cc9e879db358f621ceed5e831dceef47c0d8001"
-    kubernetes.io/change-cause: "Clean provenance pin 9078563 canonical webhook + WH-AI-002"
+    kubernetes.io/change-cause: "pms_web history + WH-AI-002/canonical webhook 052d84a"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"
