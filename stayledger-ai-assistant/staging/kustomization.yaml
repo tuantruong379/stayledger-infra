@@ -25,14 +25,14 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin for KB embed RLS rebind commit 3afde29.
-# API digest: sha256:5e8efe3e7b7394d428b894d86fe2b75f1d5bf7a449067b7b505a40ed61596fd9
+# Immutable digest pin for catalog promotions soft-fail + guest citations ddfd390.
+# API digest: sha256:9a9e6c1092f00f6ff67f35b774c12d92020f10af014e6681983c835857727f85
 # Frontend unchanged from prior pin.
 # NOTE: local BuildKit authorized for staging closure; CI deferred pre-production.
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:5e8efe3e7b7394d428b894d86fe2b75f1d5bf7a449067b7b505a40ed61596fd9
+    digest: sha256:9a9e6c1092f00f6ff67f35b774c12d92020f10af014e6681983c835857727f85
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

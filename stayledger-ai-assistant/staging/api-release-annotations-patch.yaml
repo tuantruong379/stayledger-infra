@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "3afde29abcfea52375c0574d9c496962a1e8e222"
-    stayledger.io/git-sha-short: "3afde29"
-    stayledger.io/image-tag: "release-1.2.34-3afde29"
-    stayledger.io/image-digest: "sha256:5e8efe3e7b7394d428b894d86fe2b75f1d5bf7a449067b7b505a40ed61596fd9"
+    stayledger.io/git-sha: "ddfd390195a1a7008afa6bafcda96a2b08df95f7"
+    stayledger.io/git-sha-short: "ddfd390"
+    stayledger.io/image-tag: "release-1.2.35-ddfd390"
+    stayledger.io/image-digest: "sha256:9a9e6c1092f00f6ff67f35b774c12d92020f10af014e6681983c835857727f85"
     stayledger.io/schema-head: "0049"
-    stayledger.io/rollback-digest: "sha256:3b290c1d293a552a42c1582d9756255c3696416904531fb8b22e4e3e512cb635"
-    kubernetes.io/change-cause: "KB embed RLS rebind release-1.2.34-3afde29"
+    stayledger.io/rollback-digest: "sha256:5e8efe3e7b7394d428b894d86fe2b75f1d5bf7a449067b7b505a40ed61596fd9"
+    kubernetes.io/change-cause: "catalog promotions soft-fail + guest citations release-1.2.35-ddfd390"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"
