@@ -40,11 +40,11 @@ data:
   # External outbound fail-closed until an approved staging test destination is allowlisted.
   CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "1"
   CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
-  # KB upsert allowlist empty = unrestricted while writers frozen; set during KB canary.
-  RAG_KB_UPSERT_TENANT_ALLOWLIST: ""
+  # KB upsert allowlist — canary tenant only while writers partially thawed.
+  RAG_KB_UPSERT_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2"
   # Phase 8 full staging cutover: pgvector primary for all tenants.
   RAG_RETRIEVAL_BACKEND: "pgvector"
-  RAG_CHUNK_PERSIST: "0"
+  RAG_CHUNK_PERSIST: "1"
   RAG_EMBEDDING_DIMENSIONS: "1536"
   RAG_PGVECTOR_SHADOW_ENABLED: "0"
   RAG_PGVECTOR_TENANT_ALLOWLIST: ""

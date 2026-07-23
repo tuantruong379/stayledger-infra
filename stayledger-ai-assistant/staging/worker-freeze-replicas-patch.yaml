@@ -1,5 +1,6 @@
 # Keep recovery freeze on mutating workers after overlay apply.
-# Re-enable only via Phase 9 controlled sequence.
+# KB embed canary: scale only hotel-assistant-kb-embed-worker to 1.
+# Re-enable other writers only via Phase 9 controlled sequence.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -22,8 +23,7 @@ metadata:
   name: hotel-assistant-kb-embed-worker
   namespace: stayledger-ai-assistant
 spec:
-  replicas: 0
-
+  replicas: 1
 ---
 apiVersion: apps/v1
 kind: Deployment
