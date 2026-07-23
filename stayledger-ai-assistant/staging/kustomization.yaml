@@ -26,13 +26,16 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
 
 # Immutable digest pin for W8/W5/W6 stability commit 8810784.
-# API digest: sha256:ac4407da6aee862341c0fd5a1f3eb4d921512527b816dd5d06ba9738a50d49c6
+# API digest: sha256:350417e4968cdac569b6577b12aa381f9610991861285dba90701ecfa6d8bed3
 # Frontend unchanged from prior pin.
-# NOTE: local BuildKit image — CI workflow_dispatch blocked (gh auth). Not promotion-grade.
+# NOTE: local BuildKit authorized for staging closure; CI deferred pre-production.
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:ac4407da6aee862341c0fd5a1f3eb4d921512527b816dd5d06ba9738a50d49c6
+    digest: sha256:350417e4968cdac569b6577b12aa381f9610991861285dba90701ecfa6d8bed3
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
+
+
+
