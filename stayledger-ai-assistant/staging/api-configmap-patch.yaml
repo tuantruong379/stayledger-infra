@@ -33,7 +33,7 @@ data:
   PMS_CATALOG_SYNC_ENABLED: "0"
   # Canary safety: dry-run until an approved write delta is reviewed.
   PMS_CATALOG_SYNC_DRY_RUN: "1"
-  PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: ""
+  PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: "eef2a660-4218-4ad2-aa0d-a38e51fbb321"
   PMS_WORKERS_IN_API: "0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
