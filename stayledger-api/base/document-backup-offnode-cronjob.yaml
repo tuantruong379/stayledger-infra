@@ -9,13 +9,52 @@ metadata:
 data:
   backup.sh: |
     #!/usr/bin/env sh
+    # Reasoning: staging CronJob patches add a notify sidecar that blocks on
+    # /shared/done. Mirror production's finish()/trap so success and failure
+    # both signal notify and stop BackoffLimitExceeded timeouts.
     set -eu
+    SHARED="${SHARED_DIR:-/shared}"
+    mkdir -p "${SHARED}"
+
     SRC=/var/lib/stayledger/guest-documents
     TS="$(date -u +%Y%m%dT%H%M%SZ)"
     WORK="/tmp/guest-documents-${TS}"
     ARCHIVE="/tmp/guest-documents-${TS}.tar.gz"
     ENCRYPTED="${ARCHIVE}.enc"
     PREFIX="${DOCUMENT_BACKUP_PREFIX:-guest-documents}"
+    STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    OBJECT=""
+
+    finish() {
+      ec=$?
+      echo "${ec}" > "${SHARED}/status"
+      if [ "${ec}" -eq 0 ]; then
+        echo "document S3 backup ${TS}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Guest Documents S3 (off-node) backup SUCCEEDED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "service=StayLedger Guest Documents"
+          echo "object=${OBJECT}"
+          echo "prefix=${PREFIX}"
+          echo "environment=Staging"
+        } > "${SHARED}/body"
+      else
+        echo "document S3 backup FAILED ${TS}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Guest Documents S3 (off-node) backup FAILED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "service=StayLedger Guest Documents"
+          echo "exit_code=${ec}"
+          echo "bucket=${DOCUMENT_BACKUP_BUCKET:-unset} prefix=${PREFIX}"
+          echo "environment=Staging"
+        } > "${SHARED}/body"
+      fi
+      touch "${SHARED}/done"
+      exit "${ec}"
+    }
+    trap finish EXIT
 
     if [ ! -d "${SRC}" ]; then
       echo "[document-backup] source PVC path missing: ${SRC}"
@@ -34,7 +73,8 @@ data:
     fi
     tar -czf "${ARCHIVE}" -C "${SRC}" . -C "${WORK}" SHA256SUMS
     openssl enc -aes-256-cbc -pbkdf2 -salt -in "${ARCHIVE}" -out "${ENCRYPTED}" -pass env:DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
-    aws s3 cp "${ENCRYPTED}" "s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
+    OBJECT="s3://${DOCUMENT_BACKUP_BUCKET}/${PREFIX}/${TS}.tar.gz.enc"
+    aws s3 cp "${ENCRYPTED}" "${OBJECT}" --sse "${DOCUMENT_BACKUP_ENCRYPTION:-AES256}"
     echo "[document-backup] uploaded encrypted DR copy ${PREFIX}/${TS}.tar.gz.enc"
 
 ---
