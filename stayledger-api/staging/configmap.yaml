@@ -121,7 +121,8 @@ data:
   GUEST_CHAT_USAGE_LEDGER_V1_ENABLED: "true"
   GUEST_CHAT_QUOTA_ENFORCEMENT_MODE: "observe"
   GUEST_CHAT_QUOTA_ABSOLUTE_CAP: "10"
-  EXTERNAL_BOOKING_IDEMPOTENCY_V2_ENABLED: "false"
+  # Reasoning: G07 — enable payload-hash idempotency v2 via committed overlay (not live patch).
+  EXTERNAL_BOOKING_IDEMPOTENCY_V2_ENABLED: "true"
   # Reasoning: previously live-only; must be in overlay SoT (non-secret).
   AI_ASSISTANT_INTERNAL_BASE_URL: "http://hotel-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
   PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260722"

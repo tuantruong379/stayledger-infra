@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Phase 7 staging 2026-07-23 — expand migration + observe flags (digest in evidence pack)
+# Cycle 3 staging 2026-07-23 — c69be7c fail-closed dates/JWT/quota; digest sha256:1f57bfd4…
 images:
   - name: putin111/stayledger-api
-    newTag: staging-d8c9da05
+    newTag: staging-c69be7c
 
 patches:
   - path: patches/deployment-staging.yaml
