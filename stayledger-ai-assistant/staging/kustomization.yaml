@@ -25,14 +25,14 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin for W8/W5/W6 stability commit 8810784.
-# API digest: sha256:350417e4968cdac569b6577b12aa381f9610991861285dba90701ecfa6d8bed3
+# Immutable digest pin for writer-closure canary controls commit 380f90c.
+# API digest: sha256:0836cd83dc9160db8378cc125ba16e217bc86f9fe35e34e83bd606a88d31c54f
 # Frontend unchanged from prior pin.
 # NOTE: local BuildKit authorized for staging closure; CI deferred pre-production.
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:350417e4968cdac569b6577b12aa381f9610991861285dba90701ecfa6d8bed3
+    digest: sha256:0836cd83dc9160db8378cc125ba16e217bc86f9fe35e34e83bd606a88d31c54f
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

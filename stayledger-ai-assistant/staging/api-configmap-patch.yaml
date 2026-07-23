@@ -31,9 +31,17 @@ data:
   PMS_CONVERSATION_SYNC_ENABLED: "0"
   PMS_OUTBOX_WORKER_ENABLED: "0"
   PMS_CATALOG_SYNC_ENABLED: "0"
+  # Canary safety: dry-run until an approved write delta is reviewed.
+  PMS_CATALOG_SYNC_DRY_RUN: "1"
+  PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: ""
   PMS_WORKERS_IN_API: "0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
+  # External outbound fail-closed until an approved staging test destination is allowlisted.
+  CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "1"
+  CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
+  # KB upsert allowlist empty = unrestricted while writers frozen; set during KB canary.
+  RAG_KB_UPSERT_TENANT_ALLOWLIST: ""
   # Phase 8 full staging cutover: pgvector primary for all tenants.
   RAG_RETRIEVAL_BACKEND: "pgvector"
   RAG_CHUNK_PERSIST: "0"

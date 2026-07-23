@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "c127b6e17b41979eebc9c0973eea33ff2f157665"
-    stayledger.io/git-sha-short: "c127b6e"
-    stayledger.io/image-tag: "release-1.2.33-c127b6e"
-    stayledger.io/image-digest: "sha256:350417e4968cdac569b6577b12aa381f9610991861285dba90701ecfa6d8bed3"
+    stayledger.io/git-sha: "380f90cb592214d7c2b5dc1f0d9eabd5c54f9475"
+    stayledger.io/git-sha-short: "380f90c"
+    stayledger.io/image-tag: "release-1.2.34-380f90c"
+    stayledger.io/image-digest: "sha256:0836cd83dc9160db8378cc125ba16e217bc86f9fe35e34e83bd606a88d31c54f"
     stayledger.io/schema-head: "0049"
     stayledger.io/rollback-digest: "sha256:ac4407da6aee862341c0fd5a1f3eb4d921512527b816dd5d06ba9738a50d49c6"
-    kubernetes.io/change-cause: "Roll-forward to release-1.2.33-c127b6e after rollback drill"
+    kubernetes.io/change-cause: "Writer-closure canary controls release-1.2.34-380f90c"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"
