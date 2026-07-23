@@ -16,6 +16,9 @@ data:
   # base (base still serves other overlays/tests). Fail-closed tenant resolution must not rely
   # on a default tenant in staging/production — see app/tenancy/context.py.
   DEFAULT_TENANT_ID: ""
+  # P0: API pods must not run side-effect writers under Uvicorn. Dedicated Deployments own them.
+  API_NOTIFICATION_OUTBOX_ENABLED: "0"
+  API_ALERT_EVALUATOR_ENABLED: "0"
   # P0 (F-P0-09/PR-J): channel outbound queue must fail closed, not silently drop on backpressure.
   CHANNEL_QUEUE_FAIL_CLOSED: "1"
   # P0 (F-P0-01/PR-B,C): reject turns without a resolved property/tenant instead of guessing.

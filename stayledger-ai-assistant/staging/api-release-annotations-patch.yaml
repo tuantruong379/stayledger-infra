@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "eae7b309c74b2587366d60890f2fedb0e0a79fdd"
-    stayledger.io/git-sha-short: "eae7b30"
-    stayledger.io/image-tag: "release-1.2.36-eae7b30"
-    stayledger.io/image-digest: "sha256:353ce28b34d45b5ea6127335ba50edc664a44f6cfded4b5c5f92cb353922d5a9"
+    stayledger.io/git-sha: "ea5390f70a2a3df52f3089620a679ba4492b0234"
+    stayledger.io/git-sha-short: "ea5390f"
+    stayledger.io/image-tag: "release-1.2.37-ea5390f"
+    stayledger.io/image-digest: "sha256:f8c419e99cdad7b1fb3c8ba903135ea26de9f4842d1b1c1d1aea73f3985341d6"
     stayledger.io/schema-head: "0049"
-    stayledger.io/rollback-digest: "sha256:9a9e6c1092f00f6ff67f35b774c12d92020f10af014e6681983c835857727f85"
-    kubernetes.io/change-cause: "final eae7b30 after verified rollback/roll-forward"
+    stayledger.io/rollback-digest: "sha256:353ce28b34d45b5ea6127335ba50edc664a44f6cfded4b5c5f92cb353922d5a9"
+    kubernetes.io/change-cause: "fail-closed tenancy + API writer gates ea5390f"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"

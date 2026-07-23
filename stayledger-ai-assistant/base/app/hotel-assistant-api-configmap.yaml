@@ -42,7 +42,7 @@ data:
   # (TENANT_CONFIG_SOURCE, TENANT_REGISTRY_SOURCE, USAGE_EVENTS_STORE_BACKEND,
   # FEEDBACK_STORE_BACKEND, TENANTS_REGISTRY_PATH, USAGE_EVENTS_LOG_PATH)
   # are no longer read by the application.
-  DEFAULT_TENANT_ID: "vertex_suites_hanoi"
+  DEFAULT_TENANT_ID: ""
   TENANT_DAILY_CHAT_TURN_LIMIT: "0"   # 0=disabled; set per cluster (or later per-tenant)
   # Phase C: /readyz fails closed when Postgres is unreachable.
   READY_REQUIRES_POSTGRES: "1"
