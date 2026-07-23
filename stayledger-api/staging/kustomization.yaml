@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 3 staging 2026-07-23 — 0b0ceaa rawBody idempotency hash; digest sha256:21b66137…
+# Cycle 3 staging 2026-07-23 — e8d6a7d skip Redis blind replay on ExternalReplaySensitive; digest sha256:65b526e6…
 images:
   - name: putin111/stayledger-api
-    newTag: staging-0b0ceaa
+    newTag: staging-e8d6a7d
 
 patches:
   - path: patches/deployment-staging.yaml
