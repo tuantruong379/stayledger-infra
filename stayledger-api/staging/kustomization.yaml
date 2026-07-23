@@ -15,10 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 6 staging 2026-07-23 — c349d43 register guest_chat Prometheus counters; digest sha256:96583316…
+# release/1.2.38 API — guest-chat history BFF for ai_assistant (8f82d1b).
+# Digest: sha256:842e54ac07ac0957c7d813446f9e5b7b139601a9b932c386a5f83cdbb70c51a2
 images:
   - name: putin111/stayledger-api
-    newTag: staging-c349d43
+    digest: sha256:842e54ac07ac0957c7d813446f9e5b7b139601a9b932c386a5f83cdbb70c51a2
 
 patches:
   - path: patches/deployment-staging.yaml
