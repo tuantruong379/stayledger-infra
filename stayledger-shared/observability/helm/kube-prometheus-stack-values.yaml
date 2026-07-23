@@ -196,6 +196,10 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    # Reasoning: AlertmanagerConfig lives in observability but PMS alerts are labeled
+    # namespace=stayledger-staging. Without None, email routes only match observability.
+    alertmanagerConfigMatcherStrategy:
+      type: None
     storage:
       volumeClaimTemplate:
         spec:

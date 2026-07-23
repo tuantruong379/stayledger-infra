@@ -1,3 +1,6 @@
+# StayLedger Alertmanager routing — email to platform@stayledger.io via SES SMTP.
+# Reasoning: product ops preference is SMTP email (not Slack). Credentials live in
+# Secret alertmanager-smtp (observability ns); do not commit SMTP passwords or SES keys.
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
@@ -8,53 +11,62 @@ metadata:
     app: stayledger
 spec:
   route:
-    receiver: slack-warnings
+    receiver: email-platform
     groupBy: [alertname, severity]
     groupWait: 30s
     groupInterval: 5m
     repeatInterval: 4h
     routes:
-      - receiver: slack-critical
+      - receiver: email-platform-critical
         matchers:
           - name: severity
             value: critical
         continue: false
 
   receivers:
-    - name: slack-warnings
-      slackConfigs:
-        - apiURL:
-            # Reasoning: hub cluster already has `alertmanager-secrets` with
-            # `slack_api_url`; do not invent a second secret name that never existed.
-            name: alertmanager-secrets
-            key: slack_api_url
-          channel: "#stayledger-alerts"
-          title: '[{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
-          text: |
-            {{ range .Alerts }}
-            *Summary:* {{ .Annotations.summary }}
-            *Description:* {{ .Annotations.description }}
-            *Severity:* {{ .Labels.severity }}
-            {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
-            {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
-            {{ end }}
+    - name: email-platform
+      emailConfigs:
+        - to: platform@stayledger.io
+          from: noreply@stayledger.io
+          # SES SMTP (same endpoint family as PMS backup notify). Port 587 = STARTTLS.
+          smarthost: email-smtp.ap-southeast-1.amazonaws.com:587
+          hello: stayledger.io
+          requireTLS: true
+          # authUsername is CRD string (not SecretKeySelector on this operator).
+          # Live value is synced from Secret alertmanager-smtp/smtp-user by apply script /
+          # kubectl patch — never commit the SES access key id into git.
+          authUsername: ""
+          authPassword:
+            name: alertmanager-smtp
+            key: smtp-password
           sendResolved: true
-
-    - name: slack-critical
-      slackConfigs:
-        - apiURL:
-            name: alertmanager-secrets
-            key: slack_api_url
-          channel: "#stayledger-oncall"
-          title: ':rotating_light: [CRITICAL] {{ .CommonLabels.alertname }}'
-          text: |
+          # Reasoning: avoid custom Subject headers with Go templates — some AM
+          # versions fail notify when header templates do not expand cleanly.
+          html: |
             {{ range .Alerts }}
-            *Summary:* {{ .Annotations.summary }}
-            *Description:* {{ .Annotations.description }}
-            {{ if .Annotations.dashboard_url }}*Dashboard:* {{ .Annotations.dashboard_url }}{{ end }}
-            {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+            <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }})</p>
+            <p>{{ .Annotations.summary }}</p>
+            <p>{{ .Annotations.description }}</p>
+            {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
+            {{ if .Annotations.dashboard_url }}<p>Dashboard: {{ .Annotations.dashboard_url }}</p>{{ end }}
             {{ end }}
-          sendResolved: true
 
-# Slack webhook lives in secret `alertmanager-secrets` key `slack_api_url` (observability ns).
-# Do not commit webhook URLs.
+    - name: email-platform-critical
+      emailConfigs:
+        - to: platform@stayledger.io
+          from: noreply@stayledger.io
+          smarthost: email-smtp.ap-southeast-1.amazonaws.com:587
+          hello: stayledger.io
+          requireTLS: true
+          authUsername: ""
+          authPassword:
+            name: alertmanager-smtp
+            key: smtp-password
+          sendResolved: true
+          html: |
+            {{ range .Alerts }}
+            <p><b>CRITICAL: {{ .Labels.alertname }}</b></p>
+            <p>{{ .Annotations.summary }}</p>
+            <p>{{ .Annotations.description }}</p>
+            {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
+            {{ end }}
