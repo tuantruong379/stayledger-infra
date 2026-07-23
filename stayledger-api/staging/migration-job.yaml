@@ -49,8 +49,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          # Run migrate deploy with the same release image as the API rollout
-          image: putin111/stayledger-api:staging-d8c9da05
+          # Reasoning: keep migration Job image pin identical to staging kustomization newTag
+          # (staging-e8d6a7d / digest sha256:65b526e6…) so Job desired state cannot drift from API/worker.
+          image: putin111/stayledger-api:staging-e8d6a7d
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma
