@@ -50,8 +50,8 @@ spec:
       containers:
         - name: migrate
           # Reasoning: keep migration Job image pin identical to staging API/worker
-          # (staging-54a9d4d / digest sha256:8163280d…) so Job desired state cannot drift.
-          image: putin111/stayledger-api:staging-54a9d4d
+          # (staging-74c8c87 / digest sha256:609fcf6d…) so Job desired state cannot drift.
+          image: putin111/stayledger-api:staging-74c8c87
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma

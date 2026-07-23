@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 8 — notification await + SES recipient policy (54a9d4d).
-# Digest: sha256:8163280d4447f55c59d5e4e5136cf8a1b841cba00a991947a7aa9cfac1817529
+# Cycle 8 — notification/SES fixes + SMTP failure surfacing (74c8c87).
+# Digest: sha256:609fcf6d0f9534e01ecc89d1921a343041c80d6e1bc1b6745f1a753a79491bf8
 images:
   - name: putin111/stayledger-api
-    digest: sha256:8163280d4447f55c59d5e4e5136cf8a1b841cba00a991947a7aa9cfac1817529
+    digest: sha256:609fcf6d0f9534e01ecc89d1921a343041c80d6e1bc1b6745f1a753a79491bf8
 
 patches:
   - path: patches/deployment-staging.yaml
