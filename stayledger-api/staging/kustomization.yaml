@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 7 — XB-MAP lifecycle APIs (350a095). Restored digest pin after G13 tag-mode proof.
-# Digest: sha256:4a7fb77648eae0287d1e1e680b9d4515dbd68e1939635ee51b9a68de1783118c
+# Cycle 8 — notification await + SES recipient policy (54a9d4d).
+# Digest: sha256:8163280d4447f55c59d5e4e5136cf8a1b841cba00a991947a7aa9cfac1817529
 images:
   - name: putin111/stayledger-api
-    digest: sha256:4a7fb77648eae0287d1e1e680b9d4515dbd68e1939635ee51b9a68de1783118c
+    digest: sha256:8163280d4447f55c59d5e4e5136cf8a1b841cba00a991947a7aa9cfac1817529
 
 patches:
   - path: patches/deployment-staging.yaml
