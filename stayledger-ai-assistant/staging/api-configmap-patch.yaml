@@ -67,3 +67,6 @@ data:
   AI_MULTITURN_MEMORY_ENABLED: "1"
   # fail_closed required by startup safety on staging/production (fail_open needs ALLOW_AI_BUDGET_FAIL_OPEN=1).
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"
+  # HAI-005: staging inventory 2026-07-23 — all 5 active tenants have webhook_api_key set in
+  # tenant_channel_secrets. Require per-tenant keys; do not change base (other overlays/local).
+  WEBHOOK_REQUIRE_TENANT_API_KEY: "1"
