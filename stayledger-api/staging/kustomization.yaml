@@ -15,10 +15,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Match production release score90 2026-07-20 (discountPercent on promotions/available for AI catalog sync)
+# Phase 7 staging 2026-07-23 — expand migration + observe flags (digest in evidence pack)
 images:
   - name: putin111/stayledger-api
-    newTag: score90-20260720
+    newTag: staging-d8c9da05
 
 patches:
   - path: patches/deployment-staging.yaml

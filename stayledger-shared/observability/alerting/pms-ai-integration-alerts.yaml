@@ -1,0 +1,54 @@
+# P0 alerts for PMS ↔ AI Assistant integration (low-cardinality labels only).
+# Apply with other stayledger-shared/observability/alerting manifests.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-pms-ai-integration-alerts
+  namespace: observability
+  labels:
+    app: stayledger
+    component: pms-ai-integration
+spec:
+  groups:
+    - name: stayledger_pms_ai_integration
+      rules:
+        - alert: PmsAiMappingFailSpike
+          expr: increase(pms_ai_mapping_fail_total[15m]) > 5
+          for: 5m
+          labels:
+            severity: warning
+            component: pms_ai_mapping
+          annotations:
+            summary: AI integration mapping failures elevated
+            description: More than 5 mapping fail events in 15m. Runbook docs/runbooks/pms-ai-mapping-fail.md
+            runbook: docs/runbooks/pms-ai-mapping-fail.md
+
+        - alert: PmsIdempotencyConflictSpike
+          expr: increase(pms_idempotency_conflict_total[15m]) > 10
+          for: 10m
+          labels:
+            severity: warning
+            component: pms_external_idempotency
+          annotations:
+            summary: External booking idempotency conflicts elevated
+            runbook: docs/runbooks/pms-idempotency-conflict.md
+
+        - alert: PmsGcAggregateReject
+          expr: increase(pms_gc_aggregate_reject_total[15m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+            component: pms_gc_usage
+          annotations:
+            summary: Guest Chat aggregate import rejected (checksum/order)
+            runbook: docs/runbooks/pms-gc-aggregate-reject.md
+
+        - alert: PmsWebJwtFailSpike
+          expr: increase(pms_web_jwt_fail_total[15m]) > 5
+          for: 5m
+          labels:
+            severity: warning
+            component: pms_web_chat
+          annotations:
+            summary: PMS Web context JWT failures elevated
+            runbook: docs/runbooks/pms-web-jwt-fail.md

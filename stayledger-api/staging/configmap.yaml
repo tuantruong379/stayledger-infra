@@ -114,6 +114,17 @@ data:
   # Wave 2: properties without ACTIVE/TRIALING subscription get zero limits (fail-closed).
   ENTITLEMENT_FAIL_CLOSED: "true"
   EXTERNAL_API_CONTRACT_VERSION: "1.0.0"
+  # PMS ↔ AI Assistant integration flags — Phase 7/8 staging observe (2026-07-23).
+  # Do not fail-open: durable mapping + enforce require ACTIVE mapping and Product PD-CAP-01.
+  # Rollback observe: set durable/ledger false and quota mode off, then rollout restart.
+  PMS_WEB_CHAT_DURABLE_MAPPING_ENABLED: "true"
+  GUEST_CHAT_USAGE_LEDGER_V1_ENABLED: "true"
+  GUEST_CHAT_QUOTA_ENFORCEMENT_MODE: "observe"
+  GUEST_CHAT_QUOTA_ABSOLUTE_CAP: "10"
+  EXTERNAL_BOOKING_IDEMPOTENCY_V2_ENABLED: "false"
+  # Reasoning: previously live-only; must be in overlay SoT (non-secret).
+  AI_ASSISTANT_INTERNAL_BASE_URL: "http://hotel-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
+  PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260722"
   BACKUP_ENABLED: "true"
   BACKUP_SCHEDULE: "0 22 * * *"
   BACKUP_RETENTION_DAYS: "14"
