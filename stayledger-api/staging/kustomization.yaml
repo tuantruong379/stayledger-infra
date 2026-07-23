@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# release/1.2.38 API — guest-chat history BFF for ai_assistant (8f82d1b).
-# Digest: sha256:842e54ac07ac0957c7d813446f9e5b7b139601a9b932c386a5f83cdbb70c51a2
+# Cycle 6c — PD-OCC-01 occupancy fail-closed (79170bd).
+# Digest: sha256:acd041c5e882b0016f185485353c2ea64c6ee17a83503ff0f2106f2b52ac1516
 images:
   - name: putin111/stayledger-api
-    digest: sha256:842e54ac07ac0957c7d813446f9e5b7b139601a9b932c386a5f83cdbb70c51a2
+    digest: sha256:acd041c5e882b0016f185485353c2ea64c6ee17a83503ff0f2106f2b52ac1516
 
 patches:
   - path: patches/deployment-staging.yaml
