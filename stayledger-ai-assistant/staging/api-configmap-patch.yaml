@@ -30,8 +30,9 @@ data:
   PMS_DRAFT_BOOKING_ENABLED: "0"
   PMS_CONVERSATION_SYNC_ENABLED: "0"
   PMS_OUTBOX_WORKER_ENABLED: "0"
+  # Catalog dry-run canary (API stays non-polling; dedicated worker Deployment env enables sync).
+  # Keep DRY_RUN=1 and connection allowlist until write canary is approved.
   PMS_CATALOG_SYNC_ENABLED: "0"
-  # Canary safety: dry-run until an approved write delta is reviewed.
   PMS_CATALOG_SYNC_DRY_RUN: "1"
   PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: "eef2a660-4218-4ad2-aa0d-a38e51fbb321"
   PMS_WORKERS_IN_API: "0"
@@ -42,6 +43,8 @@ data:
   CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
   # KB upsert allowlist — canary tenant only while writers partially thawed.
   RAG_KB_UPSERT_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2"
+  # Guest-facing RAG citation footer (section titles only; no paths/UUIDs).
+  RAG_GUEST_CITATIONS: "1"
   # Phase 8 full staging cutover: pgvector primary for all tenants.
   RAG_RETRIEVAL_BACKEND: "pgvector"
   RAG_CHUNK_PERSIST: "1"

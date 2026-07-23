@@ -37,6 +37,10 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: hotel-assistant-kb-embed-backfill
+        # Reasoning: dedicated catalog sync worker uses HOTEL_OPS_DSN → PgBouncer.
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-pms-catalog-sync
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: postgres   # bootstrap job uses postgres SA

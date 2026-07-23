@@ -15,6 +15,7 @@ resources:
 - allow-channel-worker-egress.yaml
 - allow-kb-embed-backfill-egress.yaml
 - allow-kb-embed-worker-egress.yaml
+- allow-pms-catalog-sync-egress.yaml
 - allow-egress-dns.yaml
 - allow-metrics-aggregator-egress.yaml
 - allow-nats-ingress.yaml
