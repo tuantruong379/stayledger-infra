@@ -1,6 +1,6 @@
-# StayLedger Alertmanager routing — email to platform@stayledger.io via SES SMTP.
-# Reasoning: product ops preference is SMTP email (not Slack). Credentials live in
-# Secret alertmanager-smtp (observability ns); do not commit SMTP passwords or SES keys.
+# StayLedger Alertmanager routing — SES email to platform@stayledger.io.
+# Reasoning: default-drop kube noise; only email StayLedger product alerts and criticals.
+# Credentials: Secret alertmanager-smtp (observability); never commit SES keys.
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
@@ -11,37 +11,48 @@ metadata:
     app: stayledger
 spec:
   route:
-    receiver: email-platform
+    # Reasoning: blackhole by default so KubePodNotReady / CPUThrottling do not flood platform@.
+    receiver: "null"
     groupBy: [alertname, severity]
     groupWait: 30s
     groupInterval: 5m
     repeatInterval: 4h
     routes:
+      # Product / StayLedger-named alerts (any severity) → email
+      - receiver: email-platform
+        matchers:
+          - name: alertname
+            value: "^StayLedger.*"
+            matchType: "=~"
+        continue: true
+      - receiver: email-platform
+        matchers:
+          - name: alertname
+            value: "^(BackupJobFailed|DocumentBackup|AiWorker|AiOps|PmsAi|GuestChat).*"
+            matchType: "=~"
+        continue: true
+      # All remaining criticals (incl. StayLedger critical) → critical template
       - receiver: email-platform-critical
         matchers:
           - name: severity
             value: critical
+            matchType: "="
         continue: false
 
   receivers:
+    - name: "null"
     - name: email-platform
       emailConfigs:
         - to: platform@stayledger.io
           from: noreply@stayledger.io
-          # SES SMTP (same endpoint family as PMS backup notify). Port 587 = STARTTLS.
           smarthost: email-smtp.ap-southeast-1.amazonaws.com:587
           hello: stayledger.io
           requireTLS: true
-          # authUsername is CRD string (not SecretKeySelector on this operator).
-          # Live value is synced from Secret alertmanager-smtp/smtp-user by apply script /
-          # kubectl patch — never commit the SES access key id into git.
           authUsername: ""
           authPassword:
             name: alertmanager-smtp
             key: smtp-password
           sendResolved: true
-          # Reasoning: avoid custom Subject headers with Go templates — some AM
-          # versions fail notify when header templates do not expand cleanly.
           html: |
             {{ range .Alerts }}
             <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }})</p>
