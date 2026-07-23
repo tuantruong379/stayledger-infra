@@ -10,5 +10,5 @@ metadata:
     stayledger.io/image-digest: "sha256:353ce28b34d45b5ea6127335ba50edc664a44f6cfded4b5c5f92cb353922d5a9"
     stayledger.io/schema-head: "0049"
     stayledger.io/rollback-digest: "sha256:9a9e6c1092f00f6ff67f35b774c12d92020f10af014e6681983c835857727f85"
-    kubernetes.io/change-cause: "acquire_admin_conn transaction-local rls_admin release-1.2.36-eae7b30"
+    kubernetes.io/change-cause: "roll-forward final eae7b30 after rollback proof"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"
