@@ -4,11 +4,11 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "052d84a69cfeb166af57f3fd70dd60ad987525b2"
-    stayledger.io/git-sha-short: "052d84a"
-    stayledger.io/image-tag: "release-1.2.39-052d84a"
-    stayledger.io/image-digest: "sha256:8dba18e4def212d63689b598dcc8eb4e4db58a275bbfc603ed6bd58a20d5bf77"
+    stayledger.io/git-sha: "e6e3c36522dd669f6fbd34bf08998ef6e8361207"
+    stayledger.io/git-sha-short: "e6e3c36"
+    stayledger.io/image-tag: "release-1.2.40-e6e3c36"
+    stayledger.io/image-digest: "sha256:b58012ba4626751aabc3701071c406c592d0b075d45c4d0712e1cf1c62ab7ddd"
     stayledger.io/schema-head: "0049"
-    stayledger.io/rollback-digest: "sha256:03407521e6ad9067752751903cc9e879db358f621ceed5e831dceef47c0d8001"
-    kubernetes.io/change-cause: "pms_web history + WH-AI-002/canonical webhook 052d84a"
+    stayledger.io/rollback-digest: "sha256:8dba18e4def212d63689b598dcc8eb4e4db58a275bbfc603ed6bd58a20d5bf77"
+    kubernetes.io/change-cause: "final RC e6e3c36 normalize/branch_id/sink + Gate1-6 remediations"
     stayledger.io/build-provenance: "local-buildkit-staging-authorized"
