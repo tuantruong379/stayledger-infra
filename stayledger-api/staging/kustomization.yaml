@@ -15,11 +15,13 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Clean candidate — API hygiene 57bd625 + harness/CVE overrides 818185b3.
-# Digest: sha256:38e580a01a793f2b8f81bbc4e466cdfd00b68dfdb59fd23e69a5bc18cd9b9755
+# Staging rebuild 2026-07-24 — frozen source 47cf20a (incl. 3cbde99 CVE overrides + quota/auth unit gates).
+# Digest: sha256:4ed8c8533f7a60afbf4d1feca8bcf68087c129001d93b6acfa3fdba3e1dbdc35
+# SBOM SPDX sha256: a7f0ee38b592522c275d444ac879707d625f2ce5bbc2f69d4d43339d1590010c
+# Trivy HIGH/CRITICAL (ignore-unfixed): 0
 images:
   - name: putin111/stayledger-api
-    digest: sha256:38e580a01a793f2b8f81bbc4e466cdfd00b68dfdb59fd23e69a5bc18cd9b9755
+    digest: sha256:4ed8c8533f7a60afbf4d1feca8bcf68087c129001d93b6acfa3fdba3e1dbdc35
 
 patches:
   - path: patches/deployment-staging.yaml
