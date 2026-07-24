@@ -14,11 +14,12 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 10 — a11y Critical/Serious remediation (admin-web 4c46622)
-# Digest: sha256:8533ef2f502c6a5117f16d974d403f0622c415b325d9c35a400bb711bcfe97e1
+# Cycle 10 — a11y + env-inject/CDN cachebust (4066ee7)
+# Digest: sha256:b32c83ff5747b68e7814f0d8128aa5c260d2c0ca1ff3e7bec866ed0da0422f39
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:8533ef2f502c6a5117f16d974d403f0622c415b325d9c35a400bb711bcfe97e1
+    digest: sha256:b32c83ff5747b68e7814f0d8128aa5c260d2c0ca1ff3e7bec866ed0da0422f39
 
 patches:
   - path: patches/deployment-staging.yaml
+

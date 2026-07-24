@@ -96,7 +96,8 @@ spec:
               API_ORIGIN=$(echo "${NEXT_PUBLIC_API_URL}" | sed -E 's|/api(-proxy)?$||')
               # Longest-first: replacing .../api must not rewrite .../api-proxy into .../api-proxy-proxy
               # (Cycle 10 login outage root cause when NEXT_PUBLIC_API_URL ends with /api-proxy).
-              LEGACY_API_URLS="https://admin-staging.stayledger.tekcent.com/api-proxy https://stg-app.stayledger.io/api-proxy https://stg-api.stayledger.io/api-proxy http://10.89.1.40:30010/api-proxy https://api-staging.stayledger.tekcent.com/api https://stg-api.stayledger.io/api https://stg-app.stayledger.io/api http://10.89.1.40:30010/api http://10.89.1.40:30010"
+              # Omit bare .../api siblings of .../api-proxy (prefix collision → api-proxy-proxy).
+              LEGACY_API_URLS="https://admin-staging.stayledger.tekcent.com/api-proxy https://stg-app.stayledger.io/api-proxy https://stg-api.stayledger.io/api-proxy http://10.89.1.40:30010/api-proxy https://api-staging.stayledger.tekcent.com/api https://stg-api.stayledger.io/api http://10.89.1.40:30010/api http://10.89.1.40:30010"
               LEGACY_BOOKING_URLS="https://admin-staging.stayledger.tekcent.com https://booking-staging.stayledger.tekcent.com https://stg-app.stayledger.io http://10.89.1.40:30010"
               find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
                 xargs -0 sed -i \
