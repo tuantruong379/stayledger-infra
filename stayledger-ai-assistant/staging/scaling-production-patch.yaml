@@ -1,12 +1,12 @@
-# Single-node production sizing for stayledger k3s cluster.
-# Keep API/frontend at 1 replica baseline: node CPU requests are tight with PMS + observability.
+# Phase-1 staging: API baseline 2 replicas for cross-pod idempotency proof.
+# Frontend stays at 1; channel/webhook workers overridden to 0 by worker-freeze patch.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
 spec:
-  replicas: 1
+  replicas: 2
 
 ---
 apiVersion: apps/v1
@@ -36,16 +36,14 @@ spec:
   replicas: 1
 
 ---
-# Baseline 1 replica; HPA can add one more under load after CPU requests were
-# lowered (api 200m / workers 250m). max=2 stays within single-node budget and
-# still leaves headroom for nightly backup Jobs (~120–200m).
+# Baseline 2 API replicas for Phase-1 cross-pod idempotency; HPA may add none beyond max=2.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
 spec:
-  minReplicas: 1
+  minReplicas: 2
   maxReplicas: 2
 
 ---
