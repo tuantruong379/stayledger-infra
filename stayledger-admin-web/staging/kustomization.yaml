@@ -14,11 +14,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 10 - CDN chunk-hash bust (09cfd64)
-# Digest: sha256:628bc92c3eed25154d98226536dd7c6114b7b1abe203778c1011a68a46f475e0
+# Cycle 10 - CDN chunk-hash bust live marker (7071495)
+# Digest: sha256:247d1c2e90b0d207c0b4272350cc1ec84208181400f9595fc7c38ee97bf26ec0
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:628bc92c3eed25154d98226536dd7c6114b7b1abe203778c1011a68a46f475e0
+    digest: sha256:247d1c2e90b0d207c0b4272350cc1ec84208181400f9595fc7c38ee97bf26ec0
 
 patches:
   - path: patches/deployment-staging.yaml
