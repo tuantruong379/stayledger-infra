@@ -24,13 +24,13 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — Phase-1e RC from 50d9973 (embed deploy must not use chat model_id).
-# API digest: sha256:9b040a7177b72fb538204c6ce0327c4509933d550855642b72eb0855f3280efe
-# Rollback digest (prior Phase-1d RC): sha256:078e1301140f2f44bcc5776ce7cb02d9879f78354f437f73b713fcc07e318fc1
+# Immutable digest pin — Phase-1f RC from 1b04340 (multiturn empty-RAG persist + embed backfill).
+# API digest: sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5
+# Rollback digest (prior Phase-1e RC): sha256:9b040a7177b72fb538204c6ce0327c4509933d550855642b72eb0855f3280efe
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:9b040a7177b72fb538204c6ce0327c4509933d550855642b72eb0855f3280efe
+    digest: sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
