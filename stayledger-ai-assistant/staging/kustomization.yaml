@@ -24,13 +24,13 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — Phase-1g RC from 1c348bd (deterministic multiturn recall).
-# API digest: sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1
-# Rollback digest (prior Phase-1f RC): sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5
+# Immutable digest pin — Phase-1h RC from 7a490e6 (non-blocking idempotency lease wait).
+# API digest: sha256:83fb3e5252cab21cada4cf66a996a070001252ebae11df5538a8748789a3c889
+# Rollback digest (prior Phase-1g RC): sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1
+    digest: sha256:83fb3e5252cab21cada4cf66a996a070001252ebae11df5538a8748789a3c889
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
