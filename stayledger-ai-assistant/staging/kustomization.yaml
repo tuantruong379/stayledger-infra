@@ -24,13 +24,13 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — webhook Idempotency-Key RC on 99d2cf2 tree (+ dirty webhook idempotency).
-# API digest: sha256:5c021cd382c8db441cfb963bebfef8992216cb8b98f00052d8fb155fc14d4f93
-# Rollback digest (prior): sha256:c9cffc990b7ed231cb6798460c2ce9dd720c4c98a5a16a75748df9336fec84e4
+# Immutable digest pin — Phase-1 clean RC from e5a0a29 (retrieve-first RAG, pip purge, idempotency).
+# API digest: sha256:8ceb0b6be2bc0d4478f85a1912315b9b73e086b96d8bb51a15dd211321d0b09c
+# Rollback digest (prior dirty RC): sha256:5c021cd382c8db441cfb963bebfef8992216cb8b98f00052d8fb155fc14d4f93
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:5c021cd382c8db441cfb963bebfef8992216cb8b98f00052d8fb155fc14d4f93
+    digest: sha256:8ceb0b6be2bc0d4478f85a1912315b9b73e086b96d8bb51a15dd211321d0b09c
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
