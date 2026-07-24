@@ -4,8 +4,10 @@ metadata:
   name: stayledger-ai-worker
 spec:
   replicas: 2
+  # Cap stale ReplicaSet history alongside API (Cycle 10 staging hygiene).
+  revisionHistoryLimit: 3
   template:
     metadata:
       labels:
-        # Align AI worker version label with API image tag e40d7de
+        # Preserve live label to avoid template-hash restart when only RS retention changes.
         version: "e40d7de"

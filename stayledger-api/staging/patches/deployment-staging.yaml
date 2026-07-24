@@ -1,13 +1,15 @@
-# Staging-specific deployment overrides (CORS, version label).
+# Staging-specific deployment overrides (CORS, version label, RS retention).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stayledger-api
 spec:
+  # Cap stale ReplicaSet history (default 10 left many scaled-to-0 RS in staging).
+  revisionHistoryLimit: 3
   template:
     metadata:
       labels:
-        # Align pod version label with deployed API image tag
+        # Preserve live label to avoid template-hash restart when only RS retention changes.
         version: "score90-20260720"
     spec:
       containers:

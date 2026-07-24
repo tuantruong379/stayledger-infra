@@ -4,8 +4,10 @@ metadata:
   name: stayledger-admin-web
 spec:
   replicas: 2
+  # Cap stale ReplicaSet history (Cycle 10 staging hygiene).
+  revisionHistoryLimit: 3
   template:
     metadata:
       labels:
-        # Cycle 10 a11y candidate 4c46622 / digest 8533ef2f
-        version: "staging-4c46622-a11y"
+        # Cycle 10 a11y + residual + cachebust candidate 4066ee7
+        version: "staging-4066ee7"
