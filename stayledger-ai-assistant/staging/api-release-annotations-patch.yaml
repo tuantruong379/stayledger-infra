@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "bd5194c80b90319a0c28a48378509f48c83c72a4"
-    stayledger.io/git-sha-short: "bd5194c"
-    stayledger.io/image-tag: "release-1.2.33-bd5194c-phase1h2"
-    stayledger.io/image-digest: "sha256:63a85c9bb93b44d883fb9a81d6ae92445d34a3732b1d208778598f4b124f5849"
+    stayledger.io/git-sha: "f7c2b25159cc39fcccd81ee691a063c0ff280c15"
+    stayledger.io/git-sha-short: "f7c2b25"
+    stayledger.io/image-tag: "release-1.2.34-f7c2b25-phase1i"
+    stayledger.io/image-digest: "sha256:e5b98a5224332608d8c2b23ff13f246abf7c1d6b589f975af12fa68a96e37fa9"
     stayledger.io/schema-head: "0050"
-    stayledger.io/rollback-digest: "sha256:83fb3e5252cab21cada4cf66a996a070001252ebae11df5538a8748789a3c889"
-    kubernetes.io/change-cause: "Phase-1h2 RC bd5194c (external probe key resolution)"
-    stayledger.io/build-provenance: "clean-commit-buildkit-bd5194c"
+    stayledger.io/rollback-digest: "sha256:63a85c9bb93b44d883fb9a81d6ae92445d34a3732b1d208778598f4b124f5849"
+    kubernetes.io/change-cause: "release/1.2.34 RC f7c2b25 (async retry parity)"
+    stayledger.io/build-provenance: "clean-commit-buildkit-f7c2b25"
     stayledger.io/source-dirty: "clean"
