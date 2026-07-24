@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "1b04340c3888565fdec1e64b620db23d8b9e2dbb"
-    stayledger.io/git-sha-short: "1b04340"
-    stayledger.io/image-tag: "release-1.2.33-1b04340-phase1f"
-    stayledger.io/image-digest: "sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5"
+    stayledger.io/git-sha: "1c348bdc0cee6169669a9a2cdd42af5f05f6e8a6"
+    stayledger.io/git-sha-short: "1c348bd"
+    stayledger.io/image-tag: "release-1.2.33-1c348bd-phase1g"
+    stayledger.io/image-digest: "sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1"
     stayledger.io/schema-head: "0050"
-    stayledger.io/rollback-digest: "sha256:9b040a7177b72fb538204c6ce0327c4509933d550855642b72eb0855f3280efe"
-    kubernetes.io/change-cause: "Phase-1f RC 1b04340 (multiturn empty-RAG persist + embedding_model_id backfill)"
-    stayledger.io/build-provenance: "clean-commit-buildkit-1b04340"
+    stayledger.io/rollback-digest: "sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5"
+    kubernetes.io/change-cause: "Phase-1g RC 1c348bd (deterministic multiturn guest-fact recall)"
+    stayledger.io/build-provenance: "clean-commit-buildkit-1c348bd"
     stayledger.io/source-dirty: "clean"
