@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "e5a0a2934118857d862964adc7187ab541e521bf"
-    stayledger.io/git-sha-short: "e5a0a29"
-    stayledger.io/image-tag: "release-1.2.33-e5a0a29-phase1"
-    stayledger.io/image-digest: "sha256:8ceb0b6be2bc0d4478f85a1912315b9b73e086b96d8bb51a15dd211321d0b09c"
+    stayledger.io/git-sha: "6accee64b64ca591d89bf9c104855525bb991cd1"
+    stayledger.io/git-sha-short: "6accee6"
+    stayledger.io/image-tag: "release-1.2.33-6accee6-phase1b"
+    stayledger.io/image-digest: "sha256:c075d4e078d6359f3f27a76b8165b8c8bddabad13fabb29678b6bf296bb61365"
     stayledger.io/schema-head: "0049"
-    stayledger.io/rollback-digest: "sha256:5c021cd382c8db441cfb963bebfef8992216cb8b98f00052d8fb155fc14d4f93"
-    kubernetes.io/change-cause: "Phase-1 clean RC e5a0a29 (retrieve-first RAG, pip purged, concurrent idempotency)"
-    stayledger.io/build-provenance: "clean-worktree-buildkit-e5a0a29"
+    stayledger.io/rollback-digest: "sha256:8ceb0b6be2bc0d4478f85a1912315b9b73e086b96d8bb51a15dd211321d0b09c"
+    kubernetes.io/change-cause: "Phase-1 clean RC 6accee6 (off-domain translate skip + holdout COPY)"
+    stayledger.io/build-provenance: "clean-worktree-buildkit-6accee6"
     stayledger.io/source-dirty: "clean"
