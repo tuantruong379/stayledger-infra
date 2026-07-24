@@ -1,4 +1,4 @@
-# Staging overlay — NodePort 30010 + Cloudflare TLS edge.
+# Staging overlay - NodePort 30010 + Cloudflare TLS edge.
 # Deploy: kubectl apply -k stayledger-admin-web/staging/
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -14,12 +14,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 10 — a11y + env-inject/CDN cachebust (4066ee7)
-# Digest: sha256:b32c83ff5747b68e7814f0d8128aa5c260d2c0ca1ff3e7bec866ed0da0422f39
+# Cycle 10 - CDN cachebust build-id 20260724c (800a2cc)
+# Digest: sha256:9535df69e409ceaf0f80eb264f5d717e4af9d315d293797f21db7487d9abdcc8
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:b32c83ff5747b68e7814f0d8128aa5c260d2c0ca1ff3e7bec866ed0da0422f39
+    digest: sha256:9535df69e409ceaf0f80eb264f5d717e4af9d315d293797f21db7487d9abdcc8
 
 patches:
   - path: patches/deployment-staging.yaml
-
