@@ -7,5 +7,5 @@ spec:
   template:
     metadata:
       labels:
-        # Align pod version label with deployed admin-web image tag
-        version: "1.2.33"
+        # Cycle 10 a11y candidate 4c46622 / digest 8533ef2f
+        version: "staging-4c46622-a11y"

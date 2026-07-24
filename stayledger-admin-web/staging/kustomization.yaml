@@ -14,10 +14,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Admin-web release/1.2.33 (d6fda35) — Phase 0–2 UI/UX polish
+# Cycle 10 — a11y Critical/Serious remediation (admin-web 4c46622)
+# Digest: sha256:8533ef2f502c6a5117f16d974d403f0622c415b325d9c35a400bb711bcfe97e1
 images:
   - name: putin111/stayledger-admin-web
-    newTag: "1.2.33"
+    digest: sha256:8533ef2f502c6a5117f16d974d403f0622c415b325d9c35a400bb711bcfe97e1
 
 patches:
   - path: patches/deployment-staging.yaml
