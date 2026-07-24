@@ -14,11 +14,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 10 - CDN cachebust build-id 20260724c (800a2cc)
-# Digest: sha256:9535df69e409ceaf0f80eb264f5d717e4af9d315d293797f21db7487d9abdcc8
+# Cycle 10 - CDN chunk-hash bust (09cfd64)
+# Digest: sha256:628bc92c3eed25154d98226536dd7c6114b7b1abe203778c1011a68a46f475e0
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:9535df69e409ceaf0f80eb264f5d717e4af9d315d293797f21db7487d9abdcc8
+    digest: sha256:628bc92c3eed25154d98226536dd7c6114b7b1abe203778c1011a68a46f475e0
 
 patches:
   - path: patches/deployment-staging.yaml
