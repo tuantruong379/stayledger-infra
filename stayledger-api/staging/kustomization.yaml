@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 9 — metrics label sanitizer fix for housekeeping.task_created (7c5872a).
-# Digest: sha256:86c82a0cd75cf05f622aa9669aba79eefa7b4e1f96ec43a5e374d98221bee50c
+# Clean candidate — API hygiene 57bd625 + harness/CVE overrides 818185b3.
+# Digest: sha256:38e580a01a793f2b8f81bbc4e466cdfd00b68dfdb59fd23e69a5bc18cd9b9755
 images:
   - name: putin111/stayledger-api
-    digest: sha256:86c82a0cd75cf05f622aa9669aba79eefa7b4e1f96ec43a5e374d98221bee50c
+    digest: sha256:38e580a01a793f2b8f81bbc4e466cdfd00b68dfdb59fd23e69a5bc18cd9b9755
 
 patches:
   - path: patches/deployment-staging.yaml

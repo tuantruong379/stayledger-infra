@@ -122,7 +122,9 @@ spec:
           runAsUser: 0
       containers:
       - name: redis
-        image: redis:7-alpine
+        # Pin currently validated staging digest (Redis 7.4.7) — avoid floating redis:7-alpine drift.
+        image: redis@sha256:ee64a64eaab618d88051c3ade8f6352d11531fcf79d9a4818b9b183d8c1d18ba
+        imagePullPolicy: IfNotPresent
         command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
         securityContext:
           runAsNonRoot: true
