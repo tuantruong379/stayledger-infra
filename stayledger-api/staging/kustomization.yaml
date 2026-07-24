@@ -15,11 +15,11 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Cycle 8 — notification/SES fixes + SMTP failure surfacing (74c8c87).
-# Digest: sha256:609fcf6d0f9534e01ecc89d1921a343041c80d6e1bc1b6745f1a753a79491bf8
+# Cycle 9 — metrics label sanitizer fix for housekeeping.task_created (7c5872a).
+# Digest: sha256:86c82a0cd75cf05f622aa9669aba79eefa7b4e1f96ec43a5e374d98221bee50c
 images:
   - name: putin111/stayledger-api
-    digest: sha256:609fcf6d0f9534e01ecc89d1921a343041c80d6e1bc1b6745f1a753a79491bf8
+    digest: sha256:86c82a0cd75cf05f622aa9669aba79eefa7b4e1f96ec43a5e374d98221bee50c
 
 patches:
   - path: patches/deployment-staging.yaml
