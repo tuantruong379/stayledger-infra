@@ -7,6 +7,14 @@ metadata:
   namespace: stayledger-ai-assistant
 spec:
   replicas: 2
+  # A single-node staging cluster cannot schedule a surge pod alongside two
+  # 768Mi API requests. Keep one Ready replica during an immutable rollout
+  # and replace the second without deadlocking the deployment.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
 
 ---
 apiVersion: apps/v1
