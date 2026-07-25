@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "1c348bdc0cee6169669a9a2cdd42af5f05f6e8a6"
-    stayledger.io/git-sha-short: "1c348bd"
-    stayledger.io/image-tag: "release-1.2.33-1c348bd-phase1g"
-    stayledger.io/image-digest: "sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1"
+    stayledger.io/git-sha: "0557f8cc9fdc5542b236b6fa7cd061e88d07a912"
+    stayledger.io/git-sha-short: "0557f8c"
+    stayledger.io/image-tag: "release-1.2.35-0557f8c-p1h-fixes"
+    stayledger.io/image-digest: "sha256:36c90265fd9f6b75bdfbfd4070f3529f1741a3ade286fd6929b2229dcf6ff174"
     stayledger.io/schema-head: "0050"
-    stayledger.io/rollback-digest: "sha256:8a18e190e7dd7c8a3f7a92f6579cfffde8a8b635ebad4e3f1ca1aabbf7348ca5"
-    kubernetes.io/change-cause: "Phase-1g RC 1c348bd (deterministic multiturn guest-fact recall)"
-    stayledger.io/build-provenance: "clean-commit-buildkit-1c348bd"
+    stayledger.io/rollback-digest: "sha256:e5b98a5224332608d8c2b23ff13f246abf7c1d6b589f975af12fa68a96e37fa9"
+    kubernetes.io/change-cause: "Phase-1h RC 0557f8c (kb RLS bind + rag-eval startup guard + httpx keepalive latency fix)"
+    stayledger.io/build-provenance: "clean-commit-buildkit-0557f8c"
     stayledger.io/source-dirty: "clean"
