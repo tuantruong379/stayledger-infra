@@ -1,0 +1,7 @@
+title = "StayLedger Infra gitleaks configuration"
+
+# No path allowlists. Real Kubernetes secrets must stay out of git
+# (.gitignore: **/secret.yaml, **/secrets.yaml, **/*-secret.yaml, **/*-secrets.yaml).
+# Staging credential files were removed from the tree on 2026-07-03 —
+# see docs/infra/staging-secret-inventory.md. Do not re-add path allowlists
+# for secret files; rotate and keep values local/cluster-only instead.

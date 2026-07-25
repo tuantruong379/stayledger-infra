@@ -21,21 +21,42 @@ data:
   JWT_EXPIRES_IN: "15m"
   JWT_REFRESH_EXPIRES_IN: "7d"
   LOG_LEVEL: "info"
-  EMAIL_ENABLED: "false"
+  # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
+  EMAIL_ENABLED: "true"
+  EMAIL_FROM: "no-reply@stayledger.io"
+  EMAIL_FROM_NAME: "StayLedger"
+  SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
+  SMTP_PORT: "465"
+  SMTP_SECURE: "true"
+  # Reasoning (Cycle 8): SES sandbox rejects unverified *@stayledger.test and burns daily quota
+  # when booking fan-out emails every fixture user. Allow only verified ops domains; suppress
+  # synthetic fixture suffixes. Production overlay leaves these unset (no allowlist).
+  EMAIL_RECIPIENT_ALLOWLIST_DOMAINS: "flownexa.ai,stayledger.io"
+  EMAIL_SUPPRESS_RECIPIENT_SUFFIXES: "@stayledger.test"
   APP_ENV: "staging"
   THROTTLE_STORAGE: "redis"
-  SWAGGER_ENABLED: "true"
+  # k6 baseline (~20 VUs) needs headroom above default 100 req/min per client IP.
+  THROTTLE_LIMIT: "6000"
+  SWAGGER_ENABLED: "false"
   METRICS_ENABLED: "true"
+  BOOKING_PROFILE_OPS: "true"
   OTEL_ENABLED: "true"
   OTEL_SERVICE_NAME: "stayledger-api-staging"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
   AI_PROVIDER: "azure_openai"
-  AI_MODEL: "gpt-4o-mini"
-  AI_METERING_MODE: "warn"
+  AI_MODEL: "gpt-5.4-mini"
+  # P1B AI worker isolation — ENABLED on staging (worker stayledger-ai-worker is Ready).
+  # The API offloads all AI execution to the worker queue and exposes /ai/chat/stream.
+  # Rollback: set both "false" + `kubectl scale deploy/stayledger-ai-worker --replicas=0`.
+  AI_WORKER_ENABLED: "true"
+  AI_STREAMING_ENABLED: "true"
+  # AI_STREAM_FIRST_TOKEN_TIMEOUT_MS: "15000"
+  # AI_STREAM_TOTAL_TIMEOUT_MS: "60000"
   AI_QUOTA_ALERT_EMAIL_ENABLED: "false"
-  AI_DAILY_SUMMARY_EMAIL_ENABLED: "false"
   AI_DAILY_SUMMARY_LLM: "false"
   AI_REQUEST_TIMEOUT_MS: "30000"
+  # Purge staff Copilot conversations not updated in N days (daily 3AM cron).
+  AI_CONVERSATION_RETENTION_DAYS: "90"
   AI_EMBEDDING_PROVIDER: "azure"
   AI_EMBEDDING_MODEL: "text-embedding-3-small"
   AI_EMBEDDING_DIMENSIONS: "1536"
@@ -43,8 +64,8 @@ data:
   AI_EMBEDDING_SYNC: "true"
   AI_RAG_CHUNK_SIZE: "800"
   AI_RAG_CHUNK_OVERLAP: "120"
-  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
-  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
+  AZURE_OPENAI_API_VERSION: "2026-03-17"
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
   AI_REVENUE_ENABLED: "true"
   AI_REVENUE_NARRATIVE_LLM: "false"
@@ -53,9 +74,71 @@ data:
   AI_AUTOMATION_EXECUTION_MODE: "manual_record_only"
   AI_AUTOMATION_NARRATIVE_LLM: "false"
   AI_AUTOMATION_E2E_SEED: "false"
+  FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
+  DOCUMENT_CAPTURE_DEFAULT_ENABLED: "true"
+  FEATURE_DOCUMENT_OCR: "false"
+  DOCUMENT_STORAGE_PROVIDER: "pvc"
+  DOCUMENT_STORAGE_PUBLIC: "false"
+  DOCUMENT_STORAGE_ROOT: "/var/lib/stayledger/guest-documents"
+  DOCUMENT_MAX_FILE_SIZE_MB: "8"
+  DOCUMENT_ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/webp,application/pdf"
+  DOCUMENT_RETENTION_DAYS_DEFAULT: "90"
+  DOCUMENT_BACKUP_MODE: "disaster_recovery_only"
+  DOCUMENT_BACKUP_ENABLED: "true"
+  DOCUMENT_BACKUP_PROVIDER: "s3"
+  DOCUMENT_BACKUP_PREFIX: "guest-documents"
+  DOCUMENT_BACKUP_ENCRYPTION: "AES256"
   AI_SAAS_OPS_ENABLED: "true"
   AI_SECURITY_FINDINGS_ENABLED: "true"
   AI_OPS_NARRATIVE_LLM: "false"
+  FEATURE_AI_OPERATION_BETA: "true"
+  AI_OPS_MODEL_ROUTING_ENABLED: "true"
+  AI_OPS_MAIN_MODEL: "gpt-5.4-mini"
+  AI_OPS_ROUTER_MODEL: "gpt-5.4-nano"
+  AI_OPS_FALLBACK_MODEL: "gpt-5.4-mini"
+  AI_OPS_AVAILABLE_MODELS: "gpt-5.4-nano,gpt-5.4-mini"
   AI_SAAS_OPS_E2E_SEED: "false"
-  EXTERNAL_API_REPLAY_REQUIRED: "false"
+  # 1B.1: Decimal flip — promoted after zero-drift compare evidence.
+  # Rollback: set modes back to "compare" for drift logging, or "float" / unset
+  # PMS_MONEY_PROD_READ_ENABLED for legacy Float reads. Do not drop Float columns yet.
+  PMS_MONEY_PROD_READ_ENABLED: "true"
+  PMS_MONEY_READ_MODE: "decimal"
+  PMS_REPORT_MONEY_READ_MODE: "decimal"
+  PMS_PRICING_MONEY_MODE: "decimal"
+  PMS_MONEY_EXPOSE_DECIMAL: "true"
+  # 1B.2: explicit replay + signature enforcement (also default-on via NODE_ENV=production).
+  # PREREQUISITES before this reaches traffic: (1) external-signing-enc-key secret set
+  # (see deployment.yaml); (2) existing API keys backfilled with replayGraceUntil
+  # (db/src/backfill-replay-grace.ts) or their signing secrets rotated.
+  EXTERNAL_API_REPLAY_REQUIRED: "true"
+  EXTERNAL_API_SIGNATURE_REQUIRED: "true"
+  # 1B.4: quota enforcement enabled after included-unit seed + blocked-request proof.
+  # Rollback: set to "warn" to keep alerts/usage without blocking, or "report_only"
+  # for usage-only telemetry.
+  AI_METERING_MODE: "enforce"
+  # Wave 2: properties without ACTIVE/TRIALING subscription get zero limits (fail-closed).
+  ENTITLEMENT_FAIL_CLOSED: "true"
   EXTERNAL_API_CONTRACT_VERSION: "1.0.0"
+  # PMS ↔ AI Assistant integration flags — Phase 7/8 staging observe (2026-07-23).
+  # Do not fail-open: durable mapping + enforce require ACTIVE mapping and Product PD-CAP-01.
+  # Rollback observe: set durable/ledger false and quota mode off, then rollout restart.
+  PMS_WEB_CHAT_DURABLE_MAPPING_ENABLED: "true"
+  GUEST_CHAT_USAGE_LEDGER_V1_ENABLED: "true"
+  GUEST_CHAT_QUOTA_ENFORCEMENT_MODE: "observe"
+  GUEST_CHAT_QUOTA_ABSOLUTE_CAP: "10"
+  # Reasoning: G07 — enable payload-hash idempotency v2 via committed overlay (not live patch).
+  EXTERNAL_BOOKING_IDEMPOTENCY_V2_ENABLED: "true"
+  # Reasoning: previously live-only; must be in overlay SoT (non-secret).
+  AI_ASSISTANT_INTERNAL_BASE_URL: "http://hotel-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
+  PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260722"
+  BACKUP_ENABLED: "true"
+  BACKUP_SCHEDULE: "0 22 * * *"
+  BACKUP_RETENTION_DAYS: "14"
+  NOTIFICATION_RETENTION_DAYS: "90"
+  # Phase 2.3 / 3.x — schedulers off until API image with Phase 3 modules is deployed.
+  # Enable after migrations + seed:channel-manager + seed:overage-billing on staging DB.
+  AI_OPS_SCHEDULER_ENABLED: "true"
+  AI_DAILY_SUMMARY_EMAIL_ENABLED: "true"
+  OVERAGE_BILLING_ENABLED: "true"
+  TRIAL_CONVERSION_ENABLED: "true"
+  CHANNEL_ARI_SYNC_ENABLED: "false"

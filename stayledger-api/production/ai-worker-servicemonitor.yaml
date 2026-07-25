@@ -1,0 +1,21 @@
+# Scrape AI worker /api/metrics so worker-side AI metrics are collected
+# (ai_first_token_ms, ai_worker_inflight, ai_worker_failed_jobs_total, ai_stream_*).
+# OBS-03: bearer auth required when METRICS_AUTH_TOKEN is set on the worker.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stayledger-ai-worker
+  namespace: stayledger
+  labels:
+    release: kps
+spec:
+  selector:
+    matchLabels:
+      app: stayledger-ai-worker
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s
+      bearerTokenSecret:
+        name: stayledger-metrics-auth
+        key: token

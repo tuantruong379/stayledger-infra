@@ -1,0 +1,90 @@
+# Production overrides for kube-prometheus-stack on stayledger k3s.
+# Used with: -f helm/kube-prometheus-stack-values.yaml -f helm/kube-prometheus-stack-values-production.yaml
+#
+# Differences from staging hub file:
+# - ClusterIP only (Traefik Ingress for Grafana HTTPS)
+# - Smaller PVC / retention for single-node disk budget
+# - Scrape only stayledger + observability namespaces
+# - Production API metrics auth via stayledger-metrics-auth secret
+
+grafana:
+  service:
+    type: ClusterIP
+  persistence:
+    size: 2Gi
+  resources:
+    requests: { cpu: 100m, memory: 384Mi }
+    limits:   { cpu: 500m, memory: 768Mi }
+
+prometheus:
+  service:
+    type: ClusterIP
+  prometheusSpec:
+    retention: 7d
+    retentionSize: "12GB"
+    resources:
+      requests: { cpu: 150m, memory: 768Mi }
+      limits:   { cpu: 500m, memory: 1536Mi }
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: observability-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 15Gi
+    serviceMonitorNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger, observability, kube-system]
+    podMonitorNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger, observability]
+    ruleNamespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger, observability]
+    secrets:
+      - stayledger-metrics-auth
+    additionalScrapeConfigs:
+      - job_name: stayledger-api-production
+        static_configs:
+          - targets:
+              - stayledger-api.stayledger.svc.cluster.local:80
+        metrics_path: /api/metrics
+        scrape_interval: 15s
+        bearer_token_file: /etc/prometheus/secrets/stayledger-metrics-auth/token
+      - job_name: postgres-exporter
+        static_configs:
+          - targets:
+              - postgres-exporter.observability.svc.cluster.local:9187
+        scrape_interval: 30s
+      - job_name: redis-exporter
+        static_configs:
+          - targets:
+              - redis-exporter.observability.svc.cluster.local:9121
+        scrape_interval: 30s
+      # OBS-03: requires pgbouncer-exporter Deployment + pgbouncer-exporter-config secret.
+      - job_name: pgbouncer-exporter
+        static_configs:
+          - targets:
+              - pgbouncer-exporter.observability.svc.cluster.local:9127
+        scrape_interval: 15s
+
+alertmanager:
+  alertmanagerSpec:
+    resources:
+      requests: { cpu: 50m, memory: 64Mi }
+      limits:   { cpu: 200m, memory: 256Mi }
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: observability-sc
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi

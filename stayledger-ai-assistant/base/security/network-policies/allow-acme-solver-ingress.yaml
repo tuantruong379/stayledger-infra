@@ -1,0 +1,22 @@
+# Reasoning: default-deny blocks cert-manager HTTP-01 solvers; Traefik must reach
+# them on :8089 or Let's Encrypt challenges return 502 and TLS never issues.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-acme-solver-ingress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      acme.cert-manager.io/http01-solver: "true"
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+        - ipBlock:
+            cidr: ::/0
+      ports:
+        - protocol: TCP
+          port: 8089

@@ -1,0 +1,187 @@
+# Public-production readiness alerts — closes gaps found in the Track C monitoring review
+# (docs/observability/production-monitoring-alert-review.md). Additive; uses only metrics
+# already present in Prometheus (http_request_duration_ms_bucket, http_requests_total,
+# kube_horizontalpodautoscaler_*, kube_job_*/kube_cronjob_*, kube_pod_status_phase,
+# ai_queue_depth). NOTE: AI worker-side metrics (ai_first_token_ms, ai_worker_failed_jobs_total)
+# require the ai-worker scrape job (added to helm values) + a Prometheus helm upgrade.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: stayledger-readiness-alerts
+  namespace: observability
+  labels:
+    release: kps
+spec:
+  groups:
+    - name: stayledger.readiness.api
+      interval: 30s
+      rules:
+        - alert: ApiWriteP95LatencyHigh
+          # Complements the existing P99 write alert; §7 gate is write p95 < 2.5s.
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api",method="POST"}[5m])) by (le)
+            ) > 2500
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API write p95 latency above 2500ms"
+            description: "Current write p95: {{ $value }}ms (gate <2.5s). Check DB row-lock contention (booking counter/availability), PgBouncer pool, recent deploys."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+        - alert: ApiHpaAtMaxReplicas
+          expr: |
+            kube_horizontalpodautoscaler_status_desired_replicas{namespace="stayledger-staging",horizontalpodautoscaler="stayledger-api"}
+            >= kube_horizontalpodautoscaler_spec_max_replicas{namespace="stayledger-staging",horizontalpodautoscaler="stayledger-api"}
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API HPA pinned at max replicas for 10m"
+            description: "HPA desired == max ({{ $value }}). Sustained saturation — capacity may be insufficient; consider raising maxReplicas or investigating load."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-kubernetes"
+
+        - alert: PodPendingTooLong
+          expr: |
+            sum by (pod) (kube_pod_status_phase{namespace="stayledger-staging",phase="Pending"}) > 0
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Pod {{ $labels.pod }} pending > 5m"
+            description: "Pod cannot schedule/mount (resources, PVC, node affinity, or FailedMount). Check `kubectl describe pod`."
+
+    - name: stayledger.readiness.ai
+      interval: 30s
+      rules:
+        - alert: AiQueueDepthGrowing
+          # Sustained backlog: the BullMQ `ai` queue stays deep for 10m (workers not keeping up).
+          expr: ai_queue_depth{job="stayledger-api"} > 20
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI queue depth sustained > 20 for 10m"
+            description: "AI worker backlog not draining (depth {{ $value }}). Check worker health/concurrency, Azure OpenAI latency/throttling."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiWorkerScrapeMissing
+          # OBS-03: scrape health — do not require ai_first_token_ms_count (histogram
+          # series only appear after a streamed AI job; idle workers would false-alarm).
+          expr: |
+            (absent(up{job="stayledger-ai-worker"}) == 1)
+            or
+            (up{job="stayledger-ai-worker"} == 0)
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI worker metrics not being scraped"
+            description: "Prometheus target stayledger-ai-worker is down or missing. Check ServiceMonitor bearer auth (stayledger-metrics-auth) and worker /api/metrics."
+
+    - name: stayledger.readiness.datastore
+      interval: 30s
+      rules:
+        - alert: PgBouncerExporterMissing
+          # The PgBouncerClientsWaiting alert is blind without this exporter (0 series).
+          expr: absent(pgbouncer_pools_client_waiting_connections)
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "PgBouncer exporter not scraped — pool metrics blind"
+            description: "pgbouncer_pools_cl_waiting is absent. Deploy the pgbouncer-exporter (target pgbouncer-exporter.observability.svc:9127) so PgBouncerClientsWaiting/pool alerts have data."
+
+    - name: stayledger.readiness.backup
+      interval: 1m
+      rules:
+        # OBS-01: production CronJobs live in namespace=stayledger. Staging selectors caused
+        # absent()/stale false criticals while production Jobs were Complete.
+        - alert: BackupJobFailed
+          expr: |
+            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-[0-9]+"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "PostgreSQL backup job failed"
+            description: "A stayledger-postgres-backup job failed. Check `kubectl logs job/<name>`; verify the backup PV path on the node and DB name."
+            runbook_url: "docs/operations/stayledger-dr-runbook.md"
+
+        - alert: BackupNoRecentSuccess
+          # Fires if no successful backup in >26h, OR if the cronjob has never succeeded
+          # (last_successful_time series absent) — e.g. node backup dir not provisioned (BK-3).
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) == 1)
+          for: 30m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "No successful PostgreSQL backup in >24h"
+            description: "RPO at risk. The daily backup has not succeeded recently (or ever). Verify the CronJob, node backup dir (BK-3), and off-node copy (BK-4)."
+            runbook_url: "docs/operations/stayledger-dr-runbook.md"
+
+        - alert: BackupOffNodeCopyMissing
+          # BK-4: off-node copy CronJob stayledger-postgres-backup-offnode in production.
+          expr: |
+            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
+            or
+            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) == 1)
+          for: 30m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "No off-node backup copy in >24h (BK-4)"
+            description: "Backups exist only on the DB node (single-node SPOF). Implement + verify an off-node/off-site copy (BK-4). See DR runbook."
+            runbook_url: "docs/operations/stayledger-dr-runbook.md"
+
+        - alert: BackupOffNodeJobFailed
+          expr: |
+            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-offnode-.*"} > 0
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "PostgreSQL off-node backup job failed"
+            description: "A stayledger-postgres-backup-offnode job failed. Check Job logs and off-node/S3 credentials."
+            runbook_url: "docs/operations/stayledger-dr-runbook.md"
+
+    - name: stayledger.readiness.security
+      interval: 30s
+      rules:
+        - alert: FailedLoginSpike
+          # Brute-force / credential-stuffing signal. Idle rate is ~0, so this is quiet at rest.
+          expr: |
+            sum(rate(http_requests_total{job="stayledger-api",route="/api/auth/login",status=~"401|429"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            team: security
+          annotations:
+            summary: "Elevated failed-login rate"
+            description: "Failed/throttled logins {{ $value }}/s for 5m — possible brute force/credential stuffing. Review source IPs and consider tightening throttling. (Tune threshold to traffic.)"
+
+        - alert: Forbidden403Spike
+          # RBAC / property-access / CSRF denials. A spike = attack probing or a broken client.
+          expr: |
+            sum(rate(http_requests_total{job="stayledger-api",status="403"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+            team: security
+          annotations:
+            summary: "Elevated 403 Forbidden rate"
+            description: "403s {{ $value }}/s for 5m — repeated RBAC/cross-property/CSRF denials. Review for authorization probing or a misbehaving integration. (Tune threshold to traffic.)"

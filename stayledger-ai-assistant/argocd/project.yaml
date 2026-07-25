@@ -1,14 +1,14 @@
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
-  name: hotel-assistant
+  name: stayledger-ai-assistant
   namespace: argocd
 spec:
-  description: Hotel Assistant production GitOps project
+  description: StayLedger AI Assistant GitOps project
   sourceRepos:
-    - https://github.com/tuantruong379/ai-hotel-assistant.git
+    - https://github.com/tuantruong379/stayledger-infra.git
   destinations:
-    - namespace: hotel-assistant
+    - namespace: stayledger-ai-assistant
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: ""

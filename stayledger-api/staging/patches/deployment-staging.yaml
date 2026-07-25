@@ -1,0 +1,28 @@
+# Staging-specific deployment overrides (CORS, version label, RS retention).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-api
+spec:
+  # Cap stale ReplicaSet history (default 10 left many scaled-to-0 RS in staging).
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        # Preserve live label to avoid template-hash restart when only RS retention changes.
+        version: "score90-20260720"
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: ALLOWED_ORIGINS
+              value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
+              ephemeral-storage: "200Mi"

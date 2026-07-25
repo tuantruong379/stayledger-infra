@@ -1,0 +1,84 @@
+# SEC-P2-2 — ingress NetworkPolicies for the datastores (defense-in-depth).
+#
+# STATUS: AUTHORED, NOT YET APPLIED. Apply only after confirming the FULL client set and
+# during a careful staged rollout with health verification + instant rollback. Datastores
+# are already ClusterIP (not externally exposed), so this is defense-in-depth, not a fix
+# for an exposure.
+#
+# ⚠️ SHARED-INFRA CAVEAT: the Postgres instance shows a `hotel_ops` database in
+# pg_stat_activity — verify whether the stayledger-ai-assistant app (namespace `stayledger-ai-assistant`)
+# connects to THIS Postgres/PgBouncer. If so, add its pods to the postgres/pgbouncer ingress
+# allow-lists BEFORE applying, or you will break that app. Enumerate every client
+# (app pods, migration jobs, backup CronJob, exporters, and any cross-namespace consumers)
+# from `SELECT datname,usename,client_addr,count(*) FROM pg_stat_activity GROUP BY 1,2,3;`
+# and `SHOW CLIENTS;` (PgBouncer) before rollout.
+#
+# Rollout (per policy, with safety net):
+#   kubectl apply -f datastore-networkpolicies.yaml
+#   curl .../api/ready  # must stay 200; exporters must keep scraping (pgbouncer_pools_* flowing)
+#   # if ANYTHING breaks: kubectl delete -f datastore-networkpolicies.yaml   (instant revert → allow-all)
+#
+# Only Ingress is restricted (egress left open). CNI enforcement confirmed (existing api netpols active).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-pgbouncer-ingress
+  namespace: stayledger-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-pgbouncer
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: stayledger-api } }       # API + migration (component=migration shares app=stayledger-api)
+        - podSelector: { matchLabels: { app: stayledger-ai-worker } }
+      ports: [{ protocol: TCP, port: 5432 }]
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: observability } }
+          podSelector: { matchLabels: { app: pgbouncer-exporter } }
+      ports: [{ protocol: TCP, port: 5432 }]
+    # ⚠️ Add hotel-assistant here if it uses PgBouncer.
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-postgres-ingress
+  namespace: stayledger-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-postgres
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: stayledger-pgbouncer } }  # pooled traffic
+        - podSelector: { matchLabels: { app: stayledger-api } }        # migrations via DIRECT_DATABASE_URL + backup CronJob (app=stayledger-postgres)
+        - podSelector: { matchLabels: { app: stayledger-postgres } }   # backup CronJob pods carry app=stayledger-postgres
+      ports: [{ protocol: TCP, port: 5432 }]
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: observability } }
+          podSelector: { matchLabels: { app: postgres-exporter } }
+      ports: [{ protocol: TCP, port: 5432 }]
+    # ⚠️ Add hotel-assistant (namespace hotel-assistant) here if it connects to this Postgres (hotel_ops db).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-redis-ingress
+  namespace: stayledger-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-redis
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app: stayledger-api } }
+        - podSelector: { matchLabels: { app: stayledger-ai-worker } }
+      ports: [{ protocol: TCP, port: 6379 }]
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: observability } }
+          podSelector: { matchLabels: { app: redis-exporter } }
+      ports: [{ protocol: TCP, port: 6379 }]

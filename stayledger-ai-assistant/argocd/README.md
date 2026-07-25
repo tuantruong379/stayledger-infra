@@ -118,14 +118,14 @@ annotations:
   argocd-image-updater.argoproj.io/image-list: api=putin111/ai-hotel-assistant,frontend=putin111/ai-hotel-assistant-frontend
   argocd-image-updater.argoproj.io/write-back-method: git
   argocd-image-updater.argoproj.io/git-branch: release/3.1.1
-  argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
+  argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[0-9a-f]{7,40}$
   argocd-image-updater.argoproj.io/api.update-strategy: newest-build
 ```
 
 | Annotation | Ý nghĩa |
 |---|---|
 | `image-list` | Theo dõi 2 image: `api` và `frontend` trên Docker Hub |
-| `allow-tags` | Chỉ chấp nhận tag dạng `sha-abc1234` (tạo bởi GitHub Actions CD workflow) |
+| `allow-tags` | Chỉ chấp nhận tag dạng short commit hash `abc1234` (tạo bởi GitHub Actions CI; không dùng prefix `sha-`) |
 | `update-strategy: newest-build` | Khi phát hiện image mới nhất, tự động cập nhật |
 | `write-back-method: git` | Ghi image tag mới ngược lại vào Git repo thay vì chỉ patch trực tiếp cluster |
 
@@ -153,7 +153,7 @@ annotations:
   argocd-image-updater.argoproj.io/image-list: api=<registry>/<repo>/ai-hotel-assistant,frontend=<registry>/<repo>/ai-hotel-assistant-frontend
   argocd-image-updater.argoproj.io/write-back-method: git
   argocd-image-updater.argoproj.io/git-branch: release/3.1.1
-  argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
+  argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[0-9a-f]{7,40}$
   argocd-image-updater.argoproj.io/api.update-strategy: newest-build
   argocd-image-updater.argoproj.io/api.kustomize.image-name: putin111/ai-hotel-assistant
 ```
@@ -240,8 +240,8 @@ Vì vậy trước đây muốn deploy image mới thì CI hoặc operator phả
 ### Sau khi cài Image Updater
 
 ```
-GitHub Actions (cd.yml)
-  → Build & push Docker image với tag sha-xxxxxxx lên Docker Hub
+GitHub Actions (ci.yml on main)
+  → Build & push Docker image với tag short-hash (xxxxxxx, không prefix sha-) lên Docker Hub
       → Argo CD Image Updater phát hiện image mới
           → Tự cập nhật image tag trong kustomization.yaml trên Git (write-back)
               → ArgoCD phát hiện Git thay đổi

@@ -1,0 +1,17 @@
+---
+# Guarantee at least 1 frontend replica is available during voluntary disruptions
+# (node drain, cluster upgrades, manual evictions).
+# With replicas: 2, this allows exactly one pod to be evicted at a time.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stayledger-admin-web-pdb
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: overlay
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: stayledger-admin-web

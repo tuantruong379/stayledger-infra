@@ -1,4 +1,4 @@
-# Scrape database/cache exporters deployed in the hotel-assistant namespace.
+# Scrape database/cache exporters deployed in the stayledger-ai-assistant namespace.
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -7,11 +7,11 @@ metadata:
   labels:
     release: kps
     app.kubernetes.io/name: hotel-assistant-datastore-exporters
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   namespaceSelector:
     matchNames:
-      - hotel-assistant
+      - stayledger-ai-assistant
   selector:
     matchExpressions:
       - key: app.kubernetes.io/name

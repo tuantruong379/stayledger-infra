@@ -5,10 +5,10 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: hotel-assistant-frontend
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-frontend
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

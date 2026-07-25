@@ -1,0 +1,41 @@
+---
+# API is highest-priority PMS workload, but maxReplicas MUST stay 1 while the
+# serving pod mounts guest-documents (RWO PVC). A 2nd replica would stay Pending.
+# Prefer more CPU per pod (see deployment-production resources) over scale-out
+# until storage is RWX or object-backed. Then raise maxReplicas here.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stayledger-api
+  minReplicas: 1
+  maxReplicas: 1
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+    scaleDown:
+      stabilizationWindowSeconds: 180
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60

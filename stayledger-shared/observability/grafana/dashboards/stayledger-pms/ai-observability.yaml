@@ -6,14 +6,14 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger PMS"
+    grafana_folder: "StayLedger Internal"
 data:
   ai-observability.json: |
     {
       "uid": "stayledger-ai",
-      "title": "StayLedger PMS — AI Observability",
+      "title": "PMS AI Observability",
       "description": "Azure OpenAI usage, latency, cost, token consumption, RAG quality, and AI feature health",
-      "tags": ["stayledger", "ai", "openai", "rag"],
+      "tags": ["stayledger", "internal", "deferred", "ai"],
       "schemaVersion": 38,
       "refresh": "60s",
       "time": { "from": "now-6h", "to": "now" },
@@ -104,7 +104,7 @@ data:
         },
         {
           "id": 8,
-          "title": "RAG Search — Success vs Error vs Empty",
+          "title": "RAG Search - Success vs Error vs Empty",
           "type": "timeseries",
           "gridPos": { "x": 0, "y": 27, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(rate(ai_rag_search_total{job=\"$api_job\"}[5m])) by (mode, status)", "legendFormat": "{{mode}} / {{status}}" }]
@@ -141,6 +141,119 @@ data:
           "type": "table",
           "gridPos": { "x": 12, "y": 35, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(increase(ai_errors_total{job=\"$api_job\",feature=~\"$feature\",provider=~\"$provider\"}[1h])) by (feature, provider, error_code)", "legendFormat": "{{feature}} / {{provider}} / {{error_code}}", "instant": true }]
+        },
+        {
+          "id": 13,
+          "title": "AI Quota Blocks (HTTP 429)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(http_requests_total{job=\"$api_job\",route=\"/api/ai/chat\",status=\"429\"}[5m]))", "legendFormat": "quota blocks/s" }]
+        },
+        {
+          "id": 14,
+          "title": "AI Timeout-like Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 8, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "targets": [{ "expr": "sum(rate(ai_errors_total{job=\"$api_job\",error_code=~\".*[Tt][Ii][Mm][Ee][Oo][Uu][Tt].*|ETIMEDOUT|ECONNRESET\"}[5m])) by (feature, provider, error_code)", "legendFormat": "{{feature}} / {{provider}} / {{error_code}}" }]
+        },
+        {
+          "id": 15,
+          "title": "Top AI Quota Usage Now (%)",
+          "type": "barchart",
+          "gridPos": { "x": 16, "y": 43, "w": 8, "h": 7 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 80, "color": "yellow" }, { "value": 95, "color": "red" }] }
+            }
+          },
+          "targets": [{ "expr": "topk(10, ai_quota_usage_percent{job=\"$api_job\"})", "legendFormat": "{{property_id}}", "instant": true }]
+        },
+        {
+          "id": 200,
+          "title": "Phase 3.4 - Add-on Overage Billing",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 50, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "Overage = add-on usage beyond included units (conversations, automation runs). `ai_overage_units_total` increments as usage crosses included; `ai_overage_snapshot_amount` is captured at period close; `ai_overage_invoices_total` counts DRAFT invoices generated for admin review."
+          }
+        },
+        {
+          "id": 201,
+          "title": "Overage Units Rate by Dimension",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 53, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(rate(ai_overage_units_total{job=\"$api_job\"}[5m])) by (dimension)", "legendFormat": "{{dimension}}" }]
+        },
+        {
+          "id": 202,
+          "title": "Top Overage Snapshot Amount (current period)",
+          "type": "barchart",
+          "gridPos": { "x": 12, "y": 53, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "currencyVND" } },
+          "targets": [{ "expr": "topk(10, sum(ai_overage_snapshot_amount{job=\"$api_job\"}) by (property_id, dimension))", "legendFormat": "{{property_id}} / {{dimension}}", "instant": true }]
+        },
+        {
+          "id": 203,
+          "title": "Overage Invoices Generated (24h)",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 61, "w": 8, "h": 5 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(increase(ai_overage_invoices_total{job=\"$api_job\"}[24h])) by (status)", "legendFormat": "{{status}}" }]
+        },
+        {
+          "id": 204,
+          "title": "Total Overage Units (24h) by Dimension",
+          "type": "stat",
+          "gridPos": { "x": 8, "y": 61, "w": 8, "h": 5 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(increase(ai_overage_units_total{job=\"$api_job\"}[24h])) by (dimension)", "legendFormat": "{{dimension}}" }]
+        },
+        {
+          "id": 300,
+          "title": "Phase 3.1 - Channel Manager (OTA Sync)",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 66, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "OTA sync health. `channel_sync_jobs_total{operation,status}` covers inbound reservations + outbound ARI; `channel_sync_dlq_total` counts permanent failures routed to the dead-letter queue (replayable from the admin dashboard)."
+          }
+        },
+        {
+          "id": 301,
+          "title": "Channel Sync Jobs Rate by Operation + Status",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 69, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "targets": [{ "expr": "sum(rate(channel_sync_jobs_total{job=\"$api_job\"}[5m])) by (operation, status)", "legendFormat": "{{operation}} / {{status}}" }]
+        },
+        {
+          "id": 302,
+          "title": "Channel Sync Failure Ratio (with traffic guard)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 69, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1 } },
+          "targets": [{ "expr": "sum(rate(channel_sync_jobs_total{job=\"$api_job\",status=~\"failed|dlq\"}[10m])) / clamp_min(sum(rate(channel_sync_jobs_total{job=\"$api_job\"}[10m])), 0.001)", "legendFormat": "failure ratio" }]
+        },
+        {
+          "id": 303,
+          "title": "DLQ Backlog (1h)",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 77, "w": 8, "h": 5 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 1, "color": "yellow" }, { "value": 5, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(increase(channel_sync_dlq_total{job=\"$api_job\"}[1h])) by (provider)", "legendFormat": "{{provider}}" }]
+        },
+        {
+          "id": 304,
+          "title": "ARI Push Success (24h)",
+          "type": "stat",
+          "gridPos": { "x": 8, "y": 77, "w": 8, "h": 5 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{ "expr": "sum(increase(channel_sync_jobs_total{job=\"$api_job\",operation=\"ari.push\",status=\"success\"}[24h]))", "legendFormat": "ari.push success" }]
         }
       ]
     }

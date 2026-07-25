@@ -1,0 +1,94 @@
+# Alerts for the nightly RAG eval (scripts/run_rag_eval.py in stayledger-ai-assistant),
+# scraped from rag_eval_* gauges exposed by app/observability/prom_client.py at /metrics/prom.
+#
+# `for:` durations are generous (30m+) because these are nightly-batch signals, not live-traffic
+# signals — there's no flapping risk to guard against. The real risk is a stale gauge being
+# misread as "still passing," which RagEvalStale covers.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rag-eval-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: rag-eval.quality
+      rules:
+        - alert: RagEvalCriticalFailure
+          expr: rag_eval_critical_failure_count > 0
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "P1: RAG eval detected a critical hallucination/factual failure"
+            description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: judge flagged an unsupported price/policy/availability claim in the nightly RAG eval."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+            dashboard_url: "/d/hotel-golden/hotel-assistant-golden-signals?from=now-24h&to=now"
+
+        - alert: RagEvalFaithfulnessLow
+          expr: rag_eval_faithfulness_p10 < 0.7
+          for: 30m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "Nightly RAG eval faithfulness p10 below 0.7"
+            description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: 10th-percentile faithfulness score is {{ $value }}, below the 0.7 gate."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+
+        - alert: RagEvalRecallLow
+          expr: rag_eval_recall_at_5 < 0.85
+          for: 30m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "Nightly RAG eval recall@5 below 0.85"
+            description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: recall@5 is {{ $value }}, below the 0.85 gate."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+
+        - alert: RagEvalVnEnRecallGap
+          expr: abs(rag_eval_recall_at_5{language="vi"} - on(tenant_id) rag_eval_recall_at_5{language="en"}) > 0.10
+          for: 30m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "Vietnamese/English recall@5 gap exceeds 10 points"
+            description: "tenant={{ $labels.tenant_id }}: recall@5 diverges by more than 0.10 between vi/en, suggesting the embedding model is measurably weaker on one language."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+
+        - alert: RagEvalStale
+          expr: (time() - rag_eval_last_run_timestamp_seconds) > 129600
+          for: 1h
+          labels:
+            severity: p3
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "Nightly RAG eval has not completed in over 36 hours"
+            description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: last completed run is more than 36h old (36h = nightly schedule + grace window) — the rag_eval CronJob may be failing silently or the gauges may be stale."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+
+    - name: rag-eval.execution
+      rules:
+        # Distinguishes current CronJob execution failures from stale quality gauges /
+        # historical Failed Jobs retained under failedJobsHistoryLimit.
+        - alert: RagEvalCronJobFailed
+          expr: |
+            kube_job_status_failed{namespace="stayledger-ai-assistant",job_name=~"rag-eval-.*"} > 0
+            and on(job_name)
+            (time() - kube_job_status_start_time{namespace="stayledger-ai-assistant",job_name=~"rag-eval-.*"}) < 86400
+          for: 15m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_quality
+          annotations:
+            summary: "RAG eval Job failed within the last 24h"
+            description: "job={{ $labels.job_name }}: Kubernetes reports a Failed completion for the nightly rag-eval CronJob. Inspect Job logs before pruning history."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"

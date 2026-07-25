@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-worker
+spec:
+  replicas: 2
+  # Cap stale ReplicaSet history alongside API (Cycle 10 staging hygiene).
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        # Preserve live label to avoid template-hash restart when only RS retention changes.
+        version: "e40d7de"

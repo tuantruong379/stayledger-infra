@@ -1,4 +1,4 @@
-# Grafana — SLO & Error Budget dashboard (availability burn-rate + latency SLO).
+# Grafana - SLO & Error Budget dashboard (availability burn-rate + latency SLO).
 # Multi-tenant refactor (2026-05-02): added tenant_id + slo_target variables,
 # tenant-scoped SLO metric selectors, configurable alert threshold constants, and
 # tenant comparison row (throughput/error heatmap/p95 topk).
@@ -13,18 +13,18 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger AI"
+    grafana_folder: "StayLedger Internal"
 data:
   stayledger-ai-slo.json: |-
     {
-      "title": "StayLedger AI — SLO & Error Budget",
+      "title": "AI Assistant - SLO & Error Budget",
       "uid": "hotel-slo",
       "schemaVersion": 39,
       "version": 2,
       "timezone": "Asia/Ho_Chi_Minh",
       "refresh": "30s",
       "time": { "from": "now-6h", "to": "now" },
-      "tags": ["stayledger-ai", "slo", "error-budget"],
+      "tags": ["stayledger", "internal", "deferred", "ai", "assistant"],
       "templating": {
         "list": [
           {

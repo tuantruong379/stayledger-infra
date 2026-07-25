@@ -11,9 +11,9 @@ data:
   booking-lifecycle.json: |
     {
       "uid": "stayledger-booking",
-      "title": "StayLedger PMS — Booking Lifecycle",
-      "description": "Booking funnel, payment success, lifecycle duration, and failure breakdown by step and property",
-      "tags": ["stayledger", "booking", "payment"],
+      "title": "03 - PMS Booking Lifecycle",
+      "description": "Booking funnel, payment success, lifecycle duration, failure breakdown by step/property, booking-engine availability→quote→create funnel, and money-compare coverage",
+      "tags": ["stayledger", "pms", "production-readiness", "booking"],
       "schemaVersion": 38,
       "refresh": "30s",
       "time": { "from": "now-3h", "to": "now" },
@@ -31,7 +31,7 @@ data:
           "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
           "options": {
             "mode": "markdown",
-            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, and `payment_errors_total` are emitted by `stayledger-api`. Empty charts mean no matching booking/payment activity or metrics are disabled."
+            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, `payment_errors_total`, and `booking_engine_*` are emitted by `stayledger-api`. The booking-engine funnel uses `booking_engine_requests_total{operation,status=\"success\"}` (availability→quote→create). The money-compare drift panel expects a `money_compare_drift_total{field}` counter (see its note - not yet emitted). Empty charts mean no matching activity or metrics are disabled."
           }
         },
         {
@@ -127,6 +127,135 @@ data:
           "type": "timeseries",
           "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
           "targets": [{ "expr": "sum(rate(payment_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (error_type, property_id)", "legendFormat": "{{error_type}} / {{property_id}}" }]
+        },
+        {
+          "id": 11,
+          "title": "Booking Engine Requests (per min)",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 31, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqpm" } },
+          "targets": [{ "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status) * 60", "legendFormat": "{{operation}} / {{status}}" }]
+        },
+        {
+          "id": 12,
+          "title": "Booking Engine p95 Latency (ms)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 31, "w": 12, "h": 8 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms",
+              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 800, "color": "yellow" }, { "value": 2500, "color": "red" }] }
+            }
+          },
+          "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(booking_engine_request_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, le))", "legendFormat": "{{operation}} p95" }]
+        },
+        {
+          "id": 13,
+          "title": "Booking Engine Errors",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 39, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_engine_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, error_code)", "legendFormat": "{{operation}} / {{error_code}}" }]
+        },
+        {
+          "id": 14,
+          "title": "Booking Engine Inventory Conflicts",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 39, "w": 12, "h": 8 },
+          "targets": [{ "expr": "sum(rate(booking_engine_inventory_conflicts_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, property_id)", "legendFormat": "{{operation}} / {{property_id}}" }]
+        },
+        {
+          "id": 20,
+          "title": "Booking Engine Funnel & Money Compare",
+          "type": "text",
+          "gridPos": { "x": 0, "y": 47, "w": 24, "h": 3 },
+          "options": {
+            "mode": "markdown",
+            "content": "Public booking-engine conversion funnel **availability → quote → create** from `booking_engine_requests_total{operation,status=\"success\"}` (failures live in `booking_engine_errors_total`). Conversions use `increase(...[$__range])` over the dashboard time range. Money-compare coverage reflects `PMS_MONEY_READ_MODE=compare` - see the coverage note panel."
+          }
+        },
+        {
+          "id": 21,
+          "title": "Conversion: Availability → Quote",
+          "type": "stat",
+          "gridPos": { "x": 0, "y": 50, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.3, "color": "yellow" }, { "value": 0.6, "color": "green" }] } } },
+          "targets": [{
+            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+            "legendFormat": "avail→quote"
+          }]
+        },
+        {
+          "id": 22,
+          "title": "Conversion: Quote → Create",
+          "type": "stat",
+          "gridPos": { "x": 4, "y": 50, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.2, "color": "yellow" }, { "value": 0.5, "color": "green" }] } } },
+          "targets": [{
+            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+            "legendFormat": "quote→create"
+          }]
+        },
+        {
+          "id": 23,
+          "title": "Conversion: Availability → Create",
+          "type": "stat",
+          "gridPos": { "x": 8, "y": 50, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "targets": [{
+            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+            "legendFormat": "avail→create"
+          }]
+        },
+        {
+          "id": 24,
+          "title": "Bookings Created (range)",
+          "type": "stat",
+          "gridPos": { "x": 12, "y": 50, "w": 4, "h": 4 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "targets": [{
+            "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
+            "legendFormat": "created"
+          }]
+        },
+        {
+          "id": 25,
+          "title": "Booking Engine Funnel - Successful Ops (range)",
+          "type": "bargauge",
+          "gridPos": { "x": 0, "y": 54, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+          "targets": [
+            { "refId": "A", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "1 · availability" },
+            { "refId": "B", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "2 · quote" },
+            { "refId": "C", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "3 · create" }
+          ]
+        },
+        {
+          "id": 26,
+          "title": "Booking Engine Funnel Rate (per min)",
+          "type": "timeseries",
+          "gridPos": { "x": 12, "y": 54, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "reqpm" } },
+          "targets": [{ "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",operation=~\"availability|quote|create\",status=\"success\",property_id=~\"$property\"}[5m])) by (operation) * 60", "legendFormat": "{{operation}}" }]
+        },
+        {
+          "id": 27,
+          "title": "Money-Compare Drift Events - Booking Engine (range)",
+          "description": "Backed by money_compare_drift_total{field}, which stayledger-api does not yet export (money-read.util recordCompareDrift only logs). Reads 0 / No data until that counter ships; coverage is asserted via the adjacent note until then.",
+          "type": "timeseries",
+          "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 },
+          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 1, "color": "red" }] } } },
+          "targets": [{ "expr": "sum(increase(money_compare_drift_total{job=\"$api_job\"}[$__range])) by (field) or vector(0)", "legendFormat": "{{field}}" }]
+        },
+        {
+          "id": 28,
+          "title": "Money-Compare Coverage",
+          "type": "text",
+          "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 },
+          "options": {
+            "mode": "markdown",
+            "content": "**Mode:** `PMS_MONEY_READ_MODE=compare` + `PMS_MONEY_PROD_READ_ENABLED=true` on staging - every money read compares the Float column against its Decimal shadow (tolerance 1e-4).\n\n**Drift signal:** mismatches emit `[compare] money drift` WARN logs in `stayledger-api`. Booking-engine bookings verified **zero drift** (DB Float-vs-Decimal across booking / booking_rooms / booking_stays; `money drift` log count = 0).\n\n**To light up the left panel:** export a `money_compare_drift_total{field}` counter from `money-read.util` `recordCompareDrift` (counterpart to the existing `compareDriftCount`). Until then this is a documentation panel; coverage is asserted via the DB/log checks above and the golden test suite."
+          }
         }
       ]
     }

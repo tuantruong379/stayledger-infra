@@ -1,0 +1,49 @@
+# Production public URLs — Traefik ingress on stayledger cluster.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  ENVIRONMENT: "production"
+  APP_ENV: "production"
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
+  # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
+  # ConfigMap `data` key-by-key, so this override is enough to blank it here without editing
+  # base (base still serves other overlays/tests). Fail-closed tenant resolution must not rely
+  # on a default tenant in staging/production — see app/tenancy/context.py.
+  DEFAULT_TENANT_ID: ""
+  # P0 (F-P0-09/PR-J): channel outbound queue must fail closed, not silently drop on backpressure.
+  CHANNEL_QUEUE_FAIL_CLOSED: "1"
+  # P0 (F-P0-01/PR-B,C): reject turns without a resolved property/tenant instead of guessing.
+  REQUIRE_RESOLVED_PROPERTY: "1"
+  # P0 (F-P0-03,04/PR-E): route guest FAQ/RAG hot path to scope-aware hybrid retrieval
+  # (kb_chunks 0037 schema); canary at 100% now that fail-closed guards are in place.
+  RAG_SCOPED_HYBRID_HOTPATH_ENABLED: "1"
+  RAG_SCOPED_HYBRID_CANARY_PERCENT: "100"
+  PMS_STAYLEDGER_ENABLED: "1"
+  PMS_DRAFT_BOOKING_ENABLED: "1"
+  PMS_CONVERSATION_SYNC_ENABLED: "1"
+  PMS_OUTBOX_WORKER_ENABLED: "1"
+  PMS_READ_FALLBACK_MODE: "fail_closed"
+  PMS_PROVIDER_DEFAULT: "local"
+  # Phase 12 full cutover: pgvector primary for all tenants.
+  RAG_RETRIEVAL_BACKEND: "pgvector"
+  RAG_CHUNK_PERSIST: "1"
+  RAG_EMBEDDING_DIMENSIONS: "1536"
+  RAG_PGVECTOR_SHADOW_ENABLED: "0"
+  RAG_PGVECTOR_TENANT_ALLOWLIST: ""
+  RAG_PGVECTOR_CANARY_PERCENT: "100"
+  RAG_PGVECTOR_MIN_SIMILARITY: "0.35"
+  FEATURE_RAG_PGVECTOR: "1"
+  # Floor for in-memory / scoped-hybrid fallback paths.
+  RAG_HYBRID_SCORE_FLOOR: "0.25"
+  # Canary: LLM listwise rerank for Cupid only (same as staging validation).
+  FEATURE_RERANKER_ENABLED: "1"
+  RAG_RERANK_TENANT_ALLOWLIST: "cupid_hotel"
+  # Skip Azure listwise rerank when top vector hit is already confident (latency).
+  RAG_RERANK_SKIP_VECTOR_SCORE: "0.82"
+  # Bounded multi-turn history in RAG messages (Redis envelope).
+  AI_MULTITURN_MEMORY_ENABLED: "1"
+  AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"

@@ -1,0 +1,12 @@
+# Production Tempo sizing for stayledger k3s.
+persistence:
+  enabled: true
+  storageClassName: observability-sc
+  size: 8Gi
+
+tempo:
+  retention: 72h
+  # Live ~9m CPU / ~170Mi — limit 1 CPU inflated Grafana "limits > capacity".
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits:   { cpu: 400m, memory: 768Mi }

@@ -1,0 +1,136 @@
+---
+# Allow the API to receive HTTP traffic only from the admin-web frontend,
+# the nginx ingress controller, and the Prometheus scraper.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-api-ingress
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-api
+  policyTypes:
+    - Ingress
+  ingress:
+    # Admin web frontend (Next.js server-side proxy rewrites → /api-proxy)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: stayledger-admin-web
+      ports:
+        - protocol: TCP
+          port: 3001
+    # nginx ingress controller (api.stayledger.io)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3001
+    # StayLedger AI Assistant — JWKS + External API (pod port 3001)
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-api
+      ports:
+        - protocol: TCP
+          port: 3001
+    # NodePort traffic from kube-proxy (direct ops access via port 30001)
+    - ports:
+        - protocol: TCP
+          port: 3001
+    # Prometheus metrics scraping from the observability namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 3001
+
+---
+# Allow the API to reach Postgres, Redis, external HTTPS (Azure OpenAI, SMTP), and DNS only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: stayledger-api-egress
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app: stayledger-api
+  policyTypes:
+    - Egress
+  egress:
+    # DNS resolution (CoreDNS)
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # PgBouncer (DATABASE_URL points here, not Postgres directly)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: stayledger-pgbouncer
+      ports:
+        - protocol: TCP
+          port: 5432
+    # PostgreSQL direct (used by Prisma migrations via DIRECT_DATABASE_URL)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: stayledger-postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Redis (BullMQ + throttler + cache)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: stayledger-redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # StayLedger AI Assistant — PMS booking.confirmed / booking.cancelled webhook delivery
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-api
+      ports:
+        - protocol: TCP
+          port: 8000
+    # OTEL collector (in-cluster)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: observability
+      ports:
+        - protocol: TCP
+          port: 4318
+    # External HTTPS: Azure OpenAI, AWS SES SMTP
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 465

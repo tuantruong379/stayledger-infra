@@ -3,6 +3,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
+- allow-acme-solver-egress.yaml
+- allow-acme-solver-ingress.yaml
 - allow-alembic-egress.yaml
 - allow-api-egress.yaml
 - allow-api-egress-nats.yaml
@@ -11,16 +13,23 @@ resources:
 - allow-frontend-ingress.yaml
 - allow-api-ingress.yaml
 - allow-channel-worker-egress.yaml
+- allow-kb-embed-backfill-egress.yaml
+- allow-kb-embed-worker-egress.yaml
+- allow-pms-catalog-sync-egress.yaml
 - allow-egress-dns.yaml
 - allow-metrics-aggregator-egress.yaml
 - allow-nats-ingress.yaml
 - allow-observability-scrape-exporters.yaml
+- allow-observability-scrape-api.yaml
 - allow-pgbouncer-egress.yaml
 - allow-pgbouncer-ingress.yaml
+- allow-postgres-backup-egress.yaml
 - allow-postgres-ingress.yaml
+- allow-rag-eval-egress.yaml
 - allow-redis-ingress-from-api.yaml
 - allow-redis-ingress-from-channel-worker.yaml
 - allow-redis-ingress-from-exporter.yaml
+- allow-redis-ingress-from-rag-eval.yaml
 - allow-redis-ingress-from-webhook-worker.yaml
 - allow-webhook-worker-egress.yaml
 - allow-webhook-worker-ingress.yaml

@@ -3,10 +3,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-webhook-worker
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-webhook-worker
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   replicas: 1
   minReadySeconds: 10
@@ -22,7 +22,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hotel-assistant-webhook-worker
-        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/part-of: stayledger-ai-assistant
     spec:
       serviceAccountName: api-sa
       automountServiceAccountToken: false
@@ -39,7 +39,7 @@ spec:
           # Reasoning: Image tag is managed by kustomize (k8s/onprem/kustomization.yaml images: newTag).
           image: putin111/ai-hotel-assistant:3.0.11
           imagePullPolicy: IfNotPresent
-          command: ["python", "-m", "app.workers.webhook_worker"]
+          command: ["/venv/bin/python", "-m", "app.workers.webhook_worker"]
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -84,7 +84,7 @@ spec:
               # Reasoning: Ready only when Redis queue backend + Postgres are reachable (no LLM probe).
               command:
                 [
-                  "python",
+                  "/venv/bin/python",
                   "-c",
                   "from app.observability.health_checks import check_worker_readiness; import sys; sys.exit(0 if check_worker_readiness().get('ok') else 1)",
                 ]

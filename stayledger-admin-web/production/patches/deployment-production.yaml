@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-admin-web
+spec:
+  # replicas owned by HPA (min 2); kept here so apply without HPA still starts HA.
+  replicas: 2
+  minReadySeconds: 15
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # Enforce zero-downtime on every production apply (do not loosen).
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        version: "1.2.33"
+    spec:
+      containers:
+        - name: admin-web
+          # Sized to live usage (~2m / ~80Mi) with SSR headroom; HPA scales pods
+          # on CPU% of request before vertical inflation.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "384Mi"

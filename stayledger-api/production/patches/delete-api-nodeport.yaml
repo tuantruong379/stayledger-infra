@@ -1,0 +1,6 @@
+# Production: expose only ClusterIP — Traefik Ingress is the public edge.
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-api-nodeport
+$patch: delete

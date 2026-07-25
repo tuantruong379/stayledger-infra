@@ -1,0 +1,29 @@
+# Production overlay.
+# Deploy: kubectl apply -k stayledger-admin-web/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger
+
+resources:
+  - ../base
+  - configmap.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+# Admin-web release/1.2.33 (d6fda35) — Phase 0–2 UI/UX polish
+images:
+  - name: putin111/stayledger-admin-web
+    newTag: "1.2.33"
+
+patches:
+  # Production uses ClusterIP + Traefik Ingress only (no NodePort).
+  - path: patches/service-clusterip.yaml
+    target:
+      kind: Service
+      name: stayledger-admin-web
+  - path: patches/deployment-production.yaml

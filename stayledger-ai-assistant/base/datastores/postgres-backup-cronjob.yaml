@@ -2,17 +2,20 @@
 # Dumps hotel_ops database into a timestamped file on the backup PVC, then prunes
 # files older than 7 days (daily) and keeps one weekly (Sunday) up to 4 weeks.
 #
+# Labels MUST use app.kubernetes.io/name=postgres-backup (not postgres) so Job pods
+# are not selected into the headless postgres Service endpoints.
+#
 # Apply: included in kustomization.yaml
 # Restore test: kubectl exec -it <pod> -- pg_restore -h postgres -U $POSTGRES_USER -d hotel_ops_restore /backup/hotel_ops_YYYY-MM-DD.dump
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-backup-script
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
-    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres-backup
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database-backup
 data:
   backup.sh: |
     #!/bin/bash
@@ -29,11 +32,19 @@ data:
     echo "[backup] Starting pg_dump for ${DB_NAME} at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
     # Wait for Postgres to be ready (in case of concurrent pod restart).
+    ready=0
     for i in $(seq 1 30); do
-      pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" && break
+      if pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}"; then
+        ready=1
+        break
+      fi
       echo "[backup] Waiting for Postgres… (${i}/30)"
       sleep 2
     done
+    if [ "${ready}" != "1" ]; then
+      echo "[backup] ERROR: Postgres not ready at ${DB_HOST}:${DB_PORT} after 60s"
+      exit 1
+    fi
 
     export PGPASSWORD="${POSTGRES_PASSWORD}"
     pg_dump \
@@ -73,11 +84,11 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-backup
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
-    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres-backup
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database-backup
 spec:
   storageClassName: postgres-sc
   accessModes:
@@ -85,31 +96,35 @@ spec:
   resources:
     requests:
       storage: 10Gi
+  volumeName: postgres-backup-pv
 ---
 apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: postgres-backup
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
-    app.kubernetes.io/component: database
+    app.kubernetes.io/name: postgres-backup
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database-backup
 spec:
-  # 19:00 UTC = 02:00 Asia/Ho_Chi_Minh (UTC+7)
-  schedule: "0 19 * * *"
+  # 02:00 Asia/Ho_Chi_Minh — explicit timeZone so schedule is not UTC-ambiguous (BKP-01).
+  schedule: "0 2 * * *"
+  timeZone: Asia/Ho_Chi_Minh
+  suspend: false
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
   jobTemplate:
     spec:
       backoffLimit: 2
       template:
         metadata:
           labels:
-            app.kubernetes.io/name: postgres
-            app.kubernetes.io/part-of: hotel-assistant
-            app.kubernetes.io/component: database
+            app.kubernetes.io/name: postgres-backup
+            app.kubernetes.io/part-of: stayledger-ai-assistant
+            app.kubernetes.io/component: database-backup
         spec:
           restartPolicy: OnFailure
           serviceAccountName: postgres-sa

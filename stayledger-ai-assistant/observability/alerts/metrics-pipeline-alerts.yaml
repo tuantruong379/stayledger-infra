@@ -6,13 +6,13 @@ metadata:
   labels:
     release: kps
     app.kubernetes.io/name: hotel-assistant-metrics-pipeline
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   groups:
     - name: hotel-assistant.metrics-pipeline
       rules:
         - alert: NATSDeploymentUnavailable
-          expr: kube_deployment_status_replicas_available{namespace="hotel-assistant", deployment="nats"} < 1
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="nats"} < 1
           for: 3m
           labels:
             severity: p2
@@ -23,7 +23,7 @@ spec:
             description: "The real-time tenant metrics pipeline cannot accept per-turn events."
 
         - alert: MetricsAggregatorUnavailable
-          expr: kube_deployment_status_replicas_available{namespace="hotel-assistant", deployment="hotel-assistant-metrics-aggregator"} < 1
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="hotel-assistant-metrics-aggregator"} < 1
           for: 3m
           labels:
             severity: p2
@@ -36,7 +36,7 @@ spec:
         - alert: MetricsAggregatorCrashLooping
           expr: |
             increase(kube_pod_container_status_restarts_total{
-              namespace="hotel-assistant",
+              namespace="stayledger-ai-assistant",
               container="metrics-aggregator"
             }[10m]) > 2
           for: 5m

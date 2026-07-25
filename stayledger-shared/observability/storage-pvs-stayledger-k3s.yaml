@@ -1,0 +1,145 @@
+# Local PVs for observability on the stayledger k3s production cluster (node: stayledger).
+# Sized for shared disk with PMS + AI assistant (not hub-master staging sizes).
+#
+# Host prep (debug pod or SSH):
+#   mkdir -p /mnt/data/stayledger/observability/{prometheus,alertmanager,grafana,loki,tempo}
+#   chown -R 65534:65534 /mnt/data/stayledger/observability
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: observability-sc
+provisioner: kubernetes.io/no-provisioner
+reclaimPolicy: Retain
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-prometheus-pv
+  labels:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+spec:
+  capacity:
+    storage: 15Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  local:
+    path: /mnt/data/stayledger/observability/prometheus
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [stayledger]
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-alertmanager-pv
+  labels:
+    app.kubernetes.io/component: alertmanager
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  local:
+    path: /mnt/data/stayledger/observability/alertmanager
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [stayledger]
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-grafana-pv
+  labels:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  local:
+    path: /mnt/data/stayledger/observability/grafana
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [stayledger]
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-loki-pv
+  labels:
+    app.kubernetes.io/component: loki
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  local:
+    path: /mnt/data/stayledger/observability/loki
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [stayledger]
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: observability-tempo-pv
+  labels:
+    app.kubernetes.io/component: tempo
+    app.kubernetes.io/part-of: stayledger-observability
+    environment: production
+spec:
+  capacity:
+    storage: 8Gi
+  accessModes: ["ReadWriteOnce"]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: observability-sc
+  volumeMode: Filesystem
+  local:
+    path: /mnt/data/stayledger/observability/tempo
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [stayledger]

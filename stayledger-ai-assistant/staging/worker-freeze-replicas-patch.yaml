@@ -1,0 +1,43 @@
+# Keep recovery freeze on mutating workers after overlay apply.
+# KB embed canary: scale hotel-assistant-kb-embed-worker to 1.
+# Catalog write canary complete — freeze pms-catalog-sync at 0; DRY_RUN remains 1 in ConfigMap.
+# Re-enable other writers only via Phase 9 controlled sequence.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-kb-embed-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-catalog-sync
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-outbox
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0

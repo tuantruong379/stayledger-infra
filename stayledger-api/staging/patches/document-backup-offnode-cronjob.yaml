@@ -1,0 +1,128 @@
+# Keep staging document backup aligned with 22:30 VN + notify sidecar when
+# `kubectl apply -k stayledger-api/staging` is used (base CronJob has no notify).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-document-backup-offnode
+spec:
+  schedule: "30 22 * * *"
+  timeZone: Asia/Ho_Chi_Minh
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: stayledger-document-backup
+            component: guest-documents-backup
+            environment: staging
+        spec:
+          securityContext:
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: backup
+              env:
+                - name: DOCUMENT_BACKUP_MODE
+                  value: "disaster_recovery_only"
+                - name: DOCUMENT_BACKUP_PREFIX
+                  value: "guest-documents"
+                - name: DOCUMENT_BACKUP_ENCRYPTION
+                  value: "AES256"
+                - name: SHARED_DIR
+                  value: /shared
+                - name: DOCUMENT_BACKUP_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: bucket
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: access-key-id
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: secret-access-key
+                - name: AWS_DEFAULT_REGION
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: region
+                - name: DOCUMENT_BACKUP_ENCRYPTION_PASSPHRASE
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-document-backup-s3
+                      key: encryption-passphrase
+              volumeMounts:
+                - name: guest-documents
+                  mountPath: /var/lib/stayledger/guest-documents
+                  readOnly: true
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+                - name: shared
+                  mountPath: /shared
+            - name: notify
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Staging
+                - name: BACKUP_NOTIFY_TO
+                  value: platform@stayledger.io
+                - name: EMAIL_FROM
+                  value: noreply@stayledger.io
+                - name: SMTP_HOST
+                  value: email-smtp.ap-southeast-1.amazonaws.com
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-user
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-password
+              command: ["python3", "/scripts/notify.py"]
+              volumeMounts:
+                - name: notify-script
+                  mountPath: /scripts/notify.py
+                  subPath: notify.py
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: guest-documents
+              persistentVolumeClaim:
+                claimName: stayledger-guest-documents
+            - name: backup-script
+              configMap:
+                name: stayledger-document-backup-offnode-script
+                defaultMode: 0755
+            - name: notify-script
+              configMap:
+                name: stayledger-backup-notify-script
+                defaultMode: 0755
+            - name: shared
+              emptyDir:
+                medium: Memory
+                sizeLimit: 8Mi

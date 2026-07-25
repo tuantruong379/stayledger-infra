@@ -1,0 +1,17 @@
+# Shared StayLedger API manifests — apply via staging/ or production/ overlay.
+# Migration job is applied separately (Jobs are immutable after completion):
+#   kubectl apply -f migration-job.yaml -n <namespace>
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - serviceaccount.yaml
+  - networkpolicy.yaml
+  - pdb.yaml
+  - hpa.yaml
+  - deployment.yaml
+  - ai-worker-deployment.yaml
+  - guest-documents-pvc.yaml
+  - document-backup-offnode-cronjob.yaml
+  - ai-worker-servicemonitor.yaml
+  - api-servicemonitor.yaml

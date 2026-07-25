@@ -1,0 +1,281 @@
+# pg_dump backup CronJob for StayLedger PMS PostgreSQL (production).
+# Schedule: 22:00 Asia/Ho_Chi_Minh (explicit timeZone) — align with BACKUP_SCHEDULE in stayledger-api ConfigMap.
+# Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
+#
+# Target node: stayledger (local-storage-stayledger), matching postgres/redis PVs.
+# Prerequisites on node stayledger (SSH):
+#   sudo mkdir -p /mnt/data/stayledger/postgres-backup
+#   sudo chown 999:999 /mnt/data/stayledger/postgres-backup
+#   sudo chmod 750 /mnt/data/stayledger/postgres-backup
+#
+# Apply:
+#   .\apply-backup-notify.ps1
+#   kubectl apply -f postgres-backup-cronjob.yaml
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-postgres-backup-pv
+  labels:
+    type: local
+    app: stayledger-postgres
+    component: database-backup
+    environment: production
+spec:
+  storageClassName: local-storage-stayledger
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger/postgres-backup
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - stayledger
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stayledger-postgres-backup-pvc
+  namespace: stayledger
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: production
+spec:
+  storageClassName: local-storage-stayledger
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-postgres-backup-script
+  namespace: stayledger
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: production
+data:
+  backup.sh: |
+    #!/bin/bash
+    # Local pg_dump → PVC, then signal notify sidecar via /shared/{status,subject,body,done}.
+    set -euo pipefail
+
+    SHARED="${SHARED_DIR:-/shared}"
+    mkdir -p "${SHARED}"
+
+    BACKUP_DIR="/backup"
+    DB_HOST="stayledger-postgres"
+    DB_PORT="5432"
+    DB_NAME="stayledger"
+    # Local PVC keeps a short window; durable copies live in S3 (off-node RETENTION_DAYS).
+    RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-2}"
+    TIMESTAMP=$(date +%Y-%m-%d)
+    DUMP_FILE="${BACKUP_DIR}/stayledger_${TIMESTAMP}.dump"
+    STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+    finish() {
+      ec=$?
+      echo "${ec}" > "${SHARED}/status"
+      if [ "${ec}" -eq 0 ]; then
+        echo "postgres local backup ${TIMESTAMP}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres local backup SUCCEEDED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "dump=${DUMP_FILE}"
+          if [ -f "${DUMP_FILE}" ]; then
+            echo "size=$(du -sh "${DUMP_FILE}" | cut -f1)"
+          fi
+          echo "retention_days=${RETENTION_DAYS}"
+          echo "node_path=/mnt/data/stayledger/postgres-backup"
+        } > "${SHARED}/body"
+      else
+        echo "postgres local backup FAILED ${TIMESTAMP}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres local backup FAILED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "exit_code=${ec}"
+          echo "Check: kubectl logs -n stayledger job/<job-name> -c pg-dump"
+        } > "${SHARED}/body"
+      fi
+      touch "${SHARED}/done"
+      exit "${ec}"
+    }
+    trap finish EXIT
+
+    echo "[backup] Starting pg_dump for ${DB_NAME} at ${STARTED_AT}"
+
+    for i in $(seq 1 30); do
+      pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" && break
+      echo "[backup] Waiting for Postgres… (${i}/30)"
+      sleep 2
+    done
+
+    export PGPASSWORD="${POSTGRES_PASSWORD}"
+    pg_dump \
+      -h "${DB_HOST}" \
+      -p "${DB_PORT}" \
+      -U "${POSTGRES_USER}" \
+      -d "${DB_NAME}" \
+      -Fc \
+      -f "${DUMP_FILE}"
+
+    echo "[backup] Dump written: ${DUMP_FILE} ($(du -sh "${DUMP_FILE}" | cut -f1))"
+
+    find "${BACKUP_DIR}" -name "stayledger_*.dump" -mtime +"${RETENTION_DAYS}" -print -delete || true
+
+    echo "[backup] Finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-postgres-backup
+  namespace: stayledger
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: production
+spec:
+  schedule: "0 22 * * *"
+  timeZone: Asia/Ho_Chi_Minh
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          labels:
+            app: stayledger-postgres
+            component: database-backup
+            environment: production
+        spec:
+          restartPolicy: OnFailure
+          nodeSelector:
+            kubernetes.io/hostname: stayledger
+          # fsGroup so both dump (uid 999) and notify can use /shared + PVC.
+          securityContext:
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: pgvector/pgvector:pg16
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                runAsGroup: 999
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stayledger-postgres-config
+                      key: POSTGRES_USER
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-secrets
+                      key: postgres-password
+                - name: BACKUP_RETENTION_DAYS
+                  value: "2"
+                - name: SHARED_DIR
+                  value: /shared
+              command: ["/bin/bash", "/scripts/backup.sh"]
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+                - name: shared
+                  mountPath: /shared
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: "1"
+                  memory: 512Mi
+            - name: notify
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Production
+                - name: BACKUP_NOTIFY_TO
+                  value: platform@stayledger.io
+                - name: EMAIL_FROM
+                  value: noreply@stayledger.io
+                - name: SMTP_HOST
+                  value: email-smtp.ap-southeast-1.amazonaws.com
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-secrets
+                      key: smtp-user
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-secrets
+                      key: smtp-password
+              command: ["python3", "/scripts/notify.py"]
+              volumeMounts:
+                - name: notify-script
+                  mountPath: /scripts/notify.py
+                  subPath: notify.py
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: backup-data
+              persistentVolumeClaim:
+                claimName: stayledger-postgres-backup-pvc
+            - name: backup-script
+              configMap:
+                name: stayledger-postgres-backup-script
+                defaultMode: 0755
+            - name: notify-script
+              configMap:
+                name: stayledger-backup-notify-script
+                defaultMode: 0755
+            - name: shared
+              emptyDir:
+                medium: Memory
+                sizeLimit: 8Mi
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 32Mi

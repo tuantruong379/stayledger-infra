@@ -1,0 +1,86 @@
+---
+# DB Migration PreSync Hook — ArgoCD runs this before each sync of app-api.
+#
+# ArgoCD hook behaviour:
+#   PreSync            — runs before any other resource is applied
+#   BeforeHookCreation — deletes this Job if it already exists (handles retries)
+#   HookSucceeded      — deletes the Job after it succeeds (keeps cluster tidy)
+#
+# Image tag is kept in sync with deployment.yaml by the CI deploy-staging step.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stayledger-db-migrate
+  labels:
+    app: stayledger-api
+    component: migration
+    environment: overlay
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+spec:
+  backoffLimit: 2
+  # Hard deadline: if a migration hangs on an advisory lock (common during
+  # ALTER TABLE on a live DB) this aborts after 5 minutes rather than stalling
+  # the ArgoCD sync indefinitely.
+  activeDeadlineSeconds: 300
+  # Clean up the completed Job object after 1 hour.
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: migration
+        environment: overlay
+    spec:
+      restartPolicy: Never
+      # The stayledger-api ServiceAccount is created during the sync (non-hook
+      # resource), so it exists on all deploys after the first. On the very first
+      # deploy the default SA is used; automountServiceAccountToken: false below
+      # suppresses the token regardless of which SA is active.
+      serviceAccountName: stayledger-api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: putin111/stayledger-api:staging-7fe3b527
+          imagePullPolicy: Always
+          command:
+            - /app/node_modules/.bin/prisma
+            - migrate
+            - deploy
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: direct-database-url
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+              ephemeral-storage: "50Mi"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+              ephemeral-storage: "200Mi"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

@@ -26,19 +26,31 @@ data:
     ; transaction mode — apps must set pgbouncer=true in DATABASE_URL to disable prepared statements
     pool_mode = transaction
 
-    max_client_conn = 200
-    default_pool_size = 20
+    ; P1D retune: HPA scales API to 6 + 2 AI workers, each Prisma pool ≤8 client conns,
+    ; so ~64 steady client conns. 400 leaves wide headroom so scale-up never exhausts
+    ; max_client_conn (the prior 200 was hit during HPA scale-up → API pods crashed).
+    max_client_conn = 400
+    default_pool_size = 50
     min_pool_size = 2
     reserve_pool_size = 5
     reserve_pool_timeout = 3
-    ; hard cap: never open more than 25 real Postgres connections (leaves 75 of max_connections=100 free)
-    max_db_connections = 25
+    ; P1D retune: 25 server conns starved read+write+AI under mixed load (pinned at cap
+    ; while Postgres had 75 free). 80 uses Postgres' spare capacity (max_connections=150).
+    max_db_connections = 80
 
     server_idle_timeout = 600
-    client_idle_timeout = 60
+    ; P1D retune: client_idle_timeout=60 was killing Prisma's long-lived pooled
+    ; connections (worker logs flooded with FATAL client_idle_timeout → reconnect churn
+    ; → AI p95 ~34s). 0 disables idle eviction; Prisma manages its own pool lifecycle.
+    client_idle_timeout = 0
 
     log_stats = 1
     stats_period = 60
+
+    ; P1A: allow the Prometheus pgbouncer-exporter to read SHOW STATS/POOLS via the
+    ; admin console. The `pgbouncer_exporter` user must also exist in the mounted
+    ; userlist.txt secret (stayledger-pgbouncer-secret) for auth to succeed.
+    stats_users = pgbouncer_exporter
 
     server_tls_sslmode = disable
     client_tls_sslmode = disable

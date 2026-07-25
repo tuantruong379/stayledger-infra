@@ -1,0 +1,37 @@
+---
+# Production TLS ingress for the StayLedger API (api.stayledger.io).
+# DNS prereq: api.stayledger.io → ingress controller LoadBalancer / node IP
+# Apply after DNS propagates; cert-manager will provision the TLS certificate automatically.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    # SSE (/notifications/stream) works on Traefik origin. Cloudflare orange-cloud
+    # currently buffers the stream — keep DNS-only for api OR add CF Cache Rule
+    # Bypass + disable compression for path containing /notifications/stream.
+    # See artifacts/reports/production-full-test-20260716-095019/SUMMARY.md.
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - api.stayledger.io
+      secretName: stayledger-production-api-tls
+  rules:
+    - host: api.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stayledger-api
+                port:
+                  number: 80

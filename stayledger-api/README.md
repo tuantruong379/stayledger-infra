@@ -1,67 +1,40 @@
 # StayLedger API — Kubernetes Manifests
 
 ```text
-k8s/
-├── prd/                    # Production (namespace: stayledger)
-│   ├── deployment.yaml     # ConfigMap + Deployment + Service (NodePort 30001)
-│   └── migration-job.yaml  # Prisma migration Job template
-└── staging/                # Staging (namespace: stayledger-staging)
-    └── deployment.yaml     # ConfigMap + Deployment + Service + NodePort + Ingress + Migration Job
+stayledger-api/
+├── base/           # Shared manifests (Kustomize)
+├── staging/        # Staging overlay — kubectl apply -k staging/
+├── production/     # Production overlay — kubectl apply -k production/
+└── prd/            # DEPRECATED stubs
 ```
 
-Infra prerequisites (postgres, redis, secrets) are in `stayledger-shared/k8s/prd/` or `staging/`.
+Datastores: `stayledger-shared/datastores/{staging,production}/`
 
 ## Deploy — Staging
 
 ```powershell
-# Option A: automated script (recommended)
-cd stayledger-api
-.\scripts\deploy-staging.ps1
-
-# Option B: manual
-$SHA = git rev-parse --short=8 HEAD
-docker build -f Dockerfile -t putin111/stayledger-api:staging-$SHA ..
-docker push putin111/stayledger-api:staging-$SHA
-
-(Get-Content k8s/staging/deployment.yaml) -replace "staging-PLACEHOLDER","staging-$SHA" | kubectl apply -f -
-kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger-staging --timeout=120s
+kubectl apply -k stayledger-api/staging/
+kubectl apply -f stayledger-api/base/migration-job.yaml -n stayledger-staging  # one-shot, when needed
 kubectl rollout status deployment/stayledger-api -n stayledger-staging
 ```
 
+Verified image tags (2026-07-04): `staging-b29e645` (API/AI worker), set in `staging/kustomization.yaml`.
+
 ## Deploy — Production
 
-```powershell
-$SHA = git rev-parse --short=8 HEAD
-docker build -f Dockerfile -t putin111/stayledger-api:$SHA ..
-docker push putin111/stayledger-api:$SHA
-
-# Migration (delete old job first — jobs are immutable after completion)
-kubectl delete job stayledger-db-migrate -n stayledger --ignore-not-found
-(Get-Content k8s/prd/migration-job.yaml) -replace "<IMAGE_TAG>","$SHA" | kubectl apply -f -
-kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger --timeout=120s
-
-# Rolling update
-kubectl set image deployment/stayledger-api api=putin111/stayledger-api:$SHA -n stayledger
-kubectl rollout status deployment/stayledger-api -n stayledger
-```
+See [production/README.md](production/README.md) and `kubectl apply -k stayledger-api/production/`.
 
 ## Health Checks
 
 ```bash
-curl http://hkk8s-hub-master:30001/api/health    # production
-curl http://hkk8s-hub-master:30011/api/health    # staging
+curl https://stg-api.stayledger.io/api/ready    # staging
+curl http://hkk8s-hub-master:30011/api/ready    # staging NodePort
+curl https://api.stayledger.io/api/ready        # production
 ```
 
 ## Rollback
 
 ```bash
-kubectl rollout undo deployment/stayledger-api -n stayledger          # production
-kubectl rollout undo deployment/stayledger-api -n stayledger-staging  # staging
+kubectl rollout undo deployment/stayledger-api -n stayledger-staging
+kubectl rollout undo deployment/stayledger-api -n stayledger
 ```
-
-## NodePorts
-
-| Environment | NodePort | Ingress host (when configured)      |
-|-------------|----------|-------------------------------------|
-| Production  | 30001    | —                                   |
-| Staging     | 30011    | api-staging.stayledger.tekcent.com  |

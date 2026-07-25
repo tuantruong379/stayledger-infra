@@ -4,7 +4,7 @@ metadata:
   name: redis-pv
   labels:
     app.kubernetes.io/name: redis
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache
 spec:
   capacity:

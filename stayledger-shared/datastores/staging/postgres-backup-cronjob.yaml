@@ -1,0 +1,279 @@
+# pg_dump backup CronJob for StayLedger PMS PostgreSQL (staging).
+# Schedule: 22:00 Asia/Ho_Chi_Minh — aligned with production window (local → docs → off-node).
+# Email on success/fail → platform@stayledger.io via SES SMTP (notify sidecar).
+#
+# Apply:
+#   ..\production\apply-backup-notify.ps1 -Namespace stayledger-staging -Environment staging
+#   kubectl apply -f postgres-backup-cronjob.yaml
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: stayledger-staging-postgres-backup-pv
+  labels:
+    type: local
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  local:
+    path: /mnt/data/stayledger-staging/postgres-backup
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - hkk8s-hub-master
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: stayledger-postgres-backup-pvc
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  storageClassName: local-storage-hub-master-staging
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-postgres-backup-script
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+data:
+  backup.sh: |
+    #!/bin/bash
+    # Local pg_dump → PVC, then signal notify sidecar via /shared/{status,subject,body,done}.
+    set -euo pipefail
+
+    SHARED="${SHARED_DIR:-/shared}"
+    mkdir -p "${SHARED}"
+
+    BACKUP_DIR="/backup"
+    DB_HOST="stayledger-postgres"
+    DB_PORT="5432"
+    # Must match POSTGRES_DB in stayledger-postgres-config
+    DB_NAME="${POSTGRES_DB:-stayledger_staging}"
+    RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-14}"
+    TIMESTAMP=$(date +%Y-%m-%d)
+    DUMP_FILE="${BACKUP_DIR}/stayledger_${TIMESTAMP}.dump"
+    STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+
+    finish() {
+      ec=$?
+      echo "${ec}" > "${SHARED}/status"
+      if [ "${ec}" -eq 0 ]; then
+        echo "postgres local backup ${TIMESTAMP}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres local backup SUCCEEDED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "dump=${DUMP_FILE}"
+          if [ -f "${DUMP_FILE}" ]; then
+            echo "size=$(du -sh "${DUMP_FILE}" | cut -f1)"
+          fi
+          echo "retention_days=${RETENTION_DAYS}"
+          echo "environment=Staging"
+        } > "${SHARED}/body"
+      else
+        echo "postgres local backup FAILED ${TIMESTAMP}" > "${SHARED}/subject"
+        {
+          echo "StayLedger Postgres local backup FAILED"
+          echo "started_at=${STARTED_AT}"
+          echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "exit_code=${ec}"
+          echo "environment=Staging"
+          echo "Check: kubectl logs -n stayledger-staging job/<job-name> -c pg-dump"
+        } > "${SHARED}/body"
+      fi
+      touch "${SHARED}/done"
+      exit "${ec}"
+    }
+    trap finish EXIT
+
+    echo "[backup] Starting pg_dump for ${DB_NAME} at ${STARTED_AT}"
+
+    ready=0
+    for i in $(seq 1 30); do
+      if pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}"; then
+        ready=1
+        break
+      fi
+      echo "[backup] Waiting for Postgres… (${i}/30)"
+      sleep 2
+    done
+    if [ "${ready}" != "1" ]; then
+      echo "[backup] ERROR: Postgres not ready at ${DB_HOST}:${DB_PORT}"
+      exit 1
+    fi
+
+    export PGPASSWORD="${POSTGRES_PASSWORD}"
+    pg_dump -h "${DB_HOST}" -p "${DB_PORT}" -U "${POSTGRES_USER}" -d "${DB_NAME}" -Fc -f "${DUMP_FILE}"
+
+    find "${BACKUP_DIR}" -name "stayledger_*.dump" -mtime +"${RETENTION_DAYS}" -print -delete || true
+    echo "[backup] Finished at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-postgres-backup
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-backup
+    environment: staging
+spec:
+  schedule: "0 22 * * *"
+  timeZone: Asia/Ho_Chi_Minh
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        metadata:
+          # Pod labels so the datastore ingress NetworkPolicy admits the backup
+          # pod to Postgres:5432 — without app=stayledger-postgres the dump is blocked.
+          labels:
+            app: stayledger-postgres
+            component: database-backup
+            environment: staging
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            fsGroup: 999
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: pg-dump
+              image: pgvector/pgvector:pg16
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 999
+                runAsGroup: 999
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: POSTGRES_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stayledger-postgres-config
+                      key: POSTGRES_USER
+                - name: POSTGRES_DB
+                  valueFrom:
+                    configMapKeyRef:
+                      name: stayledger-postgres-config
+                      key: POSTGRES_DB
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: postgres-password
+                - name: BACKUP_RETENTION_DAYS
+                  value: "14"
+                - name: SHARED_DIR
+                  value: /shared
+              command: ["/bin/bash", "/scripts/backup.sh"]
+              volumeMounts:
+                - name: backup-data
+                  mountPath: /backup
+                - name: backup-script
+                  mountPath: /scripts/backup.sh
+                  subPath: backup.sh
+                - name: shared
+                  mountPath: /shared
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 256Mi
+            - name: notify
+              image: python:3.12-alpine
+              imagePullPolicy: IfNotPresent
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 65532
+                runAsGroup: 65532
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+              env:
+                - name: BACKUP_NOTIFY_ENV
+                  value: Staging
+                - name: BACKUP_NOTIFY_TO
+                  value: platform@stayledger.io
+                - name: EMAIL_FROM
+                  value: noreply@stayledger.io
+                - name: SMTP_HOST
+                  value: email-smtp.ap-southeast-1.amazonaws.com
+                - name: SMTP_PORT
+                  value: "465"
+                - name: SMTP_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-user
+                - name: SMTP_PASS
+                  valueFrom:
+                    secretKeyRef:
+                      name: stayledger-staging-secrets
+                      key: smtp-password
+              command: ["python3", "/scripts/notify.py"]
+              volumeMounts:
+                - name: notify-script
+                  mountPath: /scripts/notify.py
+                  subPath: notify.py
+                - name: shared
+                  mountPath: /shared
+              resources:
+                requests:
+                  cpu: 20m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 128Mi
+          volumes:
+            - name: backup-data
+              persistentVolumeClaim:
+                claimName: stayledger-postgres-backup-pvc
+            - name: backup-script
+              configMap:
+                name: stayledger-postgres-backup-script
+                defaultMode: 0755
+            - name: notify-script
+              configMap:
+                name: stayledger-backup-notify-script
+                defaultMode: 0755
+            - name: shared
+              emptyDir:
+                medium: Memory
+                sizeLimit: 8Mi
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 32Mi

@@ -4,7 +4,7 @@ metadata:
   name: postgres-pv
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   capacity:

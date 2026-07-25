@@ -1,0 +1,219 @@
+---
+# ConfigMap is in configmap.yaml — kept separate to avoid S6907 linter warnings.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-admin-web
+  namespace: stayledger
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stayledger-admin-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-admin-web
+        component: frontend
+        environment: production
+        version: "COMMIT_SHA"
+    spec:
+      serviceAccountName: stayledger-admin-web
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: stayledger-admin-web
+      # env-inject: copies /app/.next into next-patched emptyDir and sed-replaces
+      # placeholder URLs with runtime values. The main container mounts next-patched
+      # at /app/.next so it serves the patched bundle with readOnlyRootFilesystem: true.
+      initContainers:
+        - name: env-inject
+          # IMPORTANT: this image MUST equal the main container image (see anchor below).
+          # The init container copies its own /app/.next into the shared volume; a mismatch
+          # overwrites the main container's build with stale assets.
+          image: &adminWebImage putin111/stayledger-admin-web:COMMIT_SHA
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              cp -r /app/.next/. /next-patched/
+              API_ORIGIN=$(echo "${NEXT_PUBLIC_API_URL}" | sed -E 's|/api(-proxy)?$||')
+              LEGACY_API_URLS="http://10.89.1.40:30010/api-proxy http://10.89.1.40:30010/api http://10.89.1.40:30010 https://api-staging.stayledger.tekcent.com/api https://admin-staging.stayledger.tekcent.com/api-proxy https://stg-app.stayledger.io/api-proxy https://stg-api.stayledger.io/api-proxy https://stg-api.stayledger.io/api https://stg-app.stayledger.io/api"
+              LEGACY_BOOKING_URLS="http://10.89.1.40:30010 https://admin-staging.stayledger.tekcent.com https://booking-staging.stayledger.tekcent.com https://stg-app.stayledger.io"
+              find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                xargs -0 sed -i \
+                  -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              for legacy in $LEGACY_API_URLS; do
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_API_URL}|g"
+              done
+              for legacy in $LEGACY_BOOKING_URLS; do
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              done
+              find /next-patched -name "routes-manifest.json" -print0 | \
+                xargs -0 sed -i \
+                  -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|https://placeholder-api.invalid|${API_ORIGIN}|g" \
+                  -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g" \
+                  -e "s|script-src 'self'|script-src 'self' 'unsafe-inline'|g"
+              for legacy in $LEGACY_API_URLS; do
+                find /next-patched -name "routes-manifest.json" -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_API_URL}|g"
+              done
+              for legacy in $LEGACY_BOOKING_URLS; do
+                find /next-patched -name "routes-manifest.json" -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              done
+          envFrom:
+            - configMapRef:
+                name: stayledger-admin-web-config
+          volumeMounts:
+            - name: next-patched
+              mountPath: /next-patched
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+              ephemeral-storage: "300Mi"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+              ephemeral-storage: "600Mi"
+      containers:
+        - name: admin-web
+          image: *adminWebImage
+          imagePullPolicy: Always
+          args: ["node", "server.js"]
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: TZ
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NODE_ENV
+            - name: INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: INTERNAL_API_URL
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          volumeMounts:
+            - name: next-patched
+              mountPath: /app/.next
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "1000m"
+              memory: "768Mi"
+              ephemeral-storage: "200Mi"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: next-patched
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
+---
+# NodePort 30000 — direct ops access (Ingress routes app.stayledger.io in production)
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-admin-web
+  namespace: stayledger
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: production
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30000
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-admin-web

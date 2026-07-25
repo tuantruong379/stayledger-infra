@@ -1,6 +1,6 @@
-# Grafana — Pricing & Booking funnel.
+# Grafana - Pricing & Booking funnel.
 #
-# Reasoning: Week 4/C8 — ties business outcomes (bookings_confirmed) back to the
+# Reasoning: Week 4/C8 - ties business outcomes (bookings_confirmed) back to the
 # pricing pipeline (cache vs n8n vs fallback) and n8n call health. Useful when the
 # question is "did pricing tank revenue?" instead of "did the SLO breach?".
 # Reasoning: ``booking_workflow`` constant matches app metric label ``hotel_booking_webhook`` (see app/observability/n8n_workflows.py).
@@ -18,18 +18,18 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger AI"
+    grafana_folder: "StayLedger Internal"
 data:
   pricing-booking.json: |-
     {
-      "title": "StayLedger AI — Pricing & Booking Funnel",
+      "title": "AI Assistant - Pricing & Booking Funnel",
       "uid": "hotel-pricing-booking",
       "schemaVersion": 39,
       "version": 4,
       "timezone": "Asia/Ho_Chi_Minh",
       "refresh": "30s",
       "time": { "from": "now-6h", "to": "now" },
-      "tags": ["stayledger-ai", "pricing", "booking"],
+      "tags": ["stayledger", "internal", "deferred", "ai", "assistant"],
       "templating": {
         "list": [
           {

@@ -2,6 +2,23 @@
 
 Central Kubernetes infrastructure repository for the StayLedger platform. All manifests for every project are organised here by project, with shared cluster-wide components in `stayledger-shared/`.
 
+## Clusters
+
+| Environment | kubectl context | Typical namespaces | Overlay / install |
+|---|---|---|---|
+| **Staging** | `HK-HUB-Cluster` | `stayledger-staging`, `stayledger-ai-assistant`, `observability` | `**/staging/`, `observability/install.ps1` |
+| **Production** | `stayledger` | `stayledger`, `stayledger-ai-assistant`, `observability` | `**/production/`, `observability/install-production.ps1` |
+
+Always confirm context before apply:
+
+```powershell
+kubectl config current-context   # expect HK-HUB-Cluster (staging) or stayledger (production)
+kubectl config use-context stayledger          # production
+kubectl config use-context HK-HUB-Cluster      # staging
+```
+
+**Production releases:** use `scripts/deploy-production-stayledger-safe.ps1` (requires explicit image tags and `-ConfirmProd`). Canonical runbooks live in workspace [docs/deployment/](../docs/deployment/README.md).
+
 ## Structure
 
 ```text
@@ -30,12 +47,14 @@ stayledger-infra/
 │       └── redis-local.conf
 │
 ├── stayledger-api/                 # StayLedger PMS backend API
-│   ├── prd/                        # Production deployment
-│   └── staging/                    # Staging deployment
+│   ├── base/                       # Kustomize base
+│   ├── production/                 # Production overlay → kubectl apply -k
+│   └── staging/                    # Staging overlay → kubectl apply -k
 │
-├── stayledger-admin-web/           # StayLedger admin web frontend
-│   ├── prd/
-│   └── staging/
+├── stayledger-admin-web/           # StayLedger admin web frontend (env-inject init container)
+│   ├── base/                       # Kustomize base (env-inject + admin-web share one image)
+│   ├── production/                 # Production overlay → kubectl apply -k
+│   └── staging/                    # Staging overlay → kubectl apply -k
 │
 └── stayledger-ai-assistant/        # StayLedger AI Assistant (hotel chatbot)
     ├── base/                       # Kustomize root → kubectl apply -k stayledger-ai-assistant/base/
@@ -105,12 +124,18 @@ kubectl apply -f stayledger-shared/datastores/prd/
 
 ### 3. Per-project workloads
 
-**stayledger-api / stayledger-admin-web:**
+**stayledger-api / stayledger-admin-web (Kustomize overlays):**
 
 ```powershell
-kubectl apply -f stayledger-api/prd/
-kubectl apply -f stayledger-admin-web/prd/
+kubectl apply -k stayledger-api/production/
+kubectl apply -k stayledger-admin-web/production/
 ```
+
+> **Always use `-k` (Kustomize), never `-f`, for `stayledger-admin-web`.** Its Deployment runs an
+> `env-inject` init container that serves the bundle; the `images:` transformer keeps that init
+> container and the main container on the same image. `kubectl apply -f` or `kubectl set image admin-web=…`
+> alone updates only one of them and the pod silently serves stale JS. See
+> `stayledger-admin-web/README.md` → "CRITICAL — the `env-inject` init container serves the bundle".
 
 **stayledger-ai-assistant (Kustomize):**
 
@@ -138,6 +163,57 @@ kubectl apply -f stayledger-ai-assistant/observability/dashboards/
 kubectl apply -f stayledger-ai-assistant/argocd/project.yaml
 kubectl apply -f stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
 ```
+
+### Staging TLS edge (PMS admin + API)
+
+Point DNS `stg-app.stayledger.io` and `stg-api.stayledger.io` at the cluster ingress
+controller, then:
+
+```powershell
+# Update frontend-url in the cluster secret (email links, invites)
+kubectl patch secret stayledger-staging-secrets -n stayledger-staging --type merge `
+  -p '{"stringData":{"frontend-url":"https://stg-app.stayledger.io"}}'
+
+kubectl apply -f stayledger-shared/staging/tls-edge/cert-manager-issuer.yaml
+kubectl apply -f stayledger-shared/staging/ingress.yaml
+kubectl apply -k stayledger-api/staging/
+kubectl apply -k stayledger-admin-web/staging/   # -k (not -f): keeps env-inject + admin-web in sync
+```
+
+Verify:
+
+```bash
+curl -fsS https://stg-app.stayledger.io/healthz
+curl -fsS https://stg-api.stayledger.io/api/health
+```
+
+### Staging (AI Assistant — NodePort)
+
+Public URLs via Cloudflare → node ports (no ingress):
+
+| Surface | URL | NodePort |
+| --- | --- | --- |
+| UI | `https://stg-assistant.stayledger.io` | 30081 |
+| API | `https://stg-api-assistant.stayledger.io` | 30080 |
+
+```powershell
+kubectl apply -k stayledger-ai-assistant/staging/
+kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n stayledger-ai-assistant
+```
+
+Verify:
+
+```bash
+curl -fsS https://stg-assistant.stayledger.io/
+curl -fsS https://stg-api-assistant.stayledger.io/health
+```
+
+See [stayledger-ai-assistant/staging/README.md](stayledger-ai-assistant/staging/README.md).
+
+**Cloudflare note:** `/_next/static/*` is cached as `immutable` for 1 year. After changing
+`NEXT_PUBLIC_*` via ConfigMap/env-inject only (without a new image build), purge Cloudflare
+cache for `stg-app.stayledger.io/_next/static/*` or rebuild/push a new image so chunk hashes
+change. Otherwise browsers keep loading stale JS with the old API URL.
 
 ## Adding a new project
 

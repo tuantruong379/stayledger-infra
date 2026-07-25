@@ -2,10 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-channel-worker
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-channel-worker
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   replicas: 1
   minReadySeconds: 10
@@ -21,7 +21,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hotel-assistant-channel-worker
-        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/part-of: stayledger-ai-assistant
     spec:
       serviceAccountName: api-sa
       automountServiceAccountToken: false
@@ -72,7 +72,7 @@ spec:
               cpu: "1"
               memory: 1Gi
           # Reasoning: run a dedicated consumer loop to process queued Facebook/Zalo events and send replies.
-          command: ["python", "-m", "app.workers.channel_worker"]
+          command: ["/venv/bin/python", "-m", "app.workers.channel_worker"]
           startupProbe:
             exec:
               # Reasoning: slim runtime images may not include `ps`; /proc/1 exists while PID 1 is alive.
@@ -91,7 +91,7 @@ spec:
               # Reasoning: Redis + Postgres (same probe as webhook worker; no external LLM).
               command:
                 [
-                  "python",
+                  "/venv/bin/python",
                   "-c",
                   "from app.observability.health_checks import check_worker_readiness; import sys; sys.exit(0 if check_worker_readiness().get('ok') else 1)",
                 ]
@@ -105,4 +105,3 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 64Mi
-

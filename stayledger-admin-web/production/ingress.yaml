@@ -1,0 +1,33 @@
+---
+# Production TLS ingress for the StayLedger admin web (app.stayledger.io).
+# Note: stayledger.io and www.stayledger.io are handled by stayledger-landing/prd/ingress.yaml.
+# DNS prereq: app.stayledger.io → ingress controller LoadBalancer / node IP
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: stayledger-admin-web
+  namespace: stayledger
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - app.stayledger.io
+      secretName: stayledger-production-app-tls
+  rules:
+    - host: app.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: stayledger-admin-web
+                port:
+                  number: 80

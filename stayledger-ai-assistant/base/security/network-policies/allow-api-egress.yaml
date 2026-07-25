@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-egress
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   podSelector:
     matchLabels:
@@ -24,6 +24,16 @@ spec:
     ports:
     - protocol: TCP
       port: 6379
+  # API replica → API replica (pairs with the matching ingress rule in
+  # allow-api-ingress.yaml; NetworkPolicy requires both sides of a peer
+  # connection to allow it).
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-api
+    ports:
+    - protocol: TCP
+      port: 8000
   - to:
     - namespaceSelector:
         matchLabels:
@@ -33,6 +43,27 @@ spec:
       port: 4318
     - protocol: TCP
       port: 4317
+  # Reasoning: ClusterIP PMS for JWKS + External API (egress except 10/8 previously blocked this).
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger-staging
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 3001
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 3001
   - to:
     - ipBlock:
         cidr: 0.0.0.0/0

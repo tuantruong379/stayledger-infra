@@ -12,10 +12,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-frontend
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-frontend
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: frontend
 spec:
   replicas: 2
@@ -32,7 +32,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hotel-assistant-frontend
-        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: frontend
     spec:
       affinity:
@@ -117,10 +117,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hotel-assistant-frontend
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-frontend
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: frontend
 spec:
   type: NodePort

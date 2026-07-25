@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-worker
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        version: "bd2970c"
+    spec:
+      containers:
+        - name: ai-worker
+          # Idle CPU ~7m; memory sits ~421Mi — keep mem, hard-cap CPU at 500m.
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "768Mi"
+            limits:
+              cpu: "500m"
+              memory: "1536Mi"

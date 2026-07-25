@@ -1,0 +1,24 @@
+# Production Loki sizing for stayledger k3s (smaller than hub staging).
+# Cache requests must be >= observability LimitRange min (50m CPU / 64Mi).
+singleBinary:
+  persistence:
+    size: 10Gi
+  resources:
+    requests: { cpu: 50m, memory: 256Mi }
+    limits:   { cpu: 400m, memory: 768Mi }
+
+chunksCache:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 100m, memory: 256Mi }
+
+resultsCache:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 100m, memory: 128Mi }
+
+loki:
+  limits_config:
+    retention_period: 168h
+    ingestion_rate_mb: 8
+    ingestion_burst_size_mb: 16

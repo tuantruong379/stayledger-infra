@@ -5,25 +5,25 @@ metadata:
   namespace: argocd
   annotations:
     # Optional: Argo CD Image Updater can move the Kustomize image tags to the
-    # newest sha-* image pushed by .github/workflows/cd.yml.
+    # newest short-hash image pushed by .github/workflows/ci.yml (no sha- prefix).
     argocd-image-updater.argoproj.io/image-list: api=putin111/stayledger-ai-assistant,frontend=putin111/stayledger-ai-assistant-frontend
     argocd-image-updater.argoproj.io/write-back-method: git
     argocd-image-updater.argoproj.io/git-branch: release/1.2.0
-    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
+    argocd-image-updater.argoproj.io/api.allow-tags: regexp:^[0-9a-f]{7,40}$
     argocd-image-updater.argoproj.io/api.update-strategy: newest-build
     argocd-image-updater.argoproj.io/api.kustomize.image-name: putin111/stayledger-ai-assistant
-    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^sha-[0-9a-f]{7,40}$
+    argocd-image-updater.argoproj.io/frontend.allow-tags: regexp:^[0-9a-f]{7,40}$
     argocd-image-updater.argoproj.io/frontend.update-strategy: newest-build
     argocd-image-updater.argoproj.io/frontend.kustomize.image-name: putin111/stayledger-ai-assistant-frontend
 spec:
-  project: hotel-assistant
+  project: stayledger-ai-assistant
   source:
-    repoURL: https://github.com/tuantruong379/stayledger-ai-assistant.git
-    targetRevision: release/1.2.0
-    path: infra/stayledger-ai-assistant/base
+    repoURL: https://github.com/tuantruong379/stayledger-infra.git
+    targetRevision: release/ai-assistant-1.2.25
+    path: stayledger-ai-assistant/staging
   destination:
     server: https://kubernetes.default.svc
-    namespace: hotel-assistant
+    namespace: stayledger-ai-assistant
   syncPolicy:
     automated:
       prune: true

@@ -1,0 +1,81 @@
+---
+# DB Migration Job — run once before each production deployment.
+# NOT managed by ArgoCD hooks (production uses manual apply workflow).
+#
+# Usage:
+#   export IMAGE_TAG=<7-char>   # short commit hash from CI summary (no sha- prefix)
+#   sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-api/production/migration-job.yaml | kubectl apply -f -
+#   kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger --timeout=300s
+#   kubectl logs job/stayledger-db-migrate -n stayledger
+#
+# IMPORTANT: DATABASE_URL here maps to DIRECT_DATABASE_URL (bypasses PgBouncer).
+# Prisma migrate deploy requires a direct Postgres connection — PgBouncer transaction
+# pooling mode is incompatible with DDL migrations (prepared statement conflicts).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stayledger-db-migrate
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: migration
+    environment: production
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 3600
+  template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: migration
+        environment: production
+    spec:
+      restartPolicy: Never
+      serviceAccountName: stayledger-api
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: putin111/stayledger-api:COMMIT_SHA
+          imagePullPolicy: Always
+          command:
+            - /app/node_modules/.bin/prisma
+            - migrate
+            - deploy
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          env:
+            # Prisma requires a direct Postgres URL for migrations (not PgBouncer).
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: direct-database-url
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+              ephemeral-storage: "50Mi"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+              ephemeral-storage: "200Mi"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

@@ -1,10 +1,22 @@
-# kube-prometheus-stack Helm values for StayLedger staging
+# kube-prometheus-stack Helm values for StayLedger — single cluster-wide Prometheus/Grafana
+# instance covering BOTH stayledger-staging and stayledger (production) namespaces.
 # helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 # helm upgrade --install kps prometheus-community/kube-prometheus-stack \
 #   -n observability -f helm/kube-prometheus-stack-values.yaml \
 #   --set grafana.adminPassword=<pw>
 #
 # Release name `kps` matches the live cluster (fullnameOverride).
+#
+# P1-7 (2026-07-04): this file previously scoped serviceMonitorNamespaceSelector /
+# podMonitorNamespaceSelector / ruleNamespaceSelector to `stayledger-staging` only, and the
+# one additionalScrapeConfigs job for the main API hardcoded the staging FQDN — so the
+# `stayledger` (production) namespace was never scraped at all: no AI latency/error/token/
+# quota panels, no AiWorkerScrapeMissing-style alerts, nothing, for production. Fixed by
+# adding `stayledger` to all three namespace selectors and a second static scrape job for
+# the production API. `kubectl apply -k stayledger-api/production/` already creates the
+# ai-worker ServiceMonitor in the `stayledger` namespace via `../base` (verified — the
+# loose top-level copies in `production/` are unreferenced, see the note in that
+# directory), so no infra changes were needed there — only the Prometheus-side selectors.
 
 fullnameOverride: kps
 
@@ -104,21 +116,23 @@ prometheus:
     serviceMonitorSelector: {}
     podMonitorSelector: {}
     probeSelector: {}
+    # P1-7: `stayledger` (production) added alongside `stayledger-staging` — this cluster
+    # runs one Prometheus for both environments, so both namespaces must be discoverable.
     serviceMonitorNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring, kube-system]
+          values: [stayledger-staging, stayledger, observability, monitoring, kube-system]
     podMonitorNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring]
+          values: [stayledger-staging, stayledger, observability, monitoring]
     ruleNamespaceSelector:
       matchExpressions:
         - key: kubernetes.io/metadata.name
           operator: In
-          values: [stayledger-staging, observability, monitoring]
+          values: [stayledger-staging, stayledger, observability, monitoring]
     enableFeatures:
       - exemplar-storage
     enableRemoteWriteReceiver: true
@@ -132,7 +146,10 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 25Gi
+    # Mounted at /etc/prometheus/secrets/stayledger-metrics-auth/token by configure-staging-metrics-auth.ps1
+    secrets:
+      - stayledger-metrics-auth
     additionalScrapeConfigs:
       - job_name: stayledger-api
         static_configs:
@@ -140,31 +157,49 @@ prometheus:
               - stayledger-api.stayledger-staging.svc.cluster.local:80
         metrics_path: /api/metrics
         scrape_interval: 15s
+        bearer_token_file: /etc/prometheus/secrets/stayledger-metrics-auth/token
+
+      # P1-7: production counterpart of the staging job above — same API, same
+      # /api/metrics path, different namespace. Without this job, production had zero
+      # scrape target for stayledger-api at all (the namespace-selector fix above only
+      # unblocks ServiceMonitor/PodMonitor/PrometheusRule discovery, not static jobs).
+      - job_name: stayledger-api-production
+        static_configs:
+          - targets:
+              - stayledger-api.stayledger.svc.cluster.local:80
+        metrics_path: /api/metrics
+        scrape_interval: 15s
         # Uncomment when METRICS_AUTH_TOKEN is configured:
         # authorization:
         #   credentials: <metrics-auth-token>
 
-      - job_name: postgres-exporter
+      # AI worker metrics (ai_first_token_ms, ai_worker_inflight, ai_worker_failed_jobs_total,
+      # ai_stream_*) are scraped via the operator-native ServiceMonitor
+      # `stayledger-ai-worker` (stayledger-infra/stayledger-api/base/ai-worker-servicemonitor.yaml,
+      # applied to both staging/ and production/ via kustomize `../base`), which takes effect
+      # WITHOUT a helm upgrade as long as the namespace-selector fix above is applied. Do NOT
+      # re-add a static job here — it would double-scrape the worker once this values file is
+      # helm-upgraded.
+
+      # AI Assistant postgres/redis exporters live in stayledger-ai-assistant and are
+      # scraped via ServiceMonitor hotel-assistant-datastore-exporters (not static jobs).
+      # Legacy observability-namespace exporter Deployments can be removed after helm upgrade.
+
+      # P1A: enabled. Requires pgbouncer-exporter-secret (exporter password), the
+      # pgbouncer_exporter user in the PgBouncer userlist secret + stats_users (set
+      # in datastores/staging/pgbouncer.yaml), and the exporter deployment running.
+      - job_name: pgbouncer-exporter
         static_configs:
           - targets:
-              - postgres-exporter.observability.svc.cluster.local:9187
+              - pgbouncer-exporter.observability.svc.cluster.local:9127
         scrape_interval: 15s
-
-      - job_name: redis-exporter
-        static_configs:
-          - targets:
-              - redis-exporter.observability.svc.cluster.local:9121
-        scrape_interval: 15s
-
-      # Uncomment when pgbouncer-exporter-secret exists and deployment is scaled to 1:
-      # - job_name: pgbouncer-exporter
-      #   static_configs:
-      #     - targets:
-      #         - pgbouncer-exporter.observability.svc.cluster.local:9127
-      #   scrape_interval: 15s
 
 alertmanager:
   alertmanagerSpec:
+    # Reasoning: AlertmanagerConfig lives in observability but PMS alerts are labeled
+    # namespace=stayledger-staging. Without None, email routes only match observability.
+    alertmanagerConfigMatcherStrategy:
+      type: None
     storage:
       volumeClaimTemplate:
         spec:

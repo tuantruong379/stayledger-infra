@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-api-ingress
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
 spec:
   podSelector:
     matchLabels:
@@ -10,9 +10,50 @@ spec:
   policyTypes:
   - Ingress
   ingress:
+  # NodePort / external clients (Cilium: ipBlock alone does not cover in-cluster pods)
   - from:
     - ipBlock:
         cidr: 0.0.0.0/0
+    ports:
+    - protocol: TCP
+      port: 8000
+  # In-cluster frontend → API
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-frontend
+    ports:
+    - protocol: TCP
+      port: 8000
+  # API replica → API replica (Service-routed cross-pod calls, e.g. idempotency
+  # probes / any future internal call). The ipBlock 0.0.0.0/0 rule above does not
+  # cover this (see comment) since it never matched the pod's own identity.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-api
+    ports:
+    - protocol: TCP
+      port: 8000
+  # PMS staging API → booking.confirmed / booking.cancelled webhooks (/internal/pms/...)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger-staging
+      podSelector:
+        matchLabels:
+          app: stayledger-api
+    ports:
+    - protocol: TCP
+      port: 8000
+  # PMS production API (same webhook path when deployed)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: stayledger
+      podSelector:
+        matchLabels:
+          app: stayledger-api
     ports:
     - protocol: TCP
       port: 8000

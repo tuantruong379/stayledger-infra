@@ -1,0 +1,210 @@
+---
+# P1B-002 — Dedicated AI worker (stayledger-ai-worker).
+#
+# Same image as the API, but the command runs dist/worker-ai which boots AppModule
+# with WORKER_ROLE=ai: only the AiChatProcessor consumes the `ai` queue, while the
+# in-process non-AI processors and cron orchestrator are gated OFF. This removes
+# LLM/RAG/tool execution from the API pods. Enable offload by setting
+# AI_WORKER_ENABLED=true (and AI_STREAMING_ENABLED=true) on the API ConfigMap.
+#
+# Worker HPA is deferred to hardening; start with a fixed 2 replicas.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-worker
+  labels:
+    app: stayledger-ai-worker
+    component: ai-worker
+    environment: overlay
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stayledger-ai-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-ai-worker
+        component: ai-worker
+        environment: overlay
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: stayledger-api
+      automountServiceAccountToken: false
+      # AI jobs can run for tens of seconds; allow them to drain on rollout.
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: stayledger-ai-worker
+      containers:
+        - name: ai-worker
+          image: putin111/stayledger-api:staging-7fe3b527
+          imagePullPolicy: Always
+          # Run the worker entrypoint instead of the API server. Use `args` (not
+          # `command`) so the image's tini ENTRYPOINT stays PID 1 — required for
+          # SIGTERM forwarding + zombie reaping of BullMQ/bcrypt child processes.
+          # tini then runs: node --require ./dist/instrumentation.js dist/worker-ai.main
+          args: ["node", "--require", "./dist/instrumentation.js", "dist/worker-ai.main"]
+          ports:
+            - containerPort: 3001
+              name: http
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-api-config
+          env:
+            # Explicit role gate (worker-ai.main also sets it; belt-and-suspenders).
+            - name: WORKER_ROLE
+              value: "ai"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: redis-url
+                  optional: true
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: redis-password
+                  optional: true
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: jwt-refresh-secret
+            - name: EXTERNAL_SIGNING_ENC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: external-signing-enc-key
+            - name: AZURE_OPENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: azure-openai-endpoint
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: azure-openai-api-key
+            # EMAIL_ENABLED=true (shared ConfigMap) makes validateEnv require SMTP_*.
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: smtp-user
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: smtp-password
+            - name: FRONTEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: frontend-url
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: "200Mi"
+          startupProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            # Worker bootstrap loads the full AppModule and can exceed 70s on the
+            # single-node staging cluster during rollout. Keep the window generous
+            # so startupProbe does not kill a healthy boot before /api/live binds.
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+# ClusterIP service — internal only, for Prometheus scrape of the worker /metrics.
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-ai-worker
+  labels:
+    app: stayledger-ai-worker
+    component: ai-worker
+    environment: overlay
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-ai-worker

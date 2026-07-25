@@ -1,0 +1,32 @@
+# Production overlay — apply after datastores and secrets.
+# Deploy: kubectl apply -k stayledger-api/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger
+
+resources:
+  - ../base
+  - namespace.yaml
+  - configmap.yaml
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+# Promote score90 2026-07-20 (discountPercent on promotions/available for AI catalog sync)
+images:
+  - name: putin111/stayledger-api
+    newTag: score90-20260720
+
+patches:
+  # Production uses ClusterIP + Traefik Ingress only (no NodePort).
+  - path: patches/delete-api-nodeport.yaml
+  - path: patches/delete-staging-guest-docs-pv.yaml
+  - path: patches/deployment-production.yaml
+  - path: patches/ai-worker-production.yaml
+  - path: patches/secret-refs-production.yaml
+  - path: patches/ai-worker-secret-refs-production.yaml
+  - path: patches/guest-documents-pvc-production.yaml

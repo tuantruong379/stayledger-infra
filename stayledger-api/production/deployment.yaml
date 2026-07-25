@@ -1,0 +1,247 @@
+---
+# ConfigMap is in configmap.yaml — kept separate to avoid S6907 linter warnings
+# when the ConfigMap definition and its envFrom consumer share the same file.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+spec:
+  # Keep replicas: 1 until guest document storage is migrated to RWX/object storage.
+  # The RWO PVC (stayledger-production-guest-documents) can only be mounted by one pod.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stayledger-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: backend
+        environment: production
+        version: "COMMIT_SHA"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: stayledger-api
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: stayledger-api
+      containers:
+        - name: api
+          # Update this tag at each production release:
+          # sed -i "s|COMMIT_SHA|<7-char>|g" deployment.yaml
+          image: putin111/stayledger-api:COMMIT_SHA
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: http
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-api-config
+          env:
+            - name: ALLOWED_ORIGINS
+              value: "https://app.stayledger.io"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: redis-url
+                  optional: true
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: redis-password
+                  optional: true
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: jwt-refresh-secret
+            # AES-256-GCM key for external API signing secrets at rest.
+            # Required because EXTERNAL_API_SIGNATURE_REQUIRED=true.
+            - name: EXTERNAL_SIGNING_ENC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: external-signing-enc-key
+            # AES-256 key for encrypting sensitive data fields at rest.
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: encryption-key
+                  optional: true
+            - name: AZURE_OPENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: azure-openai-endpoint
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: azure-openai-api-key
+            - name: METRICS_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: metrics-auth-token
+                  optional: true
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: smtp-user
+                  optional: true
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: smtp-password
+                  optional: true
+            - name: FRONTEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: frontend-url
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1536Mi"
+              ephemeral-storage: "200Mi"
+          startupProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+            - name: guest-documents
+              mountPath: /var/lib/stayledger/guest-documents
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: uploads
+          emptyDir: {}
+        - name: guest-documents
+          persistentVolumeClaim:
+            claimName: stayledger-production-guest-documents
+        - name: tmp
+          emptyDir: {}
+
+---
+# ClusterIP — internal access for admin-web proxy and Prometheus scrape
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-api
+
+---
+# NodePort for direct node access (admin/ops bypass — not used by Ingress)
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-api-nodeport
+  namespace: stayledger
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: production
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3001
+      nodePort: 30001
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-api

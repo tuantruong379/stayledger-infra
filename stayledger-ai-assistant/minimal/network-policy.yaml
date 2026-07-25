@@ -1,0 +1,171 @@
+# NetworkPolicy: default-deny then allow only required paths.
+# Requires a CNI plugin that enforces NetworkPolicy (Calico, Cilium, Weave, etc.).
+
+# ── Default deny all ingress and egress in the namespace ─────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+
+---
+# ── Allow DNS resolution from all pods ───────────────────────────────────────
+# Without this, pods cannot resolve service names or external hostnames.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+
+---
+# ── API: ingress from ingress-controller ─────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow-ingress-controller
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant
+      component: api
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - port: 8000
+      protocol: TCP
+
+---
+# ── API: egress to PostgreSQL ─────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow-postgres-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant
+      component: api
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+
+---
+# ── API: egress to Redis ──────────────────────────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow-redis-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant
+      component: api
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 6379
+      protocol: TCP
+
+---
+# ── API: egress to external HTTPS (Azure OpenAI, StayLedger PMS) ─────────────
+# A broad 0.0.0.0/0 allow on 443 is necessary because Azure OpenAI and PMS
+# endpoints are hosted externally without fixed CIDRs.
+# Narrow this to specific CIDRs in your infrastructure if they are known.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-allow-external-https-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant
+      component: api
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 443
+      protocol: TCP
+
+---
+# ── Frontend: ingress from ingress-controller ─────────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-ingress-controller
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant-frontend
+      component: frontend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: ingress-nginx
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: ingress-nginx
+    ports:
+    - port: 3000
+      protocol: TCP
+
+---
+# ── Frontend: egress to API service ──────────────────────────────────────────
+# Server-Side Rendering calls the API; the API service listens on port 80 inside
+# the cluster (ClusterIP service maps 80 → 8000).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-allow-api-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app: ai-hotel-assistant-frontend
+      component: frontend
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app: ai-hotel-assistant
+          component: api
+    ports:
+    - port: 8000
+      protocol: TCP

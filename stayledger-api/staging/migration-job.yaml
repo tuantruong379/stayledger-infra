@@ -28,6 +28,11 @@ spec:
   # Clean up the completed Job object after 1 hour.
   ttlSecondsAfterFinished: 3600
   template:
+    metadata:
+      labels:
+        app: stayledger-api
+        component: migration
+        environment: staging
     spec:
       restartPolicy: Never
       # The stayledger-api ServiceAccount is created during the sync (non-hook
@@ -44,13 +49,13 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          image: putin111/stayledger-api:staging-054f962
+          # Reasoning: keep migration Job image pin identical to staging API/worker digest.
+          image: putin111/stayledger-api@sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma
             - migrate
             - deploy
-            - --schema=/app/prisma/schema.prisma
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -65,7 +70,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: stayledger-staging-secrets
-                  key: database-url
+                  key: direct-database-url
           resources:
             requests:
               memory: "128Mi"
@@ -81,3 +86,5 @@ spec:
       volumes:
         - name: tmp
           emptyDir: {}
+
+

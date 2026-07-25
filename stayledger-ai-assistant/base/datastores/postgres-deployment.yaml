@@ -2,10 +2,10 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   replicas: 1
@@ -23,7 +23,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: postgres
-        app.kubernetes.io/part-of: hotel-assistant
+        app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: database
     spec:
       # Reasoning: Phase B7 — dedicated SA, no token automount.
@@ -42,7 +42,7 @@ spec:
       # already coerces volume ownership to gid 999, and a root initContainer is incompatible with runAsNonRoot.
       containers:
         - name: postgres
-          image: postgres:16
+          image: pgvector/pgvector:pg16
           # Reasoning: Phase B5 — container-level hardening; postgres needs writable PVC + sockets/tmp via emptyDir.
           securityContext:
             allowPrivilegeEscalation: false
@@ -168,10 +168,10 @@ apiVersion: v1
 kind: Service
 metadata:
   name: postgres
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: postgres
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   clusterIP: None
@@ -182,4 +182,3 @@ spec:
       protocol: TCP
   selector:
     app.kubernetes.io/name: postgres
-

@@ -56,6 +56,21 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
 
+        - alert: ApiOverallP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_ms_bucket{job="stayledger-api"}[5m])) by (le)
+            ) > 2500
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "API overall p95 latency above 2500ms"
+            description: "Current p95: {{ $value }}ms. Check top slow routes, DB pool pressure, and recent deploys."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ApiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
         - alert: ApiWriteP99LatencyHigh
           expr: |
             histogram_quantile(0.99,
@@ -125,6 +140,86 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/PaymentFailureRateHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
 
+        - alert: BookingEngineFailureRateHigh
+          expr: |
+            (
+              sum(rate(booking_engine_errors_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(booking_engine_requests_total{job="stayledger-api"}[5m])), 0.001)
+              > 0.02
+            )
+            and sum(rate(booking_engine_requests_total{job="stayledger-api"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Booking engine failure rate above 2%"
+            description: "Error rate: {{ $value | humanizePercentage }}. Check quote/create/status errors and public booking logs."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineFailureRateHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+        - alert: BookingEngineCreateP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(booking_engine_request_duration_ms_bucket{job="stayledger-api",operation="create"}[5m])) by (le)
+            ) > 2500
+          for: 5m
+          labels:
+            severity: critical
+            team: platform
+          annotations:
+            summary: "Booking engine create p95 latency above 2500ms"
+            description: "Current create p95: {{ $value }}ms. Check booking transaction, availability reserve, and DB locks."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineCreateLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+        - alert: BookingEngineInventoryConflictHigh
+          expr: |
+            (
+              sum(rate(booking_engine_inventory_conflicts_total{job="stayledger-api"}[5m]))
+              / clamp_min(sum(rate(booking_engine_requests_total{job="stayledger-api",operation="create"}[5m])), 0.001)
+              > 0.10
+            )
+            and sum(rate(booking_engine_requests_total{job="stayledger-api",operation="create"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Booking engine inventory conflict rate above 10%"
+            description: "Conflict rate: {{ $value | humanizePercentage }}. Check stale quotes, hot dates, and availability inventory."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/BookingEngineInventoryConflictHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-booking"
+
+    - name: stayledger.external_api
+      interval: 30s
+      rules:
+        - alert: ExternalApiReplayRejectionsHigh
+          expr: |
+            sum(rate(external_api_replay_rejected_total{job="stayledger-api"}[5m])) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Elevated external API replay rejections"
+            description: "Partners may be sending expired/nonces or missing headers. Rate: {{ $value }}/s."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
+        - alert: ReportQueryP95LatencyHigh
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(report_query_duration_ms_bucket{job="stayledger-api"}[5m])) by (le)
+            ) > 3000
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Report query p95 latency above 3000ms"
+            description: "Current p95: {{ $value }}ms. Check DB indexes and report cache."
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-api-perf"
+
     - name: stayledger.ai
       interval: 60s
       rules:
@@ -161,6 +256,32 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/AiLatencyHigh"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
+        - alert: AiTimeoutsHigh
+          expr: |
+            sum(rate(ai_errors_total{job="stayledger-api",error_code=~".*[Tt][Ii][Mm][Ee][Oo][Uu][Tt].*|ETIMEDOUT|ECONNRESET"}[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI timeout/error rate elevated"
+            description: "AI timeout-like errors are above 0.05/s. Check provider latency, retry settings, and quota status."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiLatencyHigh"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: AiQuotaBlocksHigh
+          expr: |
+            sum(rate(http_requests_total{job="stayledger-api",route="/api/ai/chat",status="429"}[5m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "AI quota blocks elevated"
+            description: "AI chat requests are being blocked by quota at {{ $value }}/s. Confirm paid-plan included units and notify the account team."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
         - alert: AiTokenQuotaWarning
           expr: max(ai_quota_usage_percent{job="stayledger-api"}) > 80
           for: 15m
@@ -185,12 +306,58 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
+    - name: stayledger.channel-manager
+      interval: 30s
+      rules:
+        - alert: ChannelSyncFailureRateHigh
+          expr: |
+            (
+              sum(rate(channel_sync_jobs_total{job="stayledger-api",status=~"failed|dlq"}[10m]))
+              / clamp_min(sum(rate(channel_sync_jobs_total{job="stayledger-api"}[10m])), 0.001)
+            ) > 0.2
+            and sum(rate(channel_sync_jobs_total{job="stayledger-api"}[10m])) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Channel sync failure rate elevated"
+            description: "Over 20% of channel sync jobs are failing/DLQ. Check mappings and connection health."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: ChannelSyncDlqBacklog
+          expr: sum(increase(channel_sync_dlq_total{job="stayledger-api"}[1h])) > 5
+          for: 15m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "Channel sync DLQ backlog growing"
+            description: "{{ $value }} channel sync job(s) landed in the DLQ in the last hour. Investigate and replay from the admin dashboard."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
+        - alert: ChannelAriPushStale
+          expr: |
+            sum(increase(channel_sync_jobs_total{job="stayledger-api",operation="ari.push",status="success"}[2h])) == 0
+            and sum(increase(channel_sync_jobs_total{job="stayledger-api",operation="ari.push"}[24h])) > 0
+          for: 30m
+          labels:
+            severity: warning
+            team: platform
+          annotations:
+            summary: "No successful ARI push in 2h"
+            description: "ARI pushes were attempted in the last 24h but none have succeeded in 2h. Check the OTA endpoint and worker."
+            runbook_url: "https://wiki.internal/runbooks/stayledger/ChannelManager"
+            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+
     - name: stayledger.database
       interval: 30s
       rules:
         - alert: PostgresConnectionHigh
           expr: |
-            sum(pg_stat_activity_count{job="postgres-exporter",datname="stayledger"})
+            sum(pg_stat_activity_count{job="postgres-exporter",datname="stayledger_staging"})
             / clamp_min(max(pg_settings_max_connections{job="postgres-exporter"}), 1)
             > 0.80
           for: 5m
@@ -204,7 +371,9 @@ spec:
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-database"
 
         - alert: PgBouncerClientsWaiting
-          expr: sum(pgbouncer_pools_cl_waiting{job="pgbouncer-exporter"}) > 10
+          # Metric name matches the spreaker pgbouncer-exporter (was pgbouncer_pools_cl_waiting,
+          # which this exporter does not expose — the alert was blind).
+          expr: sum(pgbouncer_pools_client_waiting_connections{job="pgbouncer-exporter"}) > 10
           for: 2m
           labels:
             severity: critical

@@ -1,0 +1,184 @@
+# Isolated off-node Postgres restore drill (staging).
+# Reasoning: prove S3 dump → checksum → pg_restore into a throwaway DB without
+# touching live stayledger_staging. Labels app=stayledger-postgres for NetworkPolicy.
+#
+# Apply:
+#   kubectl --context HK-HUB-Cluster apply -f postgres-offnode-restore-drill-job.yaml
+#   kubectl --context HK-HUB-Cluster -n stayledger-staging wait --for=condition=complete job/offnode-restore-drill-cycle6b --timeout=600s
+#   kubectl --context HK-HUB-Cluster -n stayledger-staging logs job/offnode-restore-drill-cycle6b --all-containers
+#
+# Delete when done: kubectl delete -f postgres-offnode-restore-drill-job.yaml
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: offnode-restore-drill-cycle6b
+  namespace: stayledger-staging
+  labels:
+    app: stayledger-postgres
+    component: database-restore-drill
+    environment: staging
+    stayledger.io/purpose: isolated-postgres-restore-drill
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  activeDeadlineSeconds: 900
+  template:
+    metadata:
+      labels:
+        app: stayledger-postgres
+        component: database-restore-drill
+        environment: staging
+        stayledger.io/purpose: isolated-postgres-restore-drill
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: hkk8s-hub-master
+      securityContext:
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: fetch-s3
+          image: minio/mc:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: HOME
+              value: /tmp
+            - name: DUMP_NAME
+              value: stayledger_2026-07-22.dump
+          envFrom:
+            - secretRef:
+                name: backup-offnode-s3
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              set -eu
+              echo "[iso] download s3://${S3_BUCKET}/${S3_PREFIX}${DUMP_NAME}"
+              mc alias set offnode "${S3_ENDPOINT}" "${S3_ACCESS_KEY_ID}" "${S3_SECRET_ACCESS_KEY}" --path on
+              mc cp --quiet "offnode/${S3_BUCKET}/${S3_PREFIX}${DUMP_NAME}" "/restore/${DUMP_NAME}"
+              mc cp --quiet "offnode/${S3_BUCKET}/${S3_PREFIX}${DUMP_NAME}.md5" "/restore/${DUMP_NAME}.md5"
+              EXPECTED=$(tr -d ' \t\r\n' < "/restore/${DUMP_NAME}.md5" | cut -c1-32)
+              # Reasoning: minio/mc image has no awk — use cut for md5sum field.
+              ACTUAL=$(md5sum "/restore/${DUMP_NAME}" | cut -d' ' -f1)
+              echo "[iso] md5 expected=${EXPECTED} actual=${ACTUAL}"
+              test -n "${EXPECTED}"
+              test "${EXPECTED}" = "${ACTUAL}"
+              BYTES=$(wc -c < "/restore/${DUMP_NAME}" | tr -d ' ')
+              echo "[iso] checksum PASS size=${BYTES} bytes"
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }
+      containers:
+        - name: restore
+          image: pgvector/pgvector:pg16
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DUMP_NAME
+              value: stayledger_2026-07-22.dump
+            - name: TARGET_DB
+              value: stayledger_restore_offnode_drill_c6b
+            - name: LIVE_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-postgres-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-postgres-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: postgres-password
+            - name: PGHOST
+              value: stayledger-postgres
+            - name: PGPORT
+              value: "5432"
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              set -euo pipefail
+              START=$(date +%s)
+              export PGPASSWORD="${POSTGRES_PASSWORD}"
+              export PGUSER="${POSTGRES_USER}"
+              DUMP="/restore/${DUMP_NAME}"
+              test -s "${DUMP}"
+              case "${TARGET_DB}" in
+                stayledger_staging|postgres|template0|template1|"${LIVE_DB}")
+                  echo "REFUSE: TARGET_DB=${TARGET_DB} is protected" >&2
+                  exit 3
+                  ;;
+              esac
+              echo "[iso] pg_isready"
+              pg_isready -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}"
+              echo "[iso] drop/create isolated DB ${TARGET_DB} (live ${LIVE_DB} untouched)"
+              psql -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${TARGET_DB}' AND pid <> pg_backend_pid();" || true
+              psql -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ${TARGET_DB};"
+              psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${TARGET_DB} TEMPLATE template0;"
+              echo "[iso] pg_restore start"
+              set +e
+              pg_restore -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d "${TARGET_DB}" --no-owner --no-acl "${DUMP}"
+              rc=$?
+              set -e
+              echo "[iso] pg_restore_exit=${rc}"
+              # pg_restore returns 1 for non-fatal warnings; refuse hard failures.
+              if [ "${rc}" -gt 1 ]; then
+                echo "[iso] FATAL pg_restore" >&2
+                exit "${rc}"
+              fi
+              TABLES=$(psql -d "${TARGET_DB}" -Atc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';")
+              INDEXES=$(psql -d "${TARGET_DB}" -Atc "SELECT count(*) FROM pg_indexes WHERE schemaname='public';")
+              echo "[iso] restored_public_tables=${TABLES} public_indexes=${INDEXES}"
+              echo "[iso] critical_table_counts live_vs_restored (dump is point-in-time; live may have grown)"
+              for t in accounts properties users rooms bookings payments guests audit_logs subscriptions; do
+                live=$(psql -d "${LIVE_DB}" -Atc "SELECT count(*) FROM ${t};" 2>/dev/null || echo NA)
+                rest=$(psql -d "${TARGET_DB}" -Atc "SELECT count(*) FROM ${t};" 2>/dev/null || echo NA)
+                echo "[iso] table=${t} live=${live} restored=${rest}"
+              done
+              BK_FK=$(psql -d "${TARGET_DB}" -Atc "SELECT count(*) FROM information_schema.table_constraints WHERE table_name='bookings' AND constraint_type='FOREIGN KEY';")
+              echo "[iso] bookings_fk_count=${BK_FK}"
+              echo "[iso] drop isolated DB ${TARGET_DB}"
+              psql -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${TARGET_DB}' AND pid <> pg_backend_pid();" || true
+              psql -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ${TARGET_DB};"
+              END=$(date +%s)
+              echo "[iso] restore_elapsed_s=$((END-START))"
+              echo "[iso] RESTORE_DRILL_VERIFY_PASS"
+          volumeMounts:
+            - name: restore
+              mountPath: /restore
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+      volumes:
+        - name: restore
+          emptyDir:
+            sizeLimit: 2Gi
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

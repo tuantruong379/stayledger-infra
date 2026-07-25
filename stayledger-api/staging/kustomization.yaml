@@ -1,0 +1,32 @@
+# Staging overlay - NodePort + Cloudflare TLS edge.
+# Deploy: kubectl apply -k stayledger-api/staging/
+# Migration (one-shot): kubectl apply -f stayledger-api/staging/migration-job.yaml
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-staging
+
+resources:
+  - ../base
+  - configmap.yaml
+
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
+
+# Staging closure remediations — 2026-07-25
+# Commit-addressable SHA 828067d617c421e810496994971aa11a640f0879
+# Tag: staging-828067d
+# Digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
+# Includes: notification delivery lifecycle, AI quota reserve, SES email (default).
+images:
+  - name: putin111/stayledger-api
+    digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
+
+patches:
+  - path: patches/deployment-staging.yaml
+  - path: patches/ai-worker-staging.yaml
+  - path: patches/hpa-staging.yaml
+  # 22:30 VN + SES notify sidecar (base CronJob has neither).
+  - path: patches/document-backup-offnode-cronjob.yaml

@@ -5,10 +5,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: hotel-assistant-api-config
-  namespace: hotel-assistant
+  namespace: stayledger-ai-assistant
   labels:
     app.kubernetes.io/name: hotel-assistant-api
-    app.kubernetes.io/part-of: hotel-assistant
+    app.kubernetes.io/part-of: stayledger-ai-assistant
 data:
   # --- Redis (in-cluster Service: redis) ---
   # Reasoning (B1): REDIS_URL moved to the api Secret because it now embeds a password
@@ -42,7 +42,7 @@ data:
   # (TENANT_CONFIG_SOURCE, TENANT_REGISTRY_SOURCE, USAGE_EVENTS_STORE_BACKEND,
   # FEEDBACK_STORE_BACKEND, TENANTS_REGISTRY_PATH, USAGE_EVENTS_LOG_PATH)
   # are no longer read by the application.
-  DEFAULT_TENANT_ID: "vertex_suites_hanoi"
+  DEFAULT_TENANT_ID: ""
   TENANT_DAILY_CHAT_TURN_LIMIT: "0"   # 0=disabled; set per cluster (or later per-tenant)
   # Phase C: /readyz fails closed when Postgres is unreachable.
   READY_REQUIRES_POSTGRES: "1"
@@ -70,7 +70,7 @@ data:
   # the metrics aggregator writes 1-minute materialized rows to metrics_1m.
   # Tenant KPI cards still use Postgres usage_events as the source of truth.
   FEATURE_METRICS_PIPELINE: "1"
-  NATS_URL: "nats://nats.hotel-assistant.svc.cluster.local:4222"
+  NATS_URL: "nats://nats:4222"
 
   # --- Public URL + CORS (cors_setup.py) ---
   # Reasoning: ENVIRONMENT=production activates strict CORS; CORS_ORIGINS must list every
@@ -79,8 +79,9 @@ data:
   ENVIRONMENT: "production"
   APP_ENV: "production"
   APP_VERSION: "3.0.4"
-  ADMIN_WEB_PUBLIC_URL: "https://hotel-assistant.tekcent.com"
-  CORS_ORIGINS: "https://hotel-assistant.tekcent.com,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,https://admin-hotel-assistant.tekcent.com"
+  # Overlay patches override these for staging/production stayledger hosts.
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
 
   # --- POST /webhook (webhook_auth.py, rate_limiter.py) ---
   ALLOW_NO_AUTH: "false"
@@ -102,6 +103,17 @@ data:
   PRICING_REJECT_PAST_DATES: "1"
   PRICING_WEBHOOK_HEALTH_PROBE: "0"
 
+  # --- PMS connector gates ---
+  # Deployment gates only. Per-property provider/capabilities live in pms_connections.
+  PMS_CONNECTOR_ENABLED: "1"
+  PMS_PROVIDER_DEFAULT: "local"
+  PMS_STAYLEDGER_ENABLED: "0"
+  PMS_DRAFT_BOOKING_ENABLED: "0"
+  PMS_CONVERSATION_SYNC_ENABLED: "0"
+  PMS_READ_FALLBACK_MODE: "fail_closed"
+  PMS_OUTBOX_WORKER_ENABLED: "0"
+  PMS_OUTBOX_WORKER_POLL_SECONDS: "15"
+
   # --- LLM in-process cache (llm_cache.py) ---
   LLM_CACHE_TTL_S: "300"
   LLM_CACHE_MAX_ENTRIES: "512"
@@ -116,7 +128,8 @@ data:
   RAG_RETRIEVAL_CACHE_REDIS_DISABLE: "0"
   LLM_OPERATION_RAG_ANSWER_TIMEOUT_S: "6"
   LLM_OPERATION_RAG_ANSWER_MAX_TOKENS: "300"
-  LLM_OPERATION_RAG_TRANSLATE_TIMEOUT_S: "6"
+  # Reasoning: EN unanswerable path must abstain quickly; translate is best-effort only.
+  LLM_OPERATION_RAG_TRANSLATE_TIMEOUT_S: "2"
   LLM_OPERATION_RAG_TRANSLATE_MAX_TOKENS: "96"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "3.5"
   LLM_OPERATION_BOOKING_EXTRACT_MAX_TOKENS: "96"

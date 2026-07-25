@@ -1,0 +1,307 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-admin-web
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: overlay
+  annotations:
+    kubernetes.io/change-cause: "Deploy staging-b1bbb616 — JSON parse fix, golive stabilization 2026-07-03"
+    stayledger.io/git-sha: "f5079ef"
+    stayledger.io/branch: "release/1.2.20"
+spec:
+  # 2 replicas: enables zero-downtime rolling updates and tolerates a single
+  # pod failure or node drain without any downtime window. HPA minReplicas: 2
+  # must stay >= this so scale-down cannot collapse to a single pod.
+  replicas: 2
+  # New pod must stay Ready before it counts as available (and before the old
+  # pod is terminated under maxUnavailable: 0).
+  minReadySeconds: 15
+  selector:
+    matchLabels:
+      app: stayledger-admin-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # ZERO-DOWNTIME: never take a Ready admin-web pod out before replacement
+      # is Ready. Do not change to Recreate or maxUnavailable>0 in production.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-admin-web
+        component: frontend
+        environment: overlay
+        # version is updated by CI at deploy time — enables version filtering
+        # in Grafana dashboards and Loki log queries.
+        version: "staging-b1bbb616"
+      annotations:
+        stayledger.io/git-sha: "f5079ef"
+    spec:
+      serviceAccountName: stayledger-admin-web
+      # No K8s API access needed — suppress the auto-mounted token entirely.
+      automountServiceAccountToken: false
+      # 60s: allows the preStop sleep (5s) + Next.js graceful drain to complete
+      # before the container is force-killed.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      # Spread replicas across nodes — prevents both pods landing on the same
+      # node and being lost together during a node drain or failure.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: stayledger-admin-web
+      # env-inject: copies /app/.next into the next-patched emptyDir and replaces
+      # the placeholder URLs with the runtime values from the ConfigMap.
+      # The main container mounts next-patched at /app/.next so it serves
+      # the patched bundle while keeping readOnlyRootFilesystem: true.
+      initContainers:
+        - name: env-inject
+          # IMPORTANT: env-inject copies ITS OWN /app/.next into the shared
+          # next-patched volume, which the main container then mounts over its
+          # own /app/.next. So this init image MUST equal the main image — if
+          # they drift, the init container overwrites the main container's build
+          # with stale assets (pods report the new tag but serve old JS).
+          # The YAML anchor below binds both to ONE value: bump it in one place
+          # and the alias on the main container updates in lockstep.
+          image: &adminWebImage putin111/stayledger-admin-web:staging-20260720a
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              cp -r /app/.next/. /next-patched/
+              # Strip /api or /api-proxy suffix so CSP connect-src uses the page origin.
+              API_ORIGIN=$(echo "${NEXT_PUBLIC_API_URL}" | sed -E 's|/api(-proxy)?$||')
+              # Longest-first: replacing .../api must not rewrite .../api-proxy into .../api-proxy-proxy
+              # (Cycle 10 login outage root cause when NEXT_PUBLIC_API_URL ends with /api-proxy).
+              # Omit bare .../api siblings of .../api-proxy (prefix collision → api-proxy-proxy).
+              LEGACY_API_URLS="https://admin-staging.stayledger.tekcent.com/api-proxy https://stg-app.stayledger.io/api-proxy https://stg-api.stayledger.io/api-proxy http://10.89.1.40:30010/api-proxy https://api-staging.stayledger.tekcent.com/api https://stg-api.stayledger.io/api http://10.89.1.40:30010/api http://10.89.1.40:30010"
+              LEGACY_BOOKING_URLS="https://admin-staging.stayledger.tekcent.com https://booking-staging.stayledger.tekcent.com https://stg-app.stayledger.io http://10.89.1.40:30010"
+              find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                xargs -0 sed -i \
+                  -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              for legacy in $LEGACY_API_URLS; do
+                # Skip identity rewrite; still guard short /api against /api-proxy prefix collision.
+                if [ "$legacy" = "$NEXT_PUBLIC_API_URL" ]; then
+                  continue
+                fi
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_API_URL}|g"
+              done
+              # Collapse accidental double proxy from short-/api rewrites of an already-correct URL.
+              find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                xargs -0 sed -i -e 's|api-proxy-proxy|api-proxy|g'
+              for legacy in $LEGACY_BOOKING_URLS; do
+                if [ "$legacy" = "$NEXT_PUBLIC_BOOKING_WEB_URL" ]; then
+                  continue
+                fi
+                find /next-patched -type f \( -name "*.js" -o -name "*.json" -o -name "*.map" -o -name "*.txt" \) -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              done
+              find /next-patched -name "routes-manifest.json" -print0 | \
+                xargs -0 sed -i \
+                  -e "s|https://placeholder-api.invalid/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|http://localhost:3001/api|${NEXT_PUBLIC_API_URL}|g" \
+                  -e "s|https://placeholder-api.invalid|${API_ORIGIN}|g" \
+                  -e "s|https://placeholder-booking.invalid|${NEXT_PUBLIC_BOOKING_WEB_URL}|g" \
+                  -e "s|script-src 'self'|script-src 'self' 'unsafe-inline'|g"
+              for legacy in $LEGACY_API_URLS; do
+                if [ "$legacy" = "$NEXT_PUBLIC_API_URL" ]; then
+                  continue
+                fi
+                find /next-patched -name "routes-manifest.json" -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_API_URL}|g"
+              done
+              find /next-patched -name "routes-manifest.json" -print0 | \
+                xargs -0 sed -i -e 's|api-proxy-proxy|api-proxy|g'
+              for legacy in $LEGACY_BOOKING_URLS; do
+                if [ "$legacy" = "$NEXT_PUBLIC_BOOKING_WEB_URL" ]; then
+                  continue
+                fi
+                find /next-patched -name "routes-manifest.json" -print0 | \
+                  xargs -0 sed -i -e "s|${legacy}|${NEXT_PUBLIC_BOOKING_WEB_URL}|g"
+              done
+          envFrom:
+            - configMapRef:
+                name: stayledger-admin-web-config
+          volumeMounts:
+            - name: next-patched
+              mountPath: /next-patched
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+              # init container copies the full .next bundle (~100–300 MB) into the emptyDir
+              ephemeral-storage: "300Mi"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+              ephemeral-storage: "600Mi"
+      containers:
+        - name: admin-web
+          # Bound to the env-inject init image via the &adminWebImage anchor so
+          # the two can never drift (see the init container note above). A future
+          # bump changes only the anchor definition; this alias follows.
+          image: *adminWebImage
+          imagePullPolicy: Always
+          # Override Dockerfile CMD only — ENTRYPOINT (tini) remains as PID 1.
+          # The init container has already patched the .next bundle, so we go
+          # straight to the Next.js server without the entrypoint.sh patch logic.
+          args: ["node", "server.js"]
+          ports:
+            - containerPort: 3000
+              name: http
+              protocol: TCP
+          # API/booking URLs are patched into the bundle by env-inject. Feature flags
+          # use static process.env reads so the client bundle inlines at build time;
+          # SSR still needs these on the Node process at runtime.
+          env:
+            - name: TZ
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: TZ
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NODE_ENV
+            # Needed by server-side code (SSR/route handlers) to avoid falling back
+            # to http://localhost:3001/api in production.
+            - name: NEXT_PUBLIC_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_API_URL
+            - name: NEXT_PUBLIC_BOOKING_WEB_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_BOOKING_WEB_URL
+            - name: INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: INTERNAL_API_URL
+            - name: AI_ASSISTANT_INTERNAL_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: AI_ASSISTANT_INTERNAL_API_URL
+            - name: NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE
+            - name: NEXT_PUBLIC_FEATURE_DOCUMENT_OCR
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_FEATURE_DOCUMENT_OCR
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          lifecycle:
+            # preStop sleep: gives kube-proxy time to remove this pod from iptables
+            # rules before Next.js starts handling SIGTERM. Without this, in-flight
+            # requests arriving during the endpoint propagation window (2–5s) get
+            # a connection reset.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          volumeMounts:
+            - name: next-patched
+              mountPath: /app/.next
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+              # Next.js writes session data and query caches to /tmp at runtime
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+              ephemeral-storage: "200Mi"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 5
+            # 15 + (12 × 5) = 75s max startup window for Next.js cold start
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: next-patched
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+
+---
+# NodePort 30010 — access via http://<node-ip>:30010
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-admin-web
+  labels:
+    app: stayledger-admin-web
+    component: frontend
+    environment: overlay
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      targetPort: 3000
+      nodePort: 30010
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-admin-web

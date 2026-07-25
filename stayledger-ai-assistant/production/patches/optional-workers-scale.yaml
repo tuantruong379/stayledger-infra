@@ -1,0 +1,18 @@
+# Single-node: pause non-critical workers under CPU pressure.
+# Re-enable (replicas: 1) after embed backlog drains / metrics needed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-kb-embed-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-metrics-aggregator
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0

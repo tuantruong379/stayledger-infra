@@ -1,0 +1,17 @@
+---
+# Guarantee at least 1 API replica is available during voluntary disruptions
+# (node drain, cluster upgrades, manual evictions).
+# With replicas: 2, this allows exactly one pod to be evicted at a time.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stayledger-api-pdb
+  labels:
+    app: stayledger-api
+    component: backend
+    environment: overlay
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: stayledger-api

@@ -1,0 +1,28 @@
+# PodDisruptionBudgets ensure at least one replica stays up during voluntary
+# disruptions (node drain, cluster upgrade, rolling restart).
+# With replicas: 2, minAvailable: 1 allows exactly one pod to be evicted at a time.
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-hotel-assistant-pdb
+  namespace: stayledger-ai-assistant
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-hotel-assistant
+      component: api
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-hotel-assistant-frontend-pdb
+  namespace: stayledger-ai-assistant
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ai-hotel-assistant-frontend
+      component: frontend

@@ -1,0 +1,204 @@
+---
+# Dedicated AI worker — same image as the API, runs dist/worker-ai.main.
+# Offloads LLM/RAG/tool execution from the API pods.
+# Enable offload by keeping AI_WORKER_ENABLED=true in configmap.yaml.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-worker
+  namespace: stayledger
+  labels:
+    app: stayledger-ai-worker
+    component: ai-worker
+    environment: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stayledger-ai-worker
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-ai-worker
+        component: ai-worker
+        environment: production
+        version: "COMMIT_SHA"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3001"
+        prometheus.io/path: "/api/metrics"
+    spec:
+      serviceAccountName: stayledger-api
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 90
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: stayledger-ai-worker
+      containers:
+        - name: ai-worker
+          image: putin111/stayledger-api:COMMIT_SHA
+          imagePullPolicy: Always
+          args: ["node", "--require", "./dist/instrumentation.js", "dist/worker-ai.main"]
+          ports:
+            - containerPort: 3001
+              name: http
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 1001
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-api-config
+          env:
+            - name: WORKER_ROLE
+              value: "ai"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: database-url
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: redis-url
+                  optional: true
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: redis-password
+                  optional: true
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: jwt-secret
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: jwt-refresh-secret
+            - name: EXTERNAL_SIGNING_ENC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: external-signing-enc-key
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: encryption-key
+                  optional: true
+            - name: AZURE_OPENAI_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: azure-openai-endpoint
+            - name: AZURE_OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: azure-openai-api-key
+            - name: SMTP_USER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: smtp-user
+                  optional: true
+            - name: SMTP_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: smtp-password
+                  optional: true
+            - name: FRONTEND_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-secrets
+                  key: frontend-url
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "768Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "2000m"
+              memory: "1536Mi"
+              ephemeral-storage: "200Mi"
+          startupProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /api/live
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 3001
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-ai-worker
+  namespace: stayledger
+  labels:
+    app: stayledger-ai-worker
+    component: ai-worker
+    environment: production
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3001
+      protocol: TCP
+      name: http
+  selector:
+    app: stayledger-ai-worker

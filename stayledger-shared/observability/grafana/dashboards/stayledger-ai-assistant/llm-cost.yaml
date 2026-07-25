@@ -1,6 +1,6 @@
-# Grafana — LLM Cost & Cache dashboard.
+# Grafana - LLM Cost & Cache dashboard.
 #
-# Reasoning: Week 4/C8 — measures token throughput by direction (prompt/completion/
+# Reasoning: Week 4/C8 - measures token throughput by direction (prompt/completion/
 # cached), cache hit-rate, and intent breakdown. Est $/hr uses dashboard constants
 # ``usd_per_1k_prompt`` and ``usd_per_1k_completion`` (edit in Grafana to match contract).
 # Multi-tenant refactor (2026-05-02): added tenant_id dashboard variable (multi/all),
@@ -18,18 +18,18 @@ metadata:
   labels:
     grafana_dashboard: "1"
   annotations:
-    grafana_folder: "StayLedger AI"
+    grafana_folder: "StayLedger Internal"
 data:
   llm-cost.json: |-
     {
-      "title": "StayLedger AI — LLM Cost & Cache",
+      "title": "AI Assistant - LLM Cost & Cache",
       "uid": "hotel-llm-cost",
       "schemaVersion": 39,
       "version": 4,
       "timezone": "Asia/Ho_Chi_Minh",
       "refresh": "30s",
       "time": { "from": "now-6h", "to": "now" },
-      "tags": ["stayledger-ai", "llm", "cost"],
+      "tags": ["stayledger", "internal", "deferred", "ai", "assistant"],
       "templating": {
         "list": [
           {

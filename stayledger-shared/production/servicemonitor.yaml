@@ -1,0 +1,23 @@
+# Scrape the production API /api/metrics endpoint (bearer auth required).
+# Secret stayledger-metrics-auth must exist in this namespace (key: token).
+# The kube-prometheus-stack Prometheus picks this up via serviceMonitorSelector: {}.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: stayledger-api
+  namespace: stayledger
+  labels:
+    release: kps
+spec:
+  selector:
+    matchLabels:
+      app: stayledger-api
+      environment: production
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 15s
+      # Prefer explicit auth so this SM does not 401 alongside the static scrape job.
+      bearerTokenSecret:
+        name: stayledger-metrics-auth
+        key: token

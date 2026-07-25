@@ -11,9 +11,9 @@ data:
   database.json: |
     {
       "uid": "stayledger-database",
-      "title": "StayLedger PMS — Database & PgBouncer",
+      "title": "04 - PMS Database & PgBouncer",
       "description": "PostgreSQL connections, cache hit ratio, query performance, PgBouncer pool usage, table sizes",
-      "tags": ["stayledger", "database", "postgresql", "pgbouncer"],
+      "tags": ["stayledger", "pms", "production-readiness", "database"],
       "schemaVersion": 38,
       "refresh": "30s",
       "time": { "from": "now-3h", "to": "now" },

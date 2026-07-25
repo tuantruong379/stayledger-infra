@@ -61,7 +61,7 @@ spec:
 
         - alert: PodCrashLooping
           expr: |
-            rate(kube_pod_container_status_restarts_total{namespace="hotel-assistant"}[15m]) > 0.1
+            rate(kube_pod_container_status_restarts_total{namespace="stayledger-ai-assistant"}[15m]) > 0.1
           for: 5m
           labels:
             severity: p2
