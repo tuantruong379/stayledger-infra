@@ -1,6 +1,6 @@
-# Staging overlay — NodePort + Cloudflare TLS edge.
+# Staging overlay - NodePort + Cloudflare TLS edge.
 # Deploy: kubectl apply -k stayledger-api/staging/
-# Migration (one-shot): kubectl apply -f ../base/migration-job.yaml -n stayledger-staging
+# Migration (one-shot): kubectl apply -f stayledger-api/staging/migration-job.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -15,13 +15,14 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging rebuild 2026-07-24 — frozen source 47cf20a (incl. 3cbde99 CVE overrides + quota/auth unit gates).
-# Digest: sha256:4ed8c8533f7a60afbf4d1feca8bcf68087c129001d93b6acfa3fdba3e1dbdc35
-# SBOM SPDX sha256: a7f0ee38b592522c275d444ac879707d625f2ce5bbc2f69d4d43339d1590010c
-# Trivy HIGH/CRITICAL (ignore-unfixed): 0
+# Staging closure remediations — 2026-07-25
+# Commit-addressable SHA 828067d617c421e810496994971aa11a640f0879
+# Tag: staging-828067d
+# Digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
+# Includes: notification delivery lifecycle, AI quota reserve, SES email (default).
 images:
   - name: putin111/stayledger-api
-    digest: sha256:4ed8c8533f7a60afbf4d1feca8bcf68087c129001d93b6acfa3fdba3e1dbdc35
+    digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
 
 patches:
   - path: patches/deployment-staging.yaml
