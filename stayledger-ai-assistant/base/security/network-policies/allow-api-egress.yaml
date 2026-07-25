@@ -24,6 +24,16 @@ spec:
     ports:
     - protocol: TCP
       port: 6379
+  # API replica → API replica (pairs with the matching ingress rule in
+  # allow-api-ingress.yaml; NetworkPolicy requires both sides of a peer
+  # connection to allow it).
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-api
+    ports:
+    - protocol: TCP
+      port: 8000
   - to:
     - namespaceSelector:
         matchLabels:

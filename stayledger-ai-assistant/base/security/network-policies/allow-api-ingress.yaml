@@ -25,6 +25,16 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
+  # API replica → API replica (Service-routed cross-pod calls, e.g. idempotency
+  # probes / any future internal call). The ipBlock 0.0.0.0/0 rule above does not
+  # cover this (see comment) since it never matched the pod's own identity.
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-api
+    ports:
+    - protocol: TCP
+      port: 8000
   # PMS staging API → booking.confirmed / booking.cancelled webhooks (/internal/pms/...)
   - from:
     - namespaceSelector:
