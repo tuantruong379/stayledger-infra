@@ -9,11 +9,6 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  # Bounded Slice 4 canary: the sync KB/retrieval pool defaults to 4 when omitted.
-  # Two API replicas × two Uvicorn workers × six connections = 24 theoretical sync
-  # connections, leaving headroom below PgBouncer default_pool_size=50 and PostgreSQL
-  # max_connections=100. Remove this key to rollback to the default pool size of 4.
-  POSTGRES_POOL_SIZE: "6"
   STAYLEDGER_IMAGE_DIGEST: "sha256:d37ec404375dc78cc00cdf4da1e00af421fe41787b6458d6039d261faa288345"
   STAYLEDGER_IMAGE_TAG: "release-1.2.35-99c74ca-slice2c"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
