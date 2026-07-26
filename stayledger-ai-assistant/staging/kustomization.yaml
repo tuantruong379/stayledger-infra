@@ -25,13 +25,13 @@ patches:
   - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — 7f52c52: preserve generation chunk identity.
-# Previous observed live digest: sha256:32da14afd56b9d0b7ecf16fa98a8c3e2bd06c5776011833dd6c877439e526bec
-# Rollback digest: sha256:32da14afd56b9d0b7ecf16fa98a8c3e2bd06c5776011833dd6c877439e526bec
+# Immutable digest pin — f5ecda4: skip empty structural generation chunks.
+# Previous observed live digest: sha256:53f7802ff7dc962dbd206c022b460c8d3bb475654d2161e9a93b06f586baaf56
+# Rollback digest: sha256:53f7802ff7dc962dbd206c022b460c8d3bb475654d2161e9a93b06f586baaf56
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:53f7802ff7dc962dbd206c022b460c8d3bb475654d2161e9a93b06f586baaf56
+    digest: sha256:bdb051fa117397ad09dfe6fb8d619c9d8dcb49e530a504b8853eab6465e8993e
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
