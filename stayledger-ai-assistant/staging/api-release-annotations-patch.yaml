@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "1d2883d"
-    stayledger.io/git-sha-short: "1d2883d"
-    stayledger.io/image-tag: "release-1.2.35-1d2883d-pooled-retrieval"
-    stayledger.io/image-digest: "sha256:84b51dbfa58c2734774961008e528a1ad7eb40c3c883184ececd45bdac64af14"
+    stayledger.io/git-sha: "18f2aa7"
+    stayledger.io/git-sha-short: "18f2aa7"
+    stayledger.io/image-tag: "release-1.2.35-18f2aa7-kb-classification"
+    stayledger.io/image-digest: "sha256:bf2aeeca65219dde009463d9d7d0af0b6ec69b283c319afe97c3bc029a768a3a"
     stayledger.io/schema-head: "0055"
     stayledger.io/rollback-digest: "sha256:32da14afd56b9d0b7ecf16fa98a8c3e2bd06c5776011833dd6c877439e526bec"
-    kubernetes.io/change-cause: "perf(rag): reduce scoped connection setup round trips"
-    stayledger.io/build-provenance: "clean-commit-buildkit-1d2883d"
+    kubernetes.io/change-cause: "fix(kb): preserve playbook exclusion boundaries"
+    stayledger.io/build-provenance: "clean-commit-buildkit-18f2aa7"
     stayledger.io/source-dirty: "clean"
