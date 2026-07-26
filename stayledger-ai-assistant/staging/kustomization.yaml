@@ -24,14 +24,16 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
-# Immutable digest pin — Phase-1h RC from 0557f8c (kb_repository RLS bind, rag-eval
-# startup guard, httpx keepalive latency fix, kb-import tenant hardcode guard).
-# API digest: sha256:36c90265fd9f6b75bdfbfd4070f3529f1741a3ade286fd6929b2229dcf6ff174
+# Immutable digest pin — 99c74ca: Slice 2C conversation privacy retention
+# worker, scoped durable-state purge, tenant/channel-aware cache eviction,
+# and deterministic privacy lifecycle tests.
+# API digest: sha256:d37ec404375dc78cc00cdf4da1e00af421fe41787b6458d6039d261faa288345
+# Previous observed live digest: sha256:c56883463ff31d5662067bfac18a97df59f1e71f0d7310caa4b7d892241a6083
 # Rollback digest (deployed rev 140, f7c2b25 "async retry parity"): sha256:e5b98a5224332608d8c2b23ff13f246abf7c1d6b589f975af12fa68a96e37fa9
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:36c90265fd9f6b75bdfbfd4070f3529f1741a3ade286fd6929b2229dcf6ff174
+    digest: sha256:d37ec404375dc78cc00cdf4da1e00af421fe41787b6458d6039d261faa288345
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

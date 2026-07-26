@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:f8af408476eae28416deeba9d32c62b12238c1352cec2ce85b209a67cbd957b1"
-  STAYLEDGER_IMAGE_TAG: "release-1.2.33-1c348bd-phase1g"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:d37ec404375dc78cc00cdf4da1e00af421fe41787b6458d6039d261faa288345"
+  STAYLEDGER_IMAGE_TAG: "release-1.2.35-99c74ca-slice2c"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
@@ -39,6 +39,12 @@ data:
   # Keep DRY_RUN=1 and connection allowlist until write canary is approved.
   PMS_CATALOG_SYNC_ENABLED: "0"
   PMS_CATALOG_SYNC_DRY_RUN: "1"
+  AI_CANONICAL_TURN_ENABLED: "1"
+  AI_CANONICAL_TURN_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2"
+  AI_DURABLE_MEMORY_ENABLED: "1"
+  AI_MULTITURN_MEMORY_ENABLED: "1"
+  AI_CONVERSATION_STATE_RETENTION_DAYS: "30"
+  AI_CONVERSATION_RETENTION_BATCH_SIZE: "100"
   PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: "eef2a660-4218-4ad2-aa0d-a38e51fbb321"
   PMS_WORKERS_IN_API: "0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
