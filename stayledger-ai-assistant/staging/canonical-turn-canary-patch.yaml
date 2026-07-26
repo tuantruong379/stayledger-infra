@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  # Bounded provider-neutral canary tenants. External Facebook/Zalo and booking
+  # mutations remain disabled; remove cupid_hotel after canary evidence capture.
+  AI_CANONICAL_TURN_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2,cupid_hotel"
