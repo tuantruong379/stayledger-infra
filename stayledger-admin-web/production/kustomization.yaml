@@ -15,10 +15,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Admin-web release/1.2.33 (d6fda35) — Phase 0–2 UI/UX polish
+# Promote staging-verified admin-web (staging-3461ffbb / digest sha256:46075c2b… 2026-07-26)
 images:
   - name: putin111/stayledger-admin-web
-    newTag: "1.2.33"
+    newTag: staging-3461ffbb
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

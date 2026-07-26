@@ -16,10 +16,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote score90 2026-07-20 (discountPercent on promotions/available for AI catalog sync)
+# Promote staging-verified API tip (digest sha256:e8212886… live on HK-HUB staging 2026-07-26)
 images:
   - name: putin111/stayledger-api
-    newTag: score90-20260720
+    newTag: staging-105eeb8
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
