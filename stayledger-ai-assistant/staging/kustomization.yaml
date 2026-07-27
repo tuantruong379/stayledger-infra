@@ -25,6 +25,12 @@ patches:
   - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
+  - path: postgres-observability-patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: postgres
 
 # Immutable digest pin — 4f7c2c1: share Vietnamese embedding cache identity.
 # Rollback digest: sha256:a8f0069867d9052ec2670ce6980fc73fee6d6eaf003702546bb6863f43762e0c

@@ -1,0 +1,12 @@
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "-c"
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "shared_preload_libraries=pg_stat_statements"
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "-c"
+- op: add
+  path: /spec/template/spec/containers/0/args/-
+  value: "track_io_timing=on"
