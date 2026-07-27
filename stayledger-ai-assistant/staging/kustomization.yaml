@@ -24,6 +24,7 @@ patches:
   - path: api-release-annotations-patch.yaml
   - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
+  - path: rag-eval-judge-model-patch.yaml
 
 # Immutable digest pin — c2a9094: GPT-5-compatible RAG judge parameters.
 # Previous observed live digest: sha256:abedab585df3f9d21dcfda7e0a6d54c0ef53f829252c9a2fc3b18130efced20f
