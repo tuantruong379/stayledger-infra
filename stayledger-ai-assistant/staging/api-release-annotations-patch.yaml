@@ -4,14 +4,14 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "92e6179"
-    stayledger.io/git-sha-short: "92e6179"
-    stayledger.io/image-tag: "92e6179"
-    stayledger.io/image-digest: "sha256:e299f69b095e69fbe4d4db3ef99857295102a231cb3f44a9b435cec9525948d2"
+    stayledger.io/git-sha: "dd5381e"
+    stayledger.io/git-sha-short: "dd5381e"
+    stayledger.io/image-tag: "dd5381e"
+    stayledger.io/image-digest: "sha256:8524b99f1d09dee15e3aef54a27a5cf7a89dae54726677ef46efd4f06f2f595c"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:7566ee72ddd0b0e6c36000174cb9380e699668524c531ea2e69c6e79649cc70f"
-    kubernetes.io/change-cause: "fix(kb): preserve internal playbook boundary"
-    stayledger.io/build-provenance: "kb-boundary-sibling-headings-92e6179"
+    stayledger.io/rollback-digest: "sha256:e299f69b095e69fbe4d4db3ef99857295102a231cb3f44a9b435cec9525948d2"
+    kubernetes.io/change-cause: "fix(eval): use original question for answerability"
+    stayledger.io/build-provenance: "scoped-rag-evaluator-original-question-dd5381e"
     stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
