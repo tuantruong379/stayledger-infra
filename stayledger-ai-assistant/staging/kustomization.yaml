@@ -26,12 +26,12 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — 51f1019: scoped promotion grounding + cross-branch scenario scope contract.
-# Rollback digest: sha256:5a164d5367b5a4af035c80367802e4b77236afefd043d2373a03da77e9996a53
+# Immutable digest pin — d90c7d0: fail-closed scoped citation provenance.
+# Rollback digest: sha256:bfc11fed85044dacc503b0185e4f8dd05c7bdb6110148fe45d6a63f5f4dfa2df
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:bfc11fed85044dacc503b0185e4f8dd05c7bdb6110148fe45d6a63f5f4dfa2df
+    digest: sha256:2513da69a331768b91110e1ef714a885ab45009c982eb112ee346a8b798c0d47
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
