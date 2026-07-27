@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "64a4a43"
-    stayledger.io/git-sha-short: "64a4a43"
-    stayledger.io/image-tag: "release-1.2.35-scoped-embedding-cache"
-    stayledger.io/image-digest: "sha256:abedab585df3f9d21dcfda7e0a6d54c0ef53f829252c9a2fc3b18130efced20f"
+    stayledger.io/git-sha: "c2a9094"
+    stayledger.io/git-sha-short: "c2a9094"
+    stayledger.io/image-tag: "release-1.2.35-judge-gpt5"
+    stayledger.io/image-digest: "sha256:9f4ce6cf0b45404b8fd5d9d17e18d05768c93de902619c545110d67f3bf2994d"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:f27c023db77b867e585604cf8f42321ff595e05d747d8997d777b8440370346b"
-    kubernetes.io/change-cause: "perf(rag): cache scoped query embeddings"
-    stayledger.io/build-provenance: "clean-commit-buildkit-64a4a43"
+    stayledger.io/rollback-digest: "sha256:abedab585df3f9d21dcfda7e0a6d54c0ef53f829252c9a2fc3b18130efced20f"
+    kubernetes.io/change-cause: "fix(eval): support GPT-5 judge parameters"
+    stayledger.io/build-provenance: "clean-commit-buildkit-c2a9094"
     stayledger.io/source-dirty: "clean"
