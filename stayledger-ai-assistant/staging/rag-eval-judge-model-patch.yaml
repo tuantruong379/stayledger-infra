@@ -10,6 +10,13 @@ spec:
         spec:
           containers:
             - name: rag-eval
+              args:
+                - "--tenant"
+                - "cupid_hotel"
+                - "--property"
+                - "hcm_q1"
+                - "--language"
+                - "vi"
               env:
                 - name: RAG_EVAL_JUDGE_MODEL
                   value: "azure/gpt-4o-mini"

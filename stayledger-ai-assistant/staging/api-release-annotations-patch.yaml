@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "131b619"
-    stayledger.io/git-sha-short: "131b619"
-    stayledger.io/image-tag: "release-1.2.35-judge-gate"
-    stayledger.io/image-digest: "sha256:65900447fcc0b47d9eb85f03a9f09e25c66fb3e7887dfc60935aacda462551a3"
+    stayledger.io/git-sha: "20a1e50"
+    stayledger.io/git-sha-short: "20a1e50"
+    stayledger.io/image-tag: "release-1.2.35-scoped-judge"
+    stayledger.io/image-digest: "sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:9f4ce6cf0b45404b8fd5d9d17e18d05768c93de902619c545110d67f3bf2994d"
-    kubernetes.io/change-cause: "fix(eval): fail closed on missing faithfulness scores"
-    stayledger.io/build-provenance: "clean-commit-buildkit-131b619"
+    stayledger.io/rollback-digest: "sha256:65900447fcc0b47d9eb85f03a9f09e25c66fb3e7887dfc60935aacda462551a3"
+    kubernetes.io/change-cause: "feat(eval): support scoped language qualification"
+    stayledger.io/build-provenance: "clean-commit-buildkit-20a1e50"
     stayledger.io/source-dirty: "clean"
