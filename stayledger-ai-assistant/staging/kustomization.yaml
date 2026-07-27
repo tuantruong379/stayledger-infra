@@ -26,12 +26,12 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — fa280fd: scoped promotion grounding + webhook scenario property contract.
-# Rollback digest: sha256:5570ac649c638f887435a2d1a84dfc87d2d5d1466335d2e020bbde65306a2e3c
+# Immutable digest pin — 51f1019: scoped promotion grounding + cross-branch scenario scope contract.
+# Rollback digest: sha256:5a164d5367b5a4af035c80367802e4b77236afefd043d2373a03da77e9996a53
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:5a164d5367b5a4af035c80367802e4b77236afefd043d2373a03da77e9996a53
+    digest: sha256:bfc11fed85044dacc503b0185e4f8dd05c7bdb6110148fe45d6a63f5f4dfa2df
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
