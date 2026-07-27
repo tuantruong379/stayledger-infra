@@ -26,13 +26,13 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — 81302dc: normalize wifi tokens for scoped FTS.
+# Immutable digest pin — 0830e32: route scoped refund policy through KB retrieval.
 # Previous observed live digest: sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9
 # Rollback digest: sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:be4497948a30107df488c55248eab1fa799a46ac82d2aa7a2bb791c2cfe74e2e
+    digest: sha256:12e26cddadb582d257f6e8d3e3969d7078d3250c7c24f8b82b18430d20e72939
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
