@@ -12,4 +12,5 @@ metadata:
     stayledger.io/rollback-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
     kubernetes.io/change-cause: "fix(webhook): normalize PMS property and branch identifiers"
     stayledger.io/build-provenance: "clean-scope-normalization-7070337"
+    stayledger.io/configmap-revision: "869357e"
     stayledger.io/source-dirty: "clean"
