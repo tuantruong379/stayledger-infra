@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "9580ef4"
-    stayledger.io/git-sha-short: "9580ef4"
-    stayledger.io/image-tag: "release-1.2.35-answerability-scope-fix"
-    stayledger.io/image-digest: "sha256:f27c023db77b867e585604cf8f42321ff595e05d747d8997d777b8440370346b"
+    stayledger.io/git-sha: "64a4a43"
+    stayledger.io/git-sha-short: "64a4a43"
+    stayledger.io/image-tag: "release-1.2.35-scoped-embedding-cache"
+    stayledger.io/image-digest: "sha256:abedab585df3f9d21dcfda7e0a6d54c0ef53f829252c9a2fc3b18130efced20f"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:1ae2642e79e2cdba9c168a72200d82b5a8af55d7d60086649115bd3d53779eda"
-    kubernetes.io/change-cause: "fix(rag): keep sibling-property abstention fail-closed"
-    stayledger.io/build-provenance: "clean-commit-buildkit-9580ef4"
+    stayledger.io/rollback-digest: "sha256:f27c023db77b867e585604cf8f42321ff595e05d747d8997d777b8440370346b"
+    kubernetes.io/change-cause: "perf(rag): cache scoped query embeddings"
+    stayledger.io/build-provenance: "clean-commit-buildkit-64a4a43"
     stayledger.io/source-dirty: "clean"
