@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — 4f7c2c1: share Vietnamese embedding cache identity.
-# Rollback digest: sha256:a8f0069867d9052ec2670ce6980fc73fee6d6eaf003702546bb6863f43762e0c
+# Immutable digest pin — 30e1bf1: fail closed on skipped RAG judge cases.
+# Rollback digest: sha256:85a879d28d7ac939b4c2c9922d9b7296119e201c3da416007569321a45bfdb9e
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:85a879d28d7ac939b4c2c9922d9b7296119e201c3da416007569321a45bfdb9e
+    digest: sha256:90cd81661795df3b4f5bddc0069944792df1cedaca14f32623da0fd25071aaf5
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
