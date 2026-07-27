@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "fc18271"
-    stayledger.io/git-sha-short: "fc18271"
-    stayledger.io/image-tag: "fc18271"
-    stayledger.io/image-digest: "sha256:7ee0ade19c219066e7ac67a4d19c4b565422ed850a2fd61d34c00b66385730c6"
+    stayledger.io/git-sha: "df2bab7"
+    stayledger.io/git-sha-short: "df2bab7"
+    stayledger.io/image-tag: "df2bab7"
+    stayledger.io/image-digest: "sha256:f53a4803e9cd86f5188c127342714de767dbb8da48b9e14ecff56a59f9e7b6b7"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
-    kubernetes.io/change-cause: "fix(eval): vacuous wrong-property gate"
-    stayledger.io/build-provenance: "scoped-rag-evaluator-fc18271"
-    stayledger.io/configmap-revision: "release-metadata-20260727"
+    kubernetes.io/change-cause: "fix(eval): alias-aware retrieval metrics"
+    stayledger.io/build-provenance: "scoped-rag-evaluator-df2bab7"
+    stayledger.io/configmap-revision: "release-metadata-20260727-rag-metrics"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260727"
+        stayledger.io/configmap-revision: "release-metadata-20260727-rag-metrics"
