@@ -14,3 +14,8 @@ metadata:
     stayledger.io/build-provenance: "clean-scope-normalization-7070337"
     stayledger.io/configmap-revision: "869357e"
     stayledger.io/source-dirty: "clean"
+spec:
+  template:
+    metadata:
+      annotations:
+        stayledger.io/configmap-revision: "869357e"
