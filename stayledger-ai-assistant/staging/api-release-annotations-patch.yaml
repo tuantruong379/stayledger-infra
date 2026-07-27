@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "2409952"
-    stayledger.io/git-sha-short: "2409952"
-    stayledger.io/image-tag: "2409952"
-    stayledger.io/image-digest: "sha256:cf0b3b3c86e11afc7cf73a80fc391b044c361ca6e3d6ac8a39dd84dac6e1f5e4"
+    stayledger.io/git-sha: "7a69a53"
+    stayledger.io/git-sha-short: "7a69a53"
+    stayledger.io/image-tag: "7a69a53"
+    stayledger.io/image-digest: "sha256:24cd89cdd7c03f3d713ef890c4f89b400e9d4f95541e4998e9b4995f3bea8f52"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:f1ef667c47f8fb847d57fe4fe14e42f3871eec24c9cd2eaf7ee5c2be5ff01a0e"
+    stayledger.io/rollback-digest: "sha256:cf0b3b3c86e11afc7cf73a80fc391b044c361ca6e3d6ac8a39dd84dac6e1f5e4"
     kubernetes.io/change-cause: "fix(webhook): pin canonical branch and mapping scope"
     stayledger.io/build-provenance: "webhook-scope-pin-b67b98e"
     stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
