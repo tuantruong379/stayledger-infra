@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7070337"
-    stayledger.io/git-sha-short: "7070337"
-    stayledger.io/image-tag: "7070337"
-    stayledger.io/image-digest: "sha256:5570ac649c638f887435a2d1a84dfc87d2d5d1466335d2e020bbde65306a2e3c"
+    stayledger.io/git-sha: "d5612ce"
+    stayledger.io/git-sha-short: "d5612ce"
+    stayledger.io/image-tag: "d5612ce"
+    stayledger.io/image-digest: "sha256:6ac8d361d21169e371930bcdb2890758d710795740616a967c8e4b1abce5a02b"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
     kubernetes.io/change-cause: "fix(webhook): normalize PMS property and branch identifiers"
-    stayledger.io/build-provenance: "clean-scope-normalization-7070337"
-    stayledger.io/configmap-revision: "869357e"
+    stayledger.io/build-provenance: "parallel-pool-creation-d5612ce"
+    stayledger.io/configmap-revision: "sync-pool-size-8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "869357e"
+        stayledger.io/configmap-revision: "sync-pool-size-8-20260727"
