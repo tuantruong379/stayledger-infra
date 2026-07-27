@@ -4,14 +4,14 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "d5612ce"
-    stayledger.io/git-sha-short: "d5612ce"
-    stayledger.io/image-tag: "d5612ce"
-    stayledger.io/image-digest: "sha256:6ac8d361d21169e371930bcdb2890758d710795740616a967c8e4b1abce5a02b"
+    stayledger.io/git-sha: "b67b98e"
+    stayledger.io/git-sha-short: "b67b98e"
+    stayledger.io/image-tag: "b67b98e"
+    stayledger.io/image-digest: "sha256:f1ef667c47f8fb847d57fe4fe14e42f3871eec24c9cd2eaf7ee5c2be5ff01a0e"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
-    kubernetes.io/change-cause: "fix(webhook): normalize PMS property and branch identifiers"
-    stayledger.io/build-provenance: "parallel-pool-creation-d5612ce"
+    stayledger.io/rollback-digest: "sha256:90cd81661795df3b4f5bddc0069944792df1cedaca14f32623da0fd25071aaf5"
+    kubernetes.io/change-cause: "fix(webhook): pin canonical branch and mapping scope"
+    stayledger.io/build-provenance: "webhook-scope-pin-b67b98e"
     stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:

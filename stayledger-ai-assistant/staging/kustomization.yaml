@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — 30e1bf1: fail closed on skipped RAG judge cases.
-# Rollback digest: sha256:85a879d28d7ac939b4c2c9922d9b7296119e201c3da416007569321a45bfdb9e
+# Immutable digest pin — b67b98e: pin canonical branch/mapping scope on webhook turns.
+# Rollback digest: sha256:90cd81661795df3b4f5bddc0069944792df1cedaca14f32623da0fd25071aaf5
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:90cd81661795df3b4f5bddc0069944792df1cedaca14f32623da0fd25071aaf5
+    digest: sha256:f1ef667c47f8fb847d57fe4fe14e42f3871eec24c9cd2eaf7ee5c2be5ff01a0e
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
