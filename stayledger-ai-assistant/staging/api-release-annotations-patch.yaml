@@ -12,10 +12,10 @@ metadata:
     stayledger.io/rollback-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
     kubernetes.io/change-cause: "fix(webhook): normalize PMS property and branch identifiers"
     stayledger.io/build-provenance: "parallel-pool-creation-d5612ce"
-    stayledger.io/configmap-revision: "sync-pool-size-8-20260727"
+    stayledger.io/configmap-revision: "scoped-rerank-off-ai-concurrency-8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "sync-pool-size-8-20260727"
+        stayledger.io/configmap-revision: "scoped-rerank-off-ai-concurrency-8-20260727"
