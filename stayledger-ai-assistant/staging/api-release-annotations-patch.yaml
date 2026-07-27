@@ -12,10 +12,10 @@ metadata:
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(eval): vacuous wrong-property gate"
     stayledger.io/build-provenance: "scoped-rag-evaluator-fc18271"
-    stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
+    stayledger.io/configmap-revision: "release-metadata-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
+        stayledger.io/configmap-revision: "release-metadata-20260727"
