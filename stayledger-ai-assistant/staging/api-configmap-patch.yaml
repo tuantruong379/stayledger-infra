@@ -82,6 +82,9 @@ data:
   # LLM listwise rerank after similarity floor (heuristic fallback on timeout/error).
   FEATURE_RERANKER_ENABLED: "1"
   RAG_RERANK_TENANT_ALLOWLIST: "cupid_hotel"
+  # Scoped exact retrieval already has deterministic authorization-aware ranking;
+  # keep the extra LLM rerank opt-in until the frozen quality corpus proves benefit.
+  RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED: "0"
   # Bounded multi-turn history in RAG messages (Redis envelope; not pgvector).
   AI_MULTITURN_MEMORY_ENABLED: "1"
   # fail_closed required by startup safety on staging/production (fail_open needs ALLOW_AI_BUDGET_FAIL_OPEN=1).
