@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "99f55b7"
-    stayledger.io/git-sha-short: "99f55b7"
-    stayledger.io/image-tag: "99f55b7"
-    stayledger.io/image-digest: "sha256:9c2a8621c0e332f6da6e50b4a7cba7955f890b0ab5e8733ceab6326941425bfc"
+    stayledger.io/git-sha: "6f29d8e"
+    stayledger.io/git-sha-short: "6f29d8e"
+    stayledger.io/image-tag: "6f29d8e"
+    stayledger.io/image-digest: "sha256:404349ccd8de1aaec7da6b038a9a178468b53baac3553fc97d29c564a437e460"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
-    kubernetes.io/change-cause: "fix(eval): pin property scope in RAG judge cases"
-    stayledger.io/build-provenance: "rag-judge-property-scope-99f55b7"
-    stayledger.io/configmap-revision: "release-metadata-20260727-judge-scope"
+    kubernetes.io/change-cause: "fix(rag): drop Vietnamese question stopword from FTS"
+    stayledger.io/build-provenance: "scoped-rag-vietnamese-stopword-6f29d8e"
+    stayledger.io/configmap-revision: "release-metadata-20260727-vietnamese-stopword"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260727-judge-scope"
+        stayledger.io/configmap-revision: "release-metadata-20260727-vietnamese-stopword"
