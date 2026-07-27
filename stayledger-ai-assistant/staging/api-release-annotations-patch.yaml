@@ -4,14 +4,14 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "97693fa"
-    stayledger.io/git-sha-short: "97693fa"
-    stayledger.io/image-tag: "97693fa"
-    stayledger.io/image-digest: "sha256:c579bc5d3ea8b78e7b4e4bbabe605e0aef94c34e908bf55e69128a4444011371"
+    stayledger.io/git-sha: "b24a62a"
+    stayledger.io/git-sha-short: "b24a62a"
+    stayledger.io/image-tag: "b24a62a"
+    stayledger.io/image-digest: "sha256:a7c29e88cbaf6bd1ea40de4d76370eb7c40fa84cf2d11631dcebba51f7df3115"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:24cd89cdd7c03f3d713ef890c4f89b400e9d4f95541e4998e9b4995f3bea8f52"
-    kubernetes.io/change-cause: "fix(webhook): pin canonical branch and mapping scope"
-    stayledger.io/build-provenance: "webhook-scope-pin-b67b98e"
+    stayledger.io/rollback-digest: "sha256:c579bc5d3ea8b78e7b4e4bbabe605e0aef94c34e908bf55e69128a4444011371"
+    kubernetes.io/change-cause: "fix(eval): classify safety cases as abstention"
+    stayledger.io/build-provenance: "scoped-rag-evaluator-b24a62a"
     stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
