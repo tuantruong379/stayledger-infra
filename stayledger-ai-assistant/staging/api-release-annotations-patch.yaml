@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "20a1e50"
-    stayledger.io/git-sha-short: "20a1e50"
-    stayledger.io/image-tag: "release-1.2.35-scoped-judge"
-    stayledger.io/image-digest: "sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4"
+    stayledger.io/git-sha: "c18b21d"
+    stayledger.io/git-sha-short: "c18b21d"
+    stayledger.io/image-tag: "release-1.2.35-lexical-stopwords"
+    stayledger.io/image-digest: "sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:65900447fcc0b47d9eb85f03a9f09e25c66fb3e7887dfc60935aacda462551a3"
-    kubernetes.io/change-cause: "feat(eval): support scoped language qualification"
-    stayledger.io/build-provenance: "clean-commit-buildkit-20a1e50"
+    stayledger.io/rollback-digest: "sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4"
+    kubernetes.io/change-cause: "fix(rag): remove generic question words from scoped FTS"
+    stayledger.io/build-provenance: "clean-commit-buildkit-c18b21d"
     stayledger.io/source-dirty: "clean"

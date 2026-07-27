@@ -26,13 +26,13 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — 20a1e50: scoped Vietnamese judge qualification.
-# Previous observed live digest: sha256:65900447fcc0b47d9eb85f03a9f09e25c66fb3e7887dfc60935aacda462551a3
-# Rollback digest: sha256:65900447fcc0b47d9eb85f03a9f09e25c66fb3e7887dfc60935aacda462551a3
+# Immutable digest pin — c18b21d: remove generic question words from scoped FTS.
+# Previous observed live digest: sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4
+# Rollback digest: sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:9d991cca4ab12ef3d03cee9c4431d4a7848bb824df78dbfc8d60dd855b50f0a4
+    digest: sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
