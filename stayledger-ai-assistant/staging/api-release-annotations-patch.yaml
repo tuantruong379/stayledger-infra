@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "c24b6eb"
-    stayledger.io/git-sha-short: "c24b6eb"
-    stayledger.io/image-tag: "release-1.2.35-embedding-pin"
-    stayledger.io/image-digest: "sha256:296cab671788eeacb6e226bcbdff69dd30ed616ea3bfcd96112527ba1f737187"
+    stayledger.io/git-sha: "d17a473"
+    stayledger.io/git-sha-short: "d17a473"
+    stayledger.io/image-tag: "release-1.2.35-d17a473-evaluator-query-expansion"
+    stayledger.io/image-digest: "sha256:fa62073e739cefeef7e79758114b8f184aa00bdc650de7cc46cb85678ae0d0d9"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:bdb051fa117397ad09dfe6fb8d619c9d8dcb49e530a504b8853eab6465e8993e"
-    kubernetes.io/change-cause: "feat(kb): pin embedding identity on generations"
-    stayledger.io/build-provenance: "clean-commit-buildkit-c24b6eb"
+    stayledger.io/rollback-digest: "sha256:296cab671788eeacb6e226bcbdff69dd30ed616ea3bfcd96112527ba1f737187"
+    kubernetes.io/change-cause: "fix(eval): mirror production retrieval query expansion"
+    stayledger.io/build-provenance: "clean-commit-buildkit-d17a473"
     stayledger.io/source-dirty: "clean"
