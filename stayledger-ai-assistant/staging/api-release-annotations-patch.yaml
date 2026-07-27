@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "0830e32"
-    stayledger.io/git-sha-short: "0830e32"
-    stayledger.io/image-tag: "release-1.2.35-scoped-policy-rag"
-    stayledger.io/image-digest: "sha256:12e26cddadb582d257f6e8d3e3969d7078d3250c7c24f8b82b18430d20e72939"
+    stayledger.io/git-sha: "81e0bba"
+    stayledger.io/git-sha-short: "81e0bba"
+    stayledger.io/image-tag: "release-1.2.35-judge-azure-endpoint"
+    stayledger.io/image-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:be4497948a30107df488c55248eab1fa799a46ac82d2aa7a2bb791c2cfe74e2e"
-    kubernetes.io/change-cause: "fix(rag): route scoped refund policy through KB retrieval"
-    stayledger.io/build-provenance: "clean-commit-buildkit-0830e32"
+    stayledger.io/rollback-digest: "sha256:12e26cddadb582d257f6e8d3e3969d7078d3250c7c24f8b82b18430d20e72939"
+    kubernetes.io/change-cause: "fix(eval): configure explicit Azure endpoint for RAG judge"
+    stayledger.io/build-provenance: "clean-commit-buildkit-81e0bba"
     stayledger.io/source-dirty: "clean"
