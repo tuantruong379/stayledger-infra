@@ -12,10 +12,10 @@ metadata:
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(rag): collapse Wi-Fi lexical aliases"
     stayledger.io/build-provenance: "scoped-rag-lexical-aliases-a49c7fb"
-    stayledger.io/configmap-revision: "release-metadata-20260727-lexical-aliases"
+    stayledger.io/configmap-revision: "release-metadata-20260727-provenance"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260727-lexical-aliases"
+        stayledger.io/configmap-revision: "release-metadata-20260727-provenance"
