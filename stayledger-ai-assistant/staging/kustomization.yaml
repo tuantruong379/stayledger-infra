@@ -26,13 +26,12 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — 7a9444a: separate citation and negative safety evaluation.
-# Previous observed live digest: sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9
-# Rollback digest: sha256:a9f8110e88c8b5dc21243c3b2f298504f4f2673269ece1b6d8250ef342d546e9
+# Immutable digest pin — 7070337: normalize webhook PMS-property/branch identifiers.
+# Rollback digest: sha256:1bfd3d89d985575fcc158d90583e010b2e5d35b78f0a24720eaa1d8c87ca5a1d
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:1bfd3d89d985575fcc158d90583e010b2e5d35b78f0a24720eaa1d8c87ca5a1d
+    digest: sha256:5570ac649c638f8874355d2a1a84dfc87d2d5d1466335d2e020bbde65306a2e3c
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
