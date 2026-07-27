@@ -4,14 +4,14 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "515c064"
-    stayledger.io/git-sha-short: "515c064"
-    stayledger.io/image-tag: "515c064"
-    stayledger.io/image-digest: "sha256:1bc68b6ff36e524f01c4d6d8716eb946c98c014f61c1b54a8e5acfe61216aa82"
+    stayledger.io/git-sha: "b0e172b"
+    stayledger.io/git-sha-short: "b0e172b"
+    stayledger.io/image-tag: "b0e172b"
+    stayledger.io/image-digest: "sha256:5119739f97657e32836280f8560870e75ea48dd31c81fc0671e3e87d3a187aa0"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(rag): drop Vietnamese question stopword from FTS"
-    stayledger.io/build-provenance: "scoped-rag-stage-telemetry-515c064"
+    stayledger.io/build-provenance: "scoped-rag-async-embedding-b0e172b"
     stayledger.io/configmap-revision: "release-metadata-20260727-vietnamese-stopword"
     stayledger.io/source-dirty: "clean"
 spec:
