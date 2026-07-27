@@ -7,7 +7,7 @@ metadata:
     stayledger.io/git-sha: "88c115a"
     stayledger.io/git-sha-short: "88c115a"
     stayledger.io/image-tag: "88c115a"
-    stayledger.io/image-digest: "sha256:e39bef55d4afeecd01099ab64083b819b44326630756c2c52e7db553d993da24"
+    stayledger.io/image-digest: "sha256:f0b16e4dda52ffb619002568cd4e1a97c86005d49dc3ae3cdc412be0c2c11f01"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(rag): drop Vietnamese question stopword from FTS"
