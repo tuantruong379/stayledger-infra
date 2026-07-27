@@ -4,14 +4,14 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "4d39c73"
-    stayledger.io/git-sha-short: "4d39c73"
-    stayledger.io/image-tag: "4d39c73"
-    stayledger.io/image-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
+    stayledger.io/git-sha: "fc18271"
+    stayledger.io/git-sha-short: "fc18271"
+    stayledger.io/image-tag: "fc18271"
+    stayledger.io/image-digest: "sha256:7ee0ade19c219066e7ac67a4d19c4b565422ed850a2fd61d34c00b66385730c6"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:8524b99f1d09dee15e3aef54a27a5cf7a89dae54726677ef46efd4f06f2f595c"
-    kubernetes.io/change-cause: "fix(rag): tighten answerability lexical overlap"
-    stayledger.io/build-provenance: "answerability-stopwords-4d39c73"
+    stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
+    kubernetes.io/change-cause: "fix(eval): vacuous wrong-property gate"
+    stayledger.io/build-provenance: "scoped-rag-evaluator-fc18271"
     stayledger.io/configmap-revision: "scoped-rerank-off-pool8-20260727"
     stayledger.io/source-dirty: "clean"
 spec:
