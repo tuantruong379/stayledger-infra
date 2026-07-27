@@ -26,12 +26,12 @@ patches:
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
 
-# Immutable digest pin — 9c1e6b7: pass Azure endpoint to LiteLLM fallback.
-# Rollback digest: sha256:b54b4ed0cdc964a2d8e7bda0e3815c8e009f36253817d99fa7a891ec90347995
+# Immutable digest pin — 4f7c2c1: share Vietnamese embedding cache identity.
+# Rollback digest: sha256:a8f0069867d9052ec2670ce6980fc73fee6d6eaf003702546bb6863f43762e0c
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:a8f0069867d9052ec2670ce6980fc73fee6d6eaf003702546bb6863f43762e0c
+    digest: sha256:85a879d28d7ac939b4c2c9922d9b7296119e201c3da416007569321a45bfdb9e
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
