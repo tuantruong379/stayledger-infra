@@ -7,7 +7,7 @@ metadata:
     stayledger.io/git-sha: "7070337"
     stayledger.io/git-sha-short: "7070337"
     stayledger.io/image-tag: "7070337"
-    stayledger.io/image-digest: "sha256:5570ac649c638f8874355a2d1a84dfc87d2d5d1466335d2e020bbde65306a2e3c"
+    stayledger.io/image-digest: "sha256:5570ac649c638f887435a2d1a84dfc87d2d5d1466335d2e020bbde65306a2e3c"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:88573b43985a948f912cbe3a0894f89ddd67922142619de49eee10c8f7c23dd2"
     kubernetes.io/change-cause: "fix(webhook): normalize PMS property and branch identifiers"
