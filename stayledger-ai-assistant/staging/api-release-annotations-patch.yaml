@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "a49c7fb"
-    stayledger.io/git-sha-short: "a49c7fb"
-    stayledger.io/image-tag: "a49c7fb"
-    stayledger.io/image-digest: "sha256:9be444a273c9d9a0e027c650bd35cf964a312368ae4f1287ffc38f7cba0781bb"
+    stayledger.io/git-sha: "99f55b7"
+    stayledger.io/git-sha-short: "99f55b7"
+    stayledger.io/image-tag: "99f55b7"
+    stayledger.io/image-digest: "sha256:9c2a8621c0e332f6da6e50b4a7cba7955f890b0ab5e8733ceab6326941425bfc"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
-    kubernetes.io/change-cause: "fix(rag): collapse Wi-Fi lexical aliases"
-    stayledger.io/build-provenance: "scoped-rag-lexical-aliases-a49c7fb"
-    stayledger.io/configmap-revision: "release-metadata-20260727-provenance"
+    kubernetes.io/change-cause: "fix(eval): pin property scope in RAG judge cases"
+    stayledger.io/build-provenance: "rag-judge-property-scope-99f55b7"
+    stayledger.io/configmap-revision: "release-metadata-20260727-judge-scope"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260727-provenance"
+        stayledger.io/configmap-revision: "release-metadata-20260727-judge-scope"

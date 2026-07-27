@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — a49c7fb: collapse Wi-Fi/internet lexical aliases.
-# Rollback digest: sha256:e01d278d50bd2b8bba5baf8be18075c25ed9f3c2bb337109d12f62138e40c7a7
+# Immutable digest pin — 99f55b7: pin property scope in RAG judge cases.
+# Rollback digest: sha256:9be444a273c9d9a0e027c650bd35cf964a312368ae4f1287ffc38f7cba0781bb
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:9be444a273c9d9a0e027c650bd35cf964a312368ae4f1287ffc38f7cba0781bb
+    digest: sha256:9c2a8621c0e332f6da6e50b4a7cba7955f890b0ab5e8733ceab6326941425bfc
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
