@@ -4,12 +4,12 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "9453243"
-    stayledger.io/git-sha-short: "9453243"
-    stayledger.io/image-tag: "release-1.2.35-answerability-gate"
-    stayledger.io/image-digest: "sha256:4a51e6db908fc4c4a32eec1c01afd064117b522d94d23db3e11bcf8aa88de592"
+    stayledger.io/git-sha: "2056699"
+    stayledger.io/git-sha-short: "2056699"
+    stayledger.io/image-tag: "release-1.2.35-scoped-answerability"
+    stayledger.io/image-digest: "sha256:1ae2642e79e2cdba9c168a72200d82b5a8af55d7d60086649115bd3d53779eda"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:fa62073e739cefeef7e79758114b8f184aa00bdc650de7cc46cb85678ae0d0d9"
-    kubernetes.io/change-cause: "feat(eval): gate answerable acceptance separately"
-    stayledger.io/build-provenance: "clean-commit-buildkit-9453243"
+    stayledger.io/rollback-digest: "sha256:4a51e6db908fc4c4a32eec1c01afd064117b522d94d23db3e11bcf8aa88de592"
+    kubernetes.io/change-cause: "fix(rag): accept scoped factual evidence for answerability"
+    stayledger.io/build-provenance: "clean-commit-buildkit-2056699"
     stayledger.io/source-dirty: "clean"
