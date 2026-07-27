@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:d37ec404375dc78cc00cdf4da1e00af421fe41787b6458d6039d261faa288345"
-  STAYLEDGER_IMAGE_TAG: "release-1.2.35-99c74ca-slice2c"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:5570ac649c638f887435a2d1a84dfc87d2d5d1466335d2e020bbde65306a2e3c"
+  STAYLEDGER_IMAGE_TAG: "7070337"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
@@ -64,6 +64,10 @@ data:
   RAG_CHUNK_PERSIST: "1"
   RAG_EMBEDDING_DIMENSIONS: "1536"
   RAG_PGVECTOR_SHADOW_ENABLED: "0"
+  # 2026-07-26: on for the keyword-alias regex-migration pilot batch (10 categories) —
+  # collecting real shadow-mismatch data before any category's call site is trusted to use
+  # the config-driven path instead of its legacy regex. Turn back to "0" once done observing.
+  KEYWORD_ALIAS_SHADOW_VALIDATE: "1"
   RAG_PGVECTOR_TENANT_ALLOWLIST: ""
   RAG_PGVECTOR_CANARY_PERCENT: "100"
   # Calibrated from staging top-1 cosine samples (min≈0.44); keep slack for FAQ variance.
