@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — c1372a9: enforce MRR retrieval quality gate.
-# Rollback digest: sha256:f53a4803e9cd86f5188c127342714de767dbb8da48b9e14ecff56a59f9e7b6b7
+# Immutable digest pin — 765dd86: separate lexical query from retrieval hints.
+# Rollback digest: sha256:cd20b9d85da63d255b7009b0a82e7b1f6302a7b4970d176252de6c670309b0c8
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:cd20b9d85da63d255b7009b0a82e7b1f6302a7b4970d176252de6c670309b0c8
+    digest: sha256:608ef2fdb2e0a4eefbc30eabda62d8af951ca921319cd3c50dfb25a22c977a99
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
