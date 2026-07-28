@@ -18,4 +18,4 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-retry"
+        stayledger.io/configmap-revision: "release-metadata-20260728-pms-retry-1"
