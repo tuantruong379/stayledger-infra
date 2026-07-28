@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "de96d19"
-    stayledger.io/git-sha-short: "de96d19"
-    stayledger.io/image-tag: "de96d19"
-    stayledger.io/image-digest: "sha256:a768642836c68220674d2b737708a3b0ad274a726262c308f706f2e3972056bb"
+    stayledger.io/git-sha: "ba1ab70"
+    stayledger.io/git-sha-short: "ba1ab70"
+    stayledger.io/image-tag: "llm-gate"
+    stayledger.io/image-digest: "sha256:f302df563be395a759ba287a6e70bbc271db9d17567a108eb376efff71ab0dc2"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:3ef1cb96bb826d7dcb3cb679f1c185e3ab2a58e87cff0f79c4b037c82d12d3a6"
-    kubernetes.io/change-cause: "rollback(redis): remove socket-timeout canary"
-    stayledger.io/build-provenance: "bounded-embedding-concurrency-de96d19-pool20"
-    stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20"
+    stayledger.io/rollback-digest: "sha256:a768642836c68220674d2b737708a3b0ad274a726262c308f706f2e3972056bb"
+    kubernetes.io/change-cause: "perf(llm): bound async provider concurrency"
+    stayledger.io/build-provenance: "bounded-llm-concurrency-ba1ab70-pool20"
+    stayledger.io/configmap-revision: "release-metadata-20260728-llm-gate"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20"
+        stayledger.io/configmap-revision: "release-metadata-20260728-llm-gate"
