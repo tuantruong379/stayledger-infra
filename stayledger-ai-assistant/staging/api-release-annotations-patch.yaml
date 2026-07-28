@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "41972f3"
-    stayledger.io/git-sha-short: "41972f3"
-    stayledger.io/image-tag: "rag-eval-loop-fix"
-    stayledger.io/image-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
+    stayledger.io/git-sha: "5aee3d9"
+    stayledger.io/git-sha-short: "5aee3d9"
+    stayledger.io/image-tag: "rag-eval-retry"
+    stayledger.io/image-digest: "sha256:5d212b1a1dfa3eb411e54e4fae0f7790b891c51cce477eb5b7cfd8a391659b28"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:a7f433d497829e57efb78bf8fea0015c9c648bd63b9ece1feb638181937486f6"
-    kubernetes.io/change-cause: "fix(eval): bind asyncpg pool to evaluator runner"
-    stayledger.io/build-provenance: "rag-eval-loop-fix-41972f3-embedding-concurrency-2"
-    stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-loop-fix"
+    stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
+    kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
+    stayledger.io/build-provenance: "rag-eval-retry-5aee3d9-embedding-concurrency-2"
+    stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-retry"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-loop-fix"
+        stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-retry"
