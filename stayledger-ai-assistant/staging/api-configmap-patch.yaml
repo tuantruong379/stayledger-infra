@@ -74,7 +74,7 @@ data:
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
   REDIS_RATE_LIMIT_POOL_WAIT_TIMEOUT_S: "1.0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
-  PMS_PROVIDER_DEFAULT: "local"
+  PMS_PROVIDER_DEFAULT: "stayledger"
   # External outbound fail-closed until an approved staging test destination is allowlisted.
   CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "1"
   CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
