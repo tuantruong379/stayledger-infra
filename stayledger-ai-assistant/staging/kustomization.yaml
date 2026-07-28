@@ -35,13 +35,13 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — webhook turn policy FAQ guard (03e5832).
+# Immutable amd64 digest pin — literal refund policy webhook guard (1145e7b).
 # Rollback API digest: sha256:ea5affb03c1571e61726855bc4a0002660e0b6236409c1b2edd07da93f11b752
 # Rollback frontend digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:c69ddcf4bafaee9da6d9002972936b1e709c1f9346b59de5a6b0eaf15c070b2a
+    digest: sha256:afba779f5c144bfc5979dc9fba4f4b90ecd5a1927f622837a39ff1ed7ea3195f
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:47723230715fc68df98b40b09f23bccbf7f8090fb60018cee160ecda4fdb8da6
