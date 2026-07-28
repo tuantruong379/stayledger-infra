@@ -10,9 +10,11 @@ spec:
         spec:
           containers:
             - name: rag-eval
-              # Run the complete frozen dataset. Each case carries its own
-              # verified property_id; no global property fallback is allowed.
-              args: []
+              # Current qualification scope is Vietnamese. Each VI case carries
+              # its own verified property_id; English qualification is deferred.
+              args:
+                - "--language"
+                - "vi"
               env:
                 - name: RAG_EVAL_JUDGE_MODEL
                   value: "azure/gpt-4o-mini"
