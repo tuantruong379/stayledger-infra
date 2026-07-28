@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/staging-feature-profile: full-internal-v4-nonblocking-llm-deadline
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -25,7 +25,7 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/staging-feature-profile: full-internal-v4-nonblocking-llm-deadline
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -37,7 +37,7 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/staging-feature-profile: full-internal-v4-nonblocking-llm-deadline
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -49,7 +49,7 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/staging-feature-profile: full-internal-v4-nonblocking-llm-deadline
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -71,7 +71,7 @@ spec:
   template:
     metadata:
       annotations:
-        stayledger.io/staging-feature-profile: full-internal-v4-nonblocking-llm-deadline
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
     spec:
       containers:
         - name: api
