@@ -78,6 +78,10 @@ data:
   REDIS_RATE_LIMIT_POOL_WAIT_TIMEOUT_S: "1.0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "stayledger"
+  # One bounded synchronous retry; idempotent draft retries remain recoverable
+  # by the reconciliation worker without holding the webhook turn for two full
+  # upstream timeout windows.
+  PMS_HTTP_MAX_RETRIES: "1"
   # External outbound fail-closed until an approved staging test destination is allowlisted.
   CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "1"
   CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
