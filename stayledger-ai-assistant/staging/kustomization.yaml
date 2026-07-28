@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — 52a3ca7: fail closed for property-specific queries without scope.
-# Rollback digest: sha256:a6617f901d00dc82958fd254fb1ad340676a9c5a1c50753b179bd4bfee9a5665
+# Immutable amd64 digest pin — 5195fb8: bounded Slice 4 workload runner.
+# Rollback digest: sha256:35c06b602fd9d9e3c75514e52a4d970d14044f3481bee9915044d88de5444beb
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:35c06b602fd9d9e3c75514e52a4d970d14044f3481bee9915044d88de5444beb
+    digest: sha256:4b9f9e90cc065befb8f790a4619fe62210ac61a3853378cacc98423752274550
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

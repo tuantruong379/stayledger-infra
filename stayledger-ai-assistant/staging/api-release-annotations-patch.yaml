@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "52a3ca7"
-    stayledger.io/git-sha-short: "52a3ca7"
-    stayledger.io/image-tag: "52a3ca7"
-    stayledger.io/image-digest: "sha256:35c06b602fd9d9e3c75514e52a4d970d14044f3481bee9915044d88de5444beb"
+    stayledger.io/git-sha: "5195fb8"
+    stayledger.io/git-sha-short: "5195fb8"
+    stayledger.io/image-tag: "5195fb8"
+    stayledger.io/image-digest: "sha256:4b9f9e90cc065befb8f790a4619fe62210ac61a3853378cacc98423752274550"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(rag): direct scoped evidence rerank and Wi-Fi answerability"
-    stayledger.io/build-provenance: "property-scope-guard-52a3ca7"
-    stayledger.io/configmap-revision: "release-metadata-20260728-property-scope-guard"
+    stayledger.io/build-provenance: "slice4-bounded-load-5195fb8"
+    stayledger.io/configmap-revision: "release-metadata-20260728-slice4-load"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-property-scope-guard"
+        stayledger.io/configmap-revision: "release-metadata-20260728-slice4-load"
