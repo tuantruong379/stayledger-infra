@@ -32,7 +32,7 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — booking-redis-offload: bounded booking-state Redis operations; pool-20 canary.
+# Immutable amd64 digest pin — booking-redis-offload: async-pool-20 canary with bounded Redis/LLM/RAG operations.
 # Rollback digest: sha256:f302df563be395a759ba287a6e70bbc271db9d17567a108eb376efff71ab0dc2
 images:
   - name: putin111/stayledger-ai-assistant
