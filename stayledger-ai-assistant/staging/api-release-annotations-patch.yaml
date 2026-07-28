@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ba1ab70"
-    stayledger.io/git-sha-short: "ba1ab70"
-    stayledger.io/image-tag: "llm-gate"
-    stayledger.io/image-digest: "sha256:f302df563be395a759ba287a6e70bbc271db9d17567a108eb376efff71ab0dc2"
+    stayledger.io/git-sha: "8cefc78"
+    stayledger.io/git-sha-short: "8cefc78"
+    stayledger.io/image-tag: "booking-redis-offload"
+    stayledger.io/image-digest: "sha256:ae3364e50aa35f9853175fad445f2eee9e5562d672432ad163d0ef1bf6aa5fea"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:a768642836c68220674d2b737708a3b0ad274a726262c308f706f2e3972056bb"
-    kubernetes.io/change-cause: "perf(llm): bound async provider concurrency"
-    stayledger.io/build-provenance: "bounded-llm-concurrency-ba1ab70-pool20"
-    stayledger.io/configmap-revision: "release-metadata-20260728-llm-gate"
+    stayledger.io/rollback-digest: "sha256:f302df563be395a759ba287a6e70bbc271db9d17567a108eb376efff71ab0dc2"
+    kubernetes.io/change-cause: "perf(redis): offload booking state operations"
+    stayledger.io/build-provenance: "booking-state-redis-offload-8cefc78-pool20"
+    stayledger.io/configmap-revision: "release-metadata-20260728-booking-redis-offload"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-llm-gate"
+        stayledger.io/configmap-revision: "release-metadata-20260728-booking-redis-offload"

@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:f302df563be395a759ba287a6e70bbc271db9d17567a108eb376efff71ab0dc2"
-  STAYLEDGER_IMAGE_TAG: "llm-gate"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:ae3364e50aa35f9853175fad445f2eee9e5562d672432ad163d0ef1bf6aa5fea"
+  STAYLEDGER_IMAGE_TAG: "booking-redis-offload"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
@@ -60,6 +60,7 @@ data:
   REDIS_RAG_CACHE_SYNC_OFFLOAD: "1"
   RAG_EMBEDDING_MAX_CONCURRENCY: "8"
   LLM_ASYNC_MAX_CONCURRENCY: "8"
+  REDIS_BOOKING_STATE_SYNC_OFFLOAD: "1"
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
   REDIS_RATE_LIMIT_POOL_WAIT_TIMEOUT_S: "1.0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
