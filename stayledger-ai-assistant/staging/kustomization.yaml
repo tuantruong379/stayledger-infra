@@ -33,12 +33,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — exact-no-hnsw-822f370: exact async path without per-request HNSW setting round trip.
-# Rollback digest: sha256:0605f164465279f9c6978d7aba0b161d748a405c8b699242613db8568a31eed7
+# Immutable amd64 digest pin — exact-gate-10f2b6a: bounded exact retrieval concurrency.
+# Rollback digest: sha256:eadbbd77b4275a356294f48d918ec21b72f0dbaa2a4afd8f60f7703145385947
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:eadbbd77b4275a356294f48d918ec21b72f0dbaa2a4afd8f60f7703145385947
+    digest: sha256:5bd194866f45b8a28c937aa52948440e560d7bb2d3de50bf0ae4baec41148317
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

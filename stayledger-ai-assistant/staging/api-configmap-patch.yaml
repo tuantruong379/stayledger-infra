@@ -65,6 +65,8 @@ data:
   # Staging canary: allow bounded parallel embedding calls; rollback to 2 if
   # Azure throttling or tail latency regresses.
   RAG_EMBEDDING_MAX_CONCURRENCY: "8"
+  # Bounded exact-retrieval DB concurrency canary; rollback to 0 to disable.
+  RAG_SCOPED_RETRIEVAL_MAX_CONCURRENCY: "8"
   LLM_ASYNC_MAX_CONCURRENCY: "8"
   REDIS_BOOKING_STATE_SYNC_OFFLOAD: "1"
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
