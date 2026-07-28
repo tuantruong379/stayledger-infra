@@ -12,10 +12,10 @@ metadata:
     stayledger.io/rollback-digest: "sha256:7724053f31079bdbef1855b905a839f538331925e91c71636adf88ff4e9cbeb9"
     kubernetes.io/change-cause: "fix(redis): bounded async and sync connection pools"
     stayledger.io/build-provenance: "bounded-redis-pool-4d2e03a"
-    stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool"
+    stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool-64"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool"
+        stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool-64"
