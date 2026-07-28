@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:82e3ff756c5f4b24e07b05a3aedd327cc3194dbda9c3c06abb980fd4e4b2ca14"
-  STAYLEDGER_IMAGE_TAG: "llm-provider-timing"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:5e94c4ab03d65b9f834fc64429e9fb4f18a3944bbbc723a34c1670b93431d3e1"
+  STAYLEDGER_IMAGE_TAG: "release-1.2.39-3ffa13a"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
@@ -70,6 +70,7 @@ data:
   # for a future design that acquires the gate before the DB connection.
   RAG_SCOPED_RETRIEVAL_MAX_CONCURRENCY: "0"
   LLM_ASYNC_MAX_CONCURRENCY: "8"
+  AI_ASYNC_RETRY_RAG_TRANSLATE_MAX_RETRIES: "0"
   REDIS_BOOKING_STATE_SYNC_OFFLOAD: "1"
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
   REDIS_RATE_LIMIT_POOL_WAIT_TIMEOUT_S: "1.0"
