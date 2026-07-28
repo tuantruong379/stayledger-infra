@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "3452fb1"
-    stayledger.io/git-sha-short: "3452fb1"
-    stayledger.io/image-tag: "release-1.2.51-3452fb1"
-    stayledger.io/image-digest: "sha256:41922b17833bf71cd1772455285eb288549bc49785b3b2cdadb5627691bcd9f5"
+    stayledger.io/git-sha: "72ba3fa"
+    stayledger.io/git-sha-short: "72ba3fa"
+    stayledger.io/image-tag: "release-1.2.52-72ba3fa"
+    stayledger.io/image-digest: "sha256:e68aa8fbf0ecf16b353f370f6c23e1af6c4d0db2f69027e0ff21df209830f476"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
     kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
-    stayledger.io/build-provenance: "booking-policy-dispatch-3452fb1"
-    stayledger.io/configmap-revision: "release-metadata-20260728-booking-policy-dispatch"
+    stayledger.io/build-provenance: "policy-faq-entrypoint-72ba3fa"
+    stayledger.io/configmap-revision: "release-metadata-20260728-policy-faq-entrypoint"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-booking-policy-dispatch"
+        stayledger.io/configmap-revision: "release-metadata-20260728-policy-faq-entrypoint"
