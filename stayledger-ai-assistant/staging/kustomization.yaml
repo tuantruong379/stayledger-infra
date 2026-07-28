@@ -12,6 +12,7 @@ namespace: stayledger-ai-assistant
 
 resources:
   - ../base
+  - pms-outbox-network-patch.yaml
 
 patches:
   - path: api-configmap-patch.yaml
