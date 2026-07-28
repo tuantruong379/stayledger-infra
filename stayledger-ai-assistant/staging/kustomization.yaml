@@ -35,13 +35,13 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — bounded late embedding cache warm (d5c4545).
+# Immutable amd64 digest pin — policy FAQ precedence with pending booking (22245d0).
 # Rollback API digest: sha256:ea5affb03c1571e61726855bc4a0002660e0b6236409c1b2edd07da93f11b752
 # Rollback frontend digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:0205d6af95617c03ef6fa97977e2fdc11be28395cd5607993b0d686e1c662d6a
+    digest: sha256:c440e54e6e8a809f883b29e6e93badab3ad871d75a67da5805c378191d142732
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:47723230715fc68df98b40b09f23bccbf7f8090fb60018cee160ecda4fdb8da6
