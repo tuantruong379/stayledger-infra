@@ -54,6 +54,8 @@ data:
   # an unbounded connection storm. Roll back with the application image if needed.
   REDIS_MAX_CONNECTIONS: "64"
   REDIS_POOL_WAIT_TIMEOUT_S: "3.0"
+  REDIS_SOCKET_CONNECT_TIMEOUT_S: "1.0"
+  REDIS_SOCKET_TIMEOUT_S: "2.0"
   REDIS_RATE_LIMIT_DEDICATED_POOL: "1"
   REDIS_RATE_LIMIT_SYNC_OFFLOAD: "1"
   REDIS_MEMORY_SYNC_OFFLOAD: "1"
