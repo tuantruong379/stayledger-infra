@@ -35,13 +35,13 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — bound embedding and booking-extract tails (cf307b6).
+# Immutable amd64 digest pin — deterministic booking extraction tail (59219fc).
 # Rollback API digest: sha256:ea5affb03c1571e61726855bc4a0002660e0b6236409c1b2edd07da93f11b752
 # Rollback frontend digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:59eb1de10b6156ec27f3547ed8c8ac62ab8daa0911517984dd859e917715425e
+    digest: sha256:241d3bd9334ccfb417ff92e587325200eec90caaf148976c34db2bc1628c36df
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:47723230715fc68df98b40b09f23bccbf7f8090fb60018cee160ecda4fdb8da6

@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "cf307b6"
-    stayledger.io/git-sha-short: "cf307b6"
-    stayledger.io/image-tag: "release-1.2.43-cf307b6"
-    stayledger.io/image-digest: "sha256:59eb1de10b6156ec27f3547ed8c8ac62ab8daa0911517984dd859e917715425e"
+    stayledger.io/git-sha: "59219fc"
+    stayledger.io/git-sha-short: "59219fc"
+    stayledger.io/image-tag: "release-1.2.44-59219fc"
+    stayledger.io/image-digest: "sha256:241d3bd9334ccfb417ff92e587325200eec90caaf148976c34db2bc1628c36df"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
     kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
-    stayledger.io/build-provenance: "embedding-deadline-booking-extract-4-cf307b6"
-    stayledger.io/configmap-revision: "release-metadata-20260728-embedding-booking-extract"
+    stayledger.io/build-provenance: "deterministic-booking-extract-59219fc"
+    stayledger.io/configmap-revision: "release-metadata-20260728-booking-extract-deterministic"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-embedding-booking-extract"
+        stayledger.io/configmap-revision: "release-metadata-20260728-booking-extract-deterministic"
