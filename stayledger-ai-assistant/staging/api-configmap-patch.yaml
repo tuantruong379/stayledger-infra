@@ -61,7 +61,7 @@ data:
   REDIS_MEMORY_SYNC_OFFLOAD: "1"
   REDIS_RAG_CACHE_SYNC_OFFLOAD: "1"
   # Bounded canary: Azure embedding tail is the dominant burst bottleneck.
-  # Roll back to 8 if the two-replica current-workload profile regresses.
+  # Roll back to 2 if the two-replica current-workload profile regresses.
   # Staging canary: allow bounded parallel embedding calls; rollback to 2 if
   # Azure throttling or tail latency regresses.
   RAG_EMBEDDING_MAX_CONCURRENCY: "8"
