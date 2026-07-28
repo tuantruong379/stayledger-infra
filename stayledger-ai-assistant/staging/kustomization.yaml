@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — f978e00: sync-offloaded conversation memory Redis operations.
-# Rollback digest: sha256:6b796afdb54dd14f2d23aadd3bce1a1b4a49ee3e37d186d3f13db521b32ea8bd
+# Immutable amd64 digest pin — 71c8fe7: sync-offloaded RAG cache Redis operations.
+# Rollback digest: sha256:f06821aa4399ef818c7ab37c9f0d641fdba904dcc2255808e1a9718204563848
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:f06821aa4399ef818c7ab37c9f0d641fdba904dcc2255808e1a9718204563848
+    digest: sha256:3ef1cb96bb826d7dcb3cb679f1c185e3ab2a58e87cff0f79c4b037c82d12d3a6
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
