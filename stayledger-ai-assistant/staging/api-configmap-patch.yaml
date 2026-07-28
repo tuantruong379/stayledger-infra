@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:a88a8e35aebf6d1295a2b13531e275542e84953301aa9c9a9c3f6c1fe544a8ed"
-  STAYLEDGER_IMAGE_TAG: "release-1.2.56-ad9f251"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:84594c0d0ec8e93757e717a2a5ddd1c124a026c571cfe90de6d92d75d2e1926d"
+  STAYLEDGER_IMAGE_TAG: "release-1.2.57-7efa31b"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "4"
   # Staging rollout safety: one Uvicorn worker per API replica. The node is
