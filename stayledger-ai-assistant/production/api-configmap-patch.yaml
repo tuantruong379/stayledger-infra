@@ -30,6 +30,14 @@ data:
   PMS_OUTBOX_WORKER_ENABLED: "0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
+  # External provider delivery remains deferred; fail closed until a separately
+  # authorized destination and provider E2E qualification exist.
+  CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "1"
+  CHANNEL_OUTBOUND_DESTINATION_ALLOWLIST: ""
+  CHANNEL_OUTBOUND_MODE: "sink"
+  CHANNEL_BINDING_ENFORCEMENT: "enforce"
+  WEBHOOK_REQUIRE_TENANT_API_KEY: "1"
+  ZALO_WEBHOOK_REQUIRE_MAC: "1"
   # Phase 12 full cutover: pgvector primary for all tenants.
   RAG_RETRIEVAL_BACKEND: "pgvector"
   RAG_CHUNK_PERSIST: "1"
