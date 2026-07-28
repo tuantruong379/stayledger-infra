@@ -33,12 +33,13 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — exact-gate-10f2b6a: bounded exact retrieval concurrency.
-# Rollback digest: sha256:eadbbd77b4275a356294f48d918ec21b72f0dbaa2a4afd8f60f7703145385947
+# Immutable amd64 digest pin — readiness MVP: KB RAG status observability.
+# Rollback API digest: sha256:5bd194866f45b8a28c937aa52948440e560d7bb2d3de50bf0ae4baec41148317
+# Rollback frontend digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:5bd194866f45b8a28c937aa52948440e560d7bb2d3de50bf0ae4baec41148317
+    digest: sha256:aa45ba3dc33d02d4f3667aed9f478d828c59c92ba2ef58fe779529bca673816d
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
-    digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
+    digest: sha256:47723230715fc68df98b40b09f23bccbf7f8090fb60018cee160ecda4fdb8da6
