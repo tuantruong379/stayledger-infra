@@ -12,7 +12,7 @@ metadata:
     stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
     kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
     stayledger.io/build-provenance: "query-embedding-deadline-5f38ba5"
-    stayledger.io/configmap-revision: "release-metadata-20260728-query-embedding-deadline"
+    stayledger.io/configmap-revision: "release-metadata-20260728-pms-retry-1"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
