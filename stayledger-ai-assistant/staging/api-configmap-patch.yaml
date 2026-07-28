@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:76197279468649e0515284b39359cd36f481c1d354dbdaaf4e667f368dbf7cfd"
-  STAYLEDGER_IMAGE_TAG: "2660a95"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:5355d3b31d83434a070b5839afd63138f4a92176ad88d31a6ccabb4958806088"
+  STAYLEDGER_IMAGE_TAG: "dc8e8c0"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges

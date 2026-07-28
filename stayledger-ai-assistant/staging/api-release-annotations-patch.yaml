@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "88c115a"
-    stayledger.io/git-sha-short: "88c115a"
-    stayledger.io/image-tag: "88c115a"
-    stayledger.io/image-digest: "sha256:76197279468649e0515284b39359cd36f481c1d354dbdaaf4e667f368dbf7cfd"
+    stayledger.io/git-sha: "dc8e8c0"
+    stayledger.io/git-sha-short: "dc8e8c0"
+    stayledger.io/image-tag: "dc8e8c0"
+    stayledger.io/image-digest: "sha256:5355d3b31d83434a070b5839afd63138f4a92176ad88d31a6ccabb4958806088"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
-    kubernetes.io/change-cause: "fix(rag): drop Vietnamese question stopword from FTS"
-    stayledger.io/build-provenance: "webhook-privacy-evaluator-88c115a"
-    stayledger.io/configmap-revision: "release-metadata-20260727-vietnamese-stopword"
+    kubernetes.io/change-cause: "fix(rag): direct scoped evidence rerank and Wi-Fi answerability"
+    stayledger.io/build-provenance: "scoped-rerank-answerability-dc8e8c0"
+    stayledger.io/configmap-revision: "release-metadata-20260728-rag-rerank"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260727-vietnamese-stopword"
+        stayledger.io/configmap-revision: "release-metadata-20260728-rag-rerank"

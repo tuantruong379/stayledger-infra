@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — 88c115a: webhook privacy evaluator alignment.
-# Rollback digest: sha256:9c2a8621c0e332f6da6e50b4a7cba7955f890b0ab5e8733ceab6326941425bfc
+# Immutable amd64 digest pin — dc8e8c0: scoped reranking and Wi-Fi answerability.
+# Rollback digest: sha256:76197279468649e0515284b39359cd36f481c1d354dbdaaf4e667f368dbf7cfd
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:76197279468649e0515284b39359cd36f481c1d354dbdaaf4e667f368dbf7cfd
+    digest: sha256:5355d3b31d83434a070b5839afd63138f4a92176ad88d31a6ccabb4958806088
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e
