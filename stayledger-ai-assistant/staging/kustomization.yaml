@@ -32,7 +32,7 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — de96d19: bounded async embedding concurrency.
+# Immutable amd64 digest pin — de96d19: bounded async embedding concurrency; pool-20 canary.
 # Rollback digest: sha256:3ef1cb96bb826d7dcb3cb679f1c185e3ab2a58e87cff0f79c4b037c82d12d3a6
 images:
   - name: putin111/stayledger-ai-assistant
