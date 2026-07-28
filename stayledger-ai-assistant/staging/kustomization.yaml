@@ -32,12 +32,12 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable amd64 digest pin — 4d2e03a: bounded Redis pool canary.
-# Rollback digest: sha256:7724053f31079bdbef1855b905a839f538331925e91c71636adf88ff4e9cbeb9
+# Immutable amd64 digest pin — 5f1ba99: dedicated webhook rate-limit Redis pool.
+# Rollback digest: sha256:78708c742bc2a5914197e0f580b022ad9a11a43a4acff6c08db056294eed4567
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:78708c742bc2a5914197e0f580b022ad9a11a43a4acff6c08db056294eed4567
+    digest: sha256:c4023d5ce59d4d3633c03066beaa7f84f974a0b89e73ff657a80eb32746d7936
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     digest: sha256:2c8a8c8749d265b91acc72f974241eafde952bf646e79d3b494f189defb31f8e

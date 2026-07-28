@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "4d2e03a"
-    stayledger.io/git-sha-short: "4d2e03a"
-    stayledger.io/image-tag: "4d2e03a"
-    stayledger.io/image-digest: "sha256:78708c742bc2a5914197e0f580b022ad9a11a43a4acff6c08db056294eed4567"
+    stayledger.io/git-sha: "5f1ba99"
+    stayledger.io/git-sha-short: "5f1ba99"
+    stayledger.io/image-tag: "5f1ba99"
+    stayledger.io/image-digest: "sha256:c4023d5ce59d4d3633c03066beaa7f84f974a0b89e73ff657a80eb32746d7936"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:7724053f31079bdbef1855b905a839f538331925e91c71636adf88ff4e9cbeb9"
-    kubernetes.io/change-cause: "fix(redis): bounded async and sync connection pools"
-    stayledger.io/build-provenance: "bounded-redis-pool-4d2e03a"
-    stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool-64"
+    stayledger.io/rollback-digest: "sha256:78708c742bc2a5914197e0f580b022ad9a11a43a4acff6c08db056294eed4567"
+    kubernetes.io/change-cause: "fix(redis): isolate webhook rate-limit pool"
+    stayledger.io/build-provenance: "dedicated-rate-limit-pool-5f1ba99"
+    stayledger.io/configmap-revision: "release-metadata-20260728-redis-rate-limit"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-redis-pool-64"
+        stayledger.io/configmap-revision: "release-metadata-20260728-redis-rate-limit"
