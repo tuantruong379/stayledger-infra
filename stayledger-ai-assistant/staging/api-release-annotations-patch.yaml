@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "e3b9787"
-    stayledger.io/git-sha-short: "e3b9787"
-    stayledger.io/image-tag: "e3b9787"
-    stayledger.io/image-digest: "sha256:a6617f901d00dc82958fd254fb1ad340676a9c5a1c50753b179bd4bfee9a5665"
+    stayledger.io/git-sha: "52a3ca7"
+    stayledger.io/git-sha-short: "52a3ca7"
+    stayledger.io/image-tag: "52a3ca7"
+    stayledger.io/image-digest: "sha256:35c06b602fd9d9e3c75514e52a4d970d14044f3481bee9915044d88de5444beb"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:fd32eca6d71338d004d8b878d55a86188db7e6a124389f4834c8ab6f96bb4e4c"
     kubernetes.io/change-cause: "fix(rag): direct scoped evidence rerank and Wi-Fi answerability"
-    stayledger.io/build-provenance: "frozen-unscoped-case-e3b9787"
-    stayledger.io/configmap-revision: "release-metadata-20260728-frozen-scope-contract"
+    stayledger.io/build-provenance: "property-scope-guard-52a3ca7"
+    stayledger.io/configmap-revision: "release-metadata-20260728-property-scope-guard"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-frozen-scope-contract"
+        stayledger.io/configmap-revision: "release-metadata-20260728-property-scope-guard"
