@@ -4,15 +4,15 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "5aee3d9"
-    stayledger.io/git-sha-short: "5aee3d9"
-    stayledger.io/image-tag: "rag-eval-retry"
-    stayledger.io/image-digest: "sha256:5d212b1a1dfa3eb411e54e4fae0f7790b891c51cce477eb5b7cfd8a391659b28"
+    stayledger.io/git-sha: "5f38ba5"
+    stayledger.io/git-sha-short: "5f38ba5"
+    stayledger.io/image-tag: "release-1.2.42-5f38ba5"
+    stayledger.io/image-digest: "sha256:f9a2994118d33134f903ad22fb9a617b62ab59be01f204ec645e8aed616907b8"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
     kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
-    stayledger.io/build-provenance: "rag-eval-retry-5aee3d9-embedding-concurrency-2"
-    stayledger.io/configmap-revision: "release-metadata-20260728-rag-eval-retry"
+    stayledger.io/build-provenance: "query-embedding-deadline-5f38ba5"
+    stayledger.io/configmap-revision: "release-metadata-20260728-query-embedding-deadline"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
