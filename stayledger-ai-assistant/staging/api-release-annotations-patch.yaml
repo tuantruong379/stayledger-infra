@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "27362ee"
-    stayledger.io/git-sha-short: "27362ee"
-    stayledger.io/image-tag: "llm-timing"
-    stayledger.io/image-digest: "sha256:53b0b9b777d107b8b6a38307c8c799992cc8c096aa9737758c1d000647e36cdb"
+    stayledger.io/git-sha: "f0823f3"
+    stayledger.io/git-sha-short: "f0823f3"
+    stayledger.io/image-tag: "llm-provider-timing"
+    stayledger.io/image-digest: "sha256:82e3ff756c5f4b24e07b05a3aedd327cc3194dbda9c3c06abb980fd4e4b2ca14"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:ae3364e50aa35f9853175fad445f2eee9e5562d672432ad163d0ef1bf6aa5fea"
-    kubernetes.io/change-cause: "obs(llm): add non-PII call timing telemetry"
-    stayledger.io/build-provenance: "llm-timing-27362ee-async-pool20-prewarmed"
-    stayledger.io/configmap-revision: "release-metadata-20260728-llm-timing"
+    stayledger.io/rollback-digest: "sha256:53b0b9b777d107b8b6a38307c8c799992cc8c096aa9737758c1d000647e36cdb"
+    kubernetes.io/change-cause: "obs(llm): attribute provider timing"
+    stayledger.io/build-provenance: "llm-provider-timing-f0823f3-async-pool20-prewarmed"
+    stayledger.io/configmap-revision: "release-metadata-20260728-llm-provider-timing"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-llm-timing"
+        stayledger.io/configmap-revision: "release-metadata-20260728-llm-provider-timing"
