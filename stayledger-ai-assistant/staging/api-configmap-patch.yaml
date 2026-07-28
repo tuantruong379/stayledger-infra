@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:3ef1cb96bb826d7dcb3cb679f1c185e3ab2a58e87cff0f79c4b037c82d12d3a6"
-  STAYLEDGER_IMAGE_TAG: "71c8fe7"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:a768642836c68220674d2b737708a3b0ad274a726262c308f706f2e3972056bb"
+  STAYLEDGER_IMAGE_TAG: "de96d19"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
@@ -58,6 +58,7 @@ data:
   REDIS_RATE_LIMIT_SYNC_OFFLOAD: "1"
   REDIS_MEMORY_SYNC_OFFLOAD: "1"
   REDIS_RAG_CACHE_SYNC_OFFLOAD: "1"
+  RAG_EMBEDDING_MAX_CONCURRENCY: "8"
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
   REDIS_RATE_LIMIT_POOL_WAIT_TIMEOUT_S: "1.0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
