@@ -22,6 +22,7 @@ patches:
   - path: scaling-production-patch.yaml
   - path: frontend-hpa-oom-mitigation-patch.yaml
   - path: api-release-annotations-patch.yaml
+  - path: api-legacy-annotations-cleanup.yaml
   - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
