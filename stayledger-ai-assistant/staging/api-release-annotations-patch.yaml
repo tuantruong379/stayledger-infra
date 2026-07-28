@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7e1816b"
-    stayledger.io/git-sha-short: "7e1816b"
-    stayledger.io/image-tag: "7e1816b"
-    stayledger.io/image-digest: "sha256:6b796afdb54dd14f2d23aadd3bce1a1b4a49ee3e37d186d3f13db521b32ea8bd"
+    stayledger.io/git-sha: "f978e00"
+    stayledger.io/git-sha-short: "f978e00"
+    stayledger.io/image-tag: "f978e00"
+    stayledger.io/image-digest: "sha256:f06821aa4399ef818c7ab37c9f0d641fdba904dcc2255808e1a9718204563848"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:c4023d5ce59d4d3633c03066beaa7f84f974a0b89e73ff657a80eb32746d7936"
-    kubernetes.io/change-cause: "fix(redis): offload rate-limit gate from event loop"
-    stayledger.io/build-provenance: "sync-offloaded-rate-limit-7e1816b"
-    stayledger.io/configmap-revision: "release-metadata-20260728-redis-sync-rate-limit"
+    stayledger.io/rollback-digest: "sha256:6b796afdb54dd14f2d23aadd3bce1a1b4a49ee3e37d186d3f13db521b32ea8bd"
+    kubernetes.io/change-cause: "fix(redis): offload conversation memory operations"
+    stayledger.io/build-provenance: "sync-offloaded-memory-f978e00"
+    stayledger.io/configmap-revision: "release-metadata-20260728-redis-sync-memory"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-redis-sync-rate-limit"
+        stayledger.io/configmap-revision: "release-metadata-20260728-redis-sync-memory"
