@@ -10,12 +10,12 @@ metadata:
     stayledger.io/image-digest: "sha256:a768642836c68220674d2b737708a3b0ad274a726262c308f706f2e3972056bb"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:3ef1cb96bb826d7dcb3cb679f1c185e3ab2a58e87cff0f79c4b037c82d12d3a6"
-    kubernetes.io/change-cause: "perf(redis): pool-20 canary with bounded Redis timeout"
-    stayledger.io/build-provenance: "bounded-embedding-concurrency-de96d19-pool20-redis-timeout"
-    stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20-redis"
+    kubernetes.io/change-cause: "rollback(redis): remove socket-timeout canary"
+    stayledger.io/build-provenance: "bounded-embedding-concurrency-de96d19-pool20"
+    stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20-redis"
+        stayledger.io/configmap-revision: "release-metadata-20260728-rag-embedding-pool20"
