@@ -44,3 +44,21 @@ data:
   PMS_CATALOG_SYNC_DRY_RUN: "1"
   PMS_OUTBOX_WORKER_ENABLED: "1"
   PMS_DRAFT_BOOKING_ENABLED: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: PMS_DRAFT_BOOKING_ENABLED
+              value: "1"
+            - name: PMS_OUTBOX_WORKER_ENABLED
+              value: "1"
+            - name: PMS_WORKERS_IN_API
+              value: "0"
