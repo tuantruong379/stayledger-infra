@@ -23,9 +23,11 @@ data:
   RAG_SCOPED_HYBRID_HOTPATH_ENABLED: "1"
   RAG_SCOPED_HYBRID_CANARY_PERCENT: "100"
   PMS_STAYLEDGER_ENABLED: "1"
-  PMS_DRAFT_BOOKING_ENABLED: "1"
+  # Production-test remains fail-closed until booking mutation has a separate
+  # authorization and qualification gate.
+  PMS_DRAFT_BOOKING_ENABLED: "0"
   PMS_CONVERSATION_SYNC_ENABLED: "1"
-  PMS_OUTBOX_WORKER_ENABLED: "1"
+  PMS_OUTBOX_WORKER_ENABLED: "0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
   # Phase 12 full cutover: pgvector primary for all tenants.
