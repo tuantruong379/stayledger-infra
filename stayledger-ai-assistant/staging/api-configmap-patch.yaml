@@ -60,7 +60,9 @@ data:
   REDIS_RATE_LIMIT_SYNC_OFFLOAD: "1"
   REDIS_MEMORY_SYNC_OFFLOAD: "1"
   REDIS_RAG_CACHE_SYNC_OFFLOAD: "1"
-  RAG_EMBEDDING_MAX_CONCURRENCY: "8"
+  # Bounded canary: Azure embedding tail is the dominant burst bottleneck.
+  # Roll back to 8 if the two-replica current-workload profile regresses.
+  RAG_EMBEDDING_MAX_CONCURRENCY: "2"
   LLM_ASYNC_MAX_CONCURRENCY: "8"
   REDIS_BOOKING_STATE_SYNC_OFFLOAD: "1"
   REDIS_RATE_LIMIT_MAX_CONNECTIONS: "16"
