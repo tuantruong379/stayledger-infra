@@ -13,6 +13,10 @@ data:
   STAYLEDGER_IMAGE_TAG: "release-1.2.46-22245d0"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "4"
+  # Staging rollout safety: one Uvicorn worker per API replica. The node is
+  # resource-constrained and two startup workers repeatedly exited before
+  # readiness; scale remains replica-based.
+  UVICORN_WORKERS: "1"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
