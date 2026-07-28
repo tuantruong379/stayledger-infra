@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "f0823f3"
-    stayledger.io/git-sha-short: "f0823f3"
-    stayledger.io/image-tag: "llm-provider-timing"
-    stayledger.io/image-digest: "sha256:82e3ff756c5f4b24e07b05a3aedd327cc3194dbda9c3c06abb980fd4e4b2ca14"
+    stayledger.io/git-sha: "6b7824f"
+    stayledger.io/git-sha-short: "6b7824f"
+    stayledger.io/image-tag: "scoped-sql-telemetry"
+    stayledger.io/image-digest: "sha256:a7f433d497829e57efb78bf8fea0015c9c648bd63b9ece1feb638181937486f6"
     stayledger.io/schema-head: "0056"
-    stayledger.io/rollback-digest: "sha256:53b0b9b777d107b8b6a38307c8c799992cc8c096aa9737758c1d000647e36cdb"
-    kubernetes.io/change-cause: "obs(llm): attribute provider timing"
-    stayledger.io/build-provenance: "llm-provider-timing-f0823f3-async-pool20-prewarmed"
-    stayledger.io/configmap-revision: "release-metadata-20260728-llm-provider-timing"
+    stayledger.io/rollback-digest: "sha256:82e3ff756c5f4b24e07b05a3aedd327cc3194dbda9c3c06abb980fd4e4b2ca14"
+    kubernetes.io/change-cause: "obs(rag): split async scoped retrieval timings"
+    stayledger.io/build-provenance: "scoped-sql-telemetry-6b7824f-embedding-concurrency-2"
+    stayledger.io/configmap-revision: "release-metadata-20260728-scoped-sql-telemetry"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-llm-provider-timing"
+        stayledger.io/configmap-revision: "release-metadata-20260728-scoped-sql-telemetry"
