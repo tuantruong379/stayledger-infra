@@ -25,6 +25,7 @@ patches:
   - path: api-legacy-annotations-cleanup.yaml
   - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
+  - path: nonmutating-canary-replicas-patch.yaml
   - path: rag-eval-judge-model-patch.yaml
   - path: postgres-observability-patch.yaml
     target:

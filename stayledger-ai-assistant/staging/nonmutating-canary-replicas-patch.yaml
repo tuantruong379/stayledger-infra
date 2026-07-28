@@ -1,0 +1,45 @@
+# Bounded staging feature exercise.
+# These workers are safe for the canary: channel outbound is sink-only and
+# catalog sync is explicitly dry-run. Booking/PMS outbox remains frozen.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-catalog-sync
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-pms-outbox
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 0
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  PMS_CATALOG_SYNC_ENABLED: "1"
+  PMS_CATALOG_SYNC_DRY_RUN: "1"
+  PMS_OUTBOX_WORKER_ENABLED: "0"
+  PMS_DRAFT_BOOKING_ENABLED: "0"
