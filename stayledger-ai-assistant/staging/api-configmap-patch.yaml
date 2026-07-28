@@ -50,6 +50,10 @@ data:
   # Bounded Slice 4 canary: pool 12 was the best observed value in the approved
   # concurrency-30 experiment. Roll back to 8 if the staging gate regresses.
   POSTGRES_POOL_SIZE: "12"
+  # Bound Redis fan-out under webhook bursts; queue briefly instead of opening
+  # an unbounded connection storm. Roll back with the application image if needed.
+  REDIS_MAX_CONNECTIONS: "32"
+  REDIS_POOL_WAIT_TIMEOUT_S: "1.0"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
   # External outbound fail-closed until an approved staging test destination is allowlisted.
