@@ -4,18 +4,18 @@ metadata:
   name: hotel-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "1776c05"
-    stayledger.io/git-sha-short: "1776c05"
-    stayledger.io/image-tag: "release-1.2.49-1776c05"
-    stayledger.io/image-digest: "sha256:72f5fb9f53ca64093844399abd24b0cfc68d488b347e583e347deb2504423c1c"
+    stayledger.io/git-sha: "0a6926a"
+    stayledger.io/git-sha-short: "0a6926a"
+    stayledger.io/image-tag: "release-1.2.50-0a6926a"
+    stayledger.io/image-digest: "sha256:2261dfb4089a881e13fc0f70282a4802638115ab35d32bfca18d5666cfd551bb"
     stayledger.io/schema-head: "0056"
     stayledger.io/rollback-digest: "sha256:9ea5034cdad39d8da68b84e69b9dc4735df77a3797f4c4ebd1585f4f87c69946"
     kubernetes.io/change-cause: "fix(eval): retry transient judge parse failures"
-    stayledger.io/build-provenance: "policy-faq-shortcut-guard-1776c05"
-    stayledger.io/configmap-revision: "release-metadata-20260728-policy-faq-shortcut"
+    stayledger.io/build-provenance: "unaccented-policy-faq-0a6926a"
+    stayledger.io/configmap-revision: "release-metadata-20260728-unaccented-policy-faq"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260728-policy-faq-shortcut"
+        stayledger.io/configmap-revision: "release-metadata-20260728-unaccented-policy-faq"
