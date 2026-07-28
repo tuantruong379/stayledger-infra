@@ -9,8 +9,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:ae3364e50aa35f9853175fad445f2eee9e5562d672432ad163d0ef1bf6aa5fea"
-  STAYLEDGER_IMAGE_TAG: "booking-redis-offload"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:53b0b9b777d107b8b6a38307c8c799992cc8c096aa9737758c1d000647e36cdb"
+  STAYLEDGER_IMAGE_TAG: "llm-timing"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
