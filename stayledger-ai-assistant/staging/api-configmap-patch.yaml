@@ -47,10 +47,9 @@ data:
   AI_CONVERSATION_RETENTION_BATCH_SIZE: "100"
   PMS_CATALOG_SYNC_CONNECTION_ALLOWLIST: "eef2a660-4218-4ad2-aa0d-a38e51fbb321"
   PMS_WORKERS_IN_API: "0"
-  # Bounded Slice 4 canary: the scoped sync retrieval pool reads POSTGRES_POOL_SIZE
-  # (not PG_POOL_MAX_SIZE, which configures the async request pool). Roll back by
-  # removing this key to restore the code default of 4.
-  POSTGRES_POOL_SIZE: "8"
+  # Bounded Slice 4 canary: pool 12 was the best observed value in the approved
+  # concurrency-30 experiment. Roll back to 8 if the staging gate regresses.
+  POSTGRES_POOL_SIZE: "12"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_PROVIDER_DEFAULT: "local"
   # External outbound fail-closed until an approved staging test destination is allowlisted.
