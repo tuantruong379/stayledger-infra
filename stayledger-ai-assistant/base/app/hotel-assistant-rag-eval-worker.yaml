@@ -50,8 +50,13 @@ spec:
               value: "5"
             - name: RAG_EVAL_WORKER_MAX_ATTEMPTS
               value: "3"
+            # Must match production retrieval (rag_top_k() defaults to 5), or the
+            # evaluation measures a context size guests never receive: at 1 the
+            # metric named recall@5 is really recall@1, retrieval becomes
+            # winner-take-all, and context_precision collapses onto {0, 0.5, 1.0}
+            # because it is one section's score divided by two.
             - name: RAG_EVAL_TOP_K
-              value: "1"
+              value: "5"
           resources:
             requests:
               cpu: "100m"
