@@ -1,14 +1,16 @@
-# RAG eval CronJob needs DB (via PgBouncer), Redis, and HTTPS to the LLM judge.
-# Without this policy, default-deny-all blocks the Job and pods fail with no usable logs.
+# Event-driven RAG evaluation worker: PgBouncer, Redis, plus external HTTPS
+# judge/embedding APIs. Redis is needed because the worker drives ChatService
+# in-process, and the HTTPS rule below deliberately excludes private ranges, so
+# it does not cover in-cluster traffic.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: allow-rag-eval-egress
+  name: allow-rag-eval-worker-egress
   namespace: stayledger-ai-assistant
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: rag-eval
+      app.kubernetes.io/name: hotel-assistant-rag-eval-worker
   policyTypes:
   - Egress
   egress:

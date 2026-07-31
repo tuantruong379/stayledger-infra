@@ -1,0 +1,25 @@
+# The evaluation worker runs ChatService in-process, which keeps per-user
+# conversation state in Redis. Without this the worker logs
+# redis_client_unavailable_fallback_to_memory and evaluates against an in-memory
+# store instead of the substrate real traffic uses.
+# Replaces allow-redis-ingress-from-rag-eval, which selected the retired
+# rag-eval CronJob's label and therefore matched nothing.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-redis-ingress-from-rag-eval-worker
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: redis
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: hotel-assistant-rag-eval-worker
+    ports:
+    - protocol: TCP
+      port: 6379

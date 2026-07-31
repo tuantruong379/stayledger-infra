@@ -45,6 +45,7 @@ resources:
   # Optional: enable when WEBHOOK_ASYNC_QUEUE=1 and you run a dedicated webhook worker pool.
   - app/hotel-assistant-webhook-worker.yaml
   - app/hotel-assistant-kb-embed-worker.yaml
+  - app/hotel-assistant-rag-eval-worker.yaml
   # Manual/operator Job — DO NOT include in always-on kustomize apply (creates a Job each apply).
   # Apply explicitly when running a one-shot backfill:
   #   kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-kb-embed-backfill-job.yaml
@@ -53,7 +54,6 @@ resources:
   # Singleton PMS workers (replicas=0 until controlled re-enable). Keep API PMS_WORKERS_IN_API=0.
   - app/hotel-assistant-pms-catalog-sync.yaml
   - app/hotel-assistant-pms-outbox.yaml
-  - app/rag-eval-cronjob.yaml
   # --- Frontend (Next.js admin dashboard) ---
   - app/hotel-assistant-frontend-configmap.yaml
   - app/hotel-assistant-frontend.yaml
