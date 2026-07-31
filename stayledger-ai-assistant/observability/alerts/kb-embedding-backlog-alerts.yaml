@@ -1,0 +1,34 @@
+# F-ING-001: alert when ingestion is no longer becoming retrievable.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kb-embedding-backlog-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: kb-embedding.backlog
+      rules:
+        - alert: KbEmbeddingBacklogOld
+          expr: max by (tenant_id) (kb_chunks_pending_embedding_oldest_age_seconds) > 900
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: rag_availability
+          annotations:
+            summary: "P1: KB chunks have been waiting for embedding for over 15 minutes"
+            description: "tenant={{ $labels.tenant_id }} has pending KB chunks older than 15 minutes; retrieval and generation publication may be blocked."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+
+        - alert: KbEmbeddingBacklogStalled
+          expr: sum by (tenant_id) (kb_chunks_pending_embedding) > 0
+            and delta(sum by (tenant_id) (kb_chunks_pending_embedding)[30m:]) >= 0
+          for: 30m
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_availability
+          annotations:
+            summary: "P2: KB embedding backlog is not draining"
+            description: "tenant={{ $labels.tenant_id }} has a non-decreasing embedding backlog for 30 minutes. Check the embed worker and its logs."
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"

@@ -1,12 +1,13 @@
-# Single-node: pause non-critical workers under CPU pressure.
-# Re-enable (replicas: 1) after embed backlog drains / metrics needed.
+# Keep one resident embed worker so ingested knowledge becomes retrievable and
+# generation evaluation can progress. The production backlog was checked before
+# enabling this overlay (RT-02) and is currently empty.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-kb-embed-worker
   namespace: stayledger-ai-assistant
 spec:
-  replicas: 0
+  replicas: 1
 
 ---
 apiVersion: apps/v1
