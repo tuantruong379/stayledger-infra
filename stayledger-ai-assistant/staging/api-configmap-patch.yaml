@@ -9,8 +9,12 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:e5b98a5224332608d8c2b23ff13f246abf7c1d6b589f975af12fa68a96e37fa9"
-  STAYLEDGER_IMAGE_TAG: "release-1.2.34-f7c2b25-phase1i"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:12440a42a502f25a40262517ac94866ea3d33712fcaadab6a5f88cd826b2023e"
+  STAYLEDGER_IMAGE_TAG: "6f5897a"
+  AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
+  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
   # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
