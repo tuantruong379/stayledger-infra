@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  # F-TURN-001 canary: exercise the fixed PMS Web caller for cupid_hotel.
+  AI_CANONICAL_TURN_ENABLED: "1"
+  AI_CANONICAL_TURN_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2,cupid_hotel"

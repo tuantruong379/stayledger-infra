@@ -22,6 +22,7 @@ patches:
   - path: scaling-production-patch.yaml
   - path: frontend-hpa-oom-mitigation-patch.yaml
   - path: api-release-annotations-patch.yaml
+  - path: canonical-turn-canary-patch.yaml
   - path: worker-freeze-replicas-patch.yaml
 
 # Local release pin — commit 6f5897a.
