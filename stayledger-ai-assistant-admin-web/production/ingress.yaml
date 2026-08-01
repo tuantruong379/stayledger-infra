@@ -1,0 +1,30 @@
+# Production TLS ingress for AI Assistant admin UI (assistant.stayledger.io).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: hotel-assistant-frontend
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    environment: production
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - assistant.stayledger.io
+      secretName: stayledger-ai-assistant-frontend-tls
+  rules:
+    - host: assistant.stayledger.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hotel-assistant-frontend
+                port:
+                  number: 3000

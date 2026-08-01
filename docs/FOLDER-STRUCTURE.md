@@ -25,10 +25,18 @@ stayledger-infra/
 │   ├── staging/
 │   └── prd/                    # production manifests (tên legacy prd/)
 │
-└── stayledger-ai-assistant/    # AI chatbot (ns riêng stayledger-ai-assistant)
+└── stayledger-ai-assistant-api/       # AI API + workers + dedicated datastores (ns stayledger-ai-assistant)
     ├── base/app|datastores|scaling|security/
     ├── staging/
-    └── production/
+    ├── production/
+    ├── observability/
+    └── argocd/
+
+└── stayledger-ai-assistant-admin-web/ # AI admin UI (same ns; apply after API)
+    ├── base/
+    ├── staging/
+    ├── production/
+    └── argocd/
 ```
 
 ## Cluster ↔ namespace ↔ folder
@@ -48,7 +56,8 @@ stayledger-infra/
 | `stayledger-postgres` (STS), `stayledger-redis`, `stayledger-pgbouncer`, backup CronJobs postgres*, CM postgres/redis/pgbouncer, Secret `stayledger-*-secrets`, `pgbouncer-secret`, backup S3 | `stayledger-shared/datastores/{staging\|production}/` |
 | `stayledger-api-nodeport` (staging only) | Patch trong `stayledger-api/staging/` hoặc production patch xóa NodePort |
 | Grafana, Prometheus, rules, dashboard CM | `stayledger-shared/observability/` |
-| `hotel-assistant-*` | `stayledger-ai-assistant/` |
+| `hotel-assistant-api`, workers, datastores, observability | `stayledger-ai-assistant-api/` |
+| `hotel-assistant-frontend` | `stayledger-ai-assistant-admin-web/` |
 
 ## Pattern Kustomize (ví dụ admin-web)
 

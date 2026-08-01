@@ -1,0 +1,50 @@
+# Staging overlay - NodePort (no ingress). Public URLs via Cloudflare -> node ports:
+#   UI:  https://stg-assistant.stayledger.io       -> NodePort 30081
+#   API: https://stg-api-assistant.stayledger.io  -> NodePort 30080
+#
+# Deploy (after base secrets):
+#   kubectl apply -k stayledger-ai-assistant-api/staging/
+#   kubectl rollout status deployment/hotel-assistant-api -n stayledger-ai-assistant
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-ai-assistant
+
+resources:
+  - ../base
+  - pms-outbox-network-patch.yaml
+
+patches:
+  - path: api-configmap-patch.yaml
+  - path: metrics-aggregator-configmap-patch.yaml
+  - path: channel-worker-resources-patch.yaml
+  - path: webhook-worker-resources-patch.yaml
+  - path: scaling-production-patch.yaml
+  - path: api-release-annotations-patch.yaml
+  - path: api-legacy-annotations-cleanup.yaml
+  - path: canonical-turn-canary-patch.yaml
+  - path: worker-freeze-replicas-patch.yaml
+  - path: nonmutating-canary-replicas-patch.yaml
+  - path: rag-eval-worker-image-patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: hotel-assistant-rag-eval-worker
+  - path: postgres-observability-patch.yaml
+    target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: postgres
+
+# Immutable digest pin — RAG foundation staging candidate 2026-08-01.
+# Tag: staging-rag-foundation-20260801
+# Rollback API digest: sha256:fe966dffdb45dfa41b146134708108346d2ec37dec12ab5a4fe5638b294a4d94
+images:
+  - name: putin111/stayledger-ai-assistant
+    newName: putin111/ai-hotel-assistant
+    digest: sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
+
+
+

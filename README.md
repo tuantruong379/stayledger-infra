@@ -60,21 +60,23 @@ stayledger-infra/
 │   ├── production/                 # Production overlay → kubectl apply -k
 │   └── staging/                    # Staging overlay → kubectl apply -k
 │
-└── stayledger-ai-assistant/        # StayLedger AI Assistant (hotel chatbot)
-    ├── base/                       # Kustomize root → kubectl apply -k stayledger-ai-assistant/base/
-    │   ├── app/                    # API, frontend, workers, alembic job
+└── stayledger-ai-assistant-api/    # AI Assistant API + workers + dedicated datastores
+    ├── base/                       # Kustomize root → kubectl apply -k stayledger-ai-assistant-api/base/
+    │   ├── app/                    # API, workers, alembic job
     │   ├── datastores/             # PostgreSQL, Redis, PgBouncer, NATS (app-dedicated)
     │   ├── scaling/                # HPAs, PDB
     │   ├── security/
     │   │   ├── kyverno/            # Pod security policies
     │   │   └── network-policies/   # Zero-trust NetworkPolicy rules
     │   └── disabled/tls-edge/      # TLS + ingress (staged, not active)
-    ├── argocd/                     # ArgoCD Application + Project (GitOps)
+    ├── argocd/                     # ArgoCD Project + API Application
     └── observability/              # App-specific alerts, dashboards, servicemonitors
-        ├── alerts/
-        ├── dashboards/
-        ├── recording-rules/
-        └── servicemonitors/
+
+└── stayledger-ai-assistant-admin-web/  # AI Assistant admin UI (same namespace)
+    ├── base/                       # Frontend Deployment/Service/HPA/NetworkPolicy
+    ├── staging/
+    ├── production/
+    └── argocd/                     # Admin-web Application
 ```
 
 ## Shared vs Project-specific
@@ -141,31 +143,33 @@ kubectl apply -k stayledger-admin-web/production/
 > alone updates only one of them and the pod silently serves stale JS. See
 > `stayledger-admin-web/README.md` → "CRITICAL — the `env-inject` init container serves the bundle".
 
-**stayledger-ai-assistant (Kustomize):**
+**stayledger-ai-assistant-api + admin-web (Kustomize):**
 
 ```powershell
-# Apply secrets first
-kubectl apply -f stayledger-ai-assistant/base/datastores/redis-secret.yaml
-kubectl apply -f stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml
-kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-api-secret.yaml
-kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-smtp-secret.yaml
-kubectl apply -f stayledger-ai-assistant/base/app/hotel-assistant-frontend-secret.yaml
+# Apply secrets first (API + UI)
+kubectl apply -f stayledger-ai-assistant-api/base/datastores/redis-secret.yaml
+kubectl apply -f stayledger-ai-assistant-api/base/datastores/pgbouncer-secret.yaml
+kubectl apply -f stayledger-ai-assistant-api/base/app/hotel-assistant-api-secret.yaml
+kubectl apply -f stayledger-ai-assistant-api/base/app/hotel-assistant-smtp-secret.yaml
+kubectl apply -f stayledger-ai-assistant-admin-web/base/app/hotel-assistant-frontend-secret.yaml
 
-# Apply stack
-kubectl apply -k stayledger-ai-assistant/base/
+# Apply stacks (same namespace stayledger-ai-assistant)
+kubectl apply -k stayledger-ai-assistant-api/base/
+kubectl apply -k stayledger-ai-assistant-admin-web/base/
 
-# App-specific observability
-kubectl apply -f stayledger-ai-assistant/observability/servicemonitors/
-kubectl apply -f stayledger-ai-assistant/observability/alerts/
-kubectl apply -f stayledger-ai-assistant/observability/recording-rules/
-kubectl apply -f stayledger-ai-assistant/observability/dashboards/
+# App-specific observability (API tree)
+kubectl apply -f stayledger-ai-assistant-api/observability/servicemonitors/
+kubectl apply -f stayledger-ai-assistant-api/observability/alerts/
+kubectl apply -f stayledger-ai-assistant-api/observability/recording-rules/
+kubectl apply -f stayledger-ai-assistant-api/observability/dashboards/
 ```
 
-### 4. GitOps (ArgoCD manages stayledger-ai-assistant automatically)
+### 4. GitOps (ArgoCD manages AI Assistant automatically)
 
 ```powershell
-kubectl apply -f stayledger-ai-assistant/argocd/project.yaml
-kubectl apply -f stayledger-ai-assistant/argocd/hotel-assistant-application.yaml
+kubectl apply -f stayledger-ai-assistant-api/argocd/project.yaml
+kubectl apply -f stayledger-ai-assistant-api/argocd/hotel-assistant-api-application.yaml
+kubectl apply -f stayledger-ai-assistant-admin-web/argocd/hotel-assistant-admin-web-application.yaml
 ```
 
 ### Staging TLS edge (PMS admin + API)
@@ -201,7 +205,8 @@ Public URLs via Cloudflare → node ports (no ingress):
 | API | `https://stg-api-assistant.stayledger.io` | 30080 |
 
 ```powershell
-kubectl apply -k stayledger-ai-assistant/staging/
+kubectl apply -k stayledger-ai-assistant-api/staging/
+kubectl apply -k stayledger-ai-assistant-admin-web/staging/
 kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n stayledger-ai-assistant
 ```
 
@@ -212,7 +217,7 @@ curl -fsS https://stg-assistant.stayledger.io/
 curl -fsS https://stg-api-assistant.stayledger.io/health
 ```
 
-See [stayledger-ai-assistant/staging/README.md](stayledger-ai-assistant/staging/README.md).
+See [stayledger-ai-assistant-api/staging/README.md](stayledger-ai-assistant-api/staging/README.md) and [stayledger-ai-assistant-admin-web/staging/README.md](stayledger-ai-assistant-admin-web/staging/README.md).
 
 **Cloudflare note:** `/_next/static/*` is cached as `immutable` for 1 year. After changing
 `NEXT_PUBLIC_*` via ConfigMap/env-inject only (without a new image build), purge Cloudflare
@@ -232,5 +237,6 @@ change. Otherwise browsers keep loading stale JS with the old API URL.
 | --- | --- | --- |
 | StayLedger API | `stayledger-api/` | `stayledger-api/` |
 | StayLedger Admin Web | `stayledger-admin-web/` | `stayledger-admin-web/` |
-| StayLedger AI Assistant | `stayledger-ai-assistant/` | `stayledger-ai-assistant/` |
+| StayLedger AI Assistant API | `stayledger-ai-assistant-api/` | `stayledger-ai-assistant-api/` |
+| StayLedger AI Assistant Admin Web | `stayledger-ai-assistant-admin-web/` | `stayledger-ai-assistant-admin-web/` |
 | Shared cluster infra | `stayledger-shared/` | `stayledger-shared/` |

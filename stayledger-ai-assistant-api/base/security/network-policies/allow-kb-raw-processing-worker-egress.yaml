@@ -1,0 +1,32 @@
+# Raw processing needs PgBouncer for durable job state and HTTPS for the
+# configured extraction/remediation provider. DNS egress is namespace-wide.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kb-raw-processing-worker-egress
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: hotel-assistant-kb-raw-processing-worker
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: pgbouncer
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 169.254.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443

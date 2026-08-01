@@ -1,0 +1,22 @@
+# Staging overlay - NodePort UI via Cloudflare -> node port 30081
+#   UI: https://stg-assistant.stayledger.io
+#
+# Deploy (after API base secrets + API overlay):
+#   kubectl apply -k stayledger-ai-assistant-admin-web/staging/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-ai-assistant
+
+resources:
+  - ../base
+
+patches:
+  - path: frontend-configmap-patch.yaml
+  - path: frontend-hpa-oom-mitigation-patch.yaml
+  - path: scaling-frontend-patch.yaml
+
+images:
+  - name: putin111/stayledger-ai-assistant-frontend
+    newName: putin111/ai-hotel-assistant-frontend
+    digest: sha256:028398b5b206d22e946ea32821265e199201b13bcfddc8c5d76931cd1947e3f6

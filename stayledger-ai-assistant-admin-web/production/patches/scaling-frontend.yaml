@@ -1,0 +1,18 @@
+# Production frontend baseline replicas (single-node stayledger k3s).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hotel-assistant-frontend
+  namespace: stayledger-ai-assistant
+spec:
+  minReplicas: 1
+  maxReplicas: 2

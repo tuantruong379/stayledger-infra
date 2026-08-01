@@ -1,0 +1,33 @@
+# Production overlay for stayledger k3s cluster (context: stayledger).
+#   UI: https://assistant.stayledger.io
+#
+# Deploy:
+#   kubectl apply -k stayledger-ai-assistant-admin-web/production/
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-ai-assistant
+
+resources:
+  - ../base
+  - ingress.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+
+patches:
+  - path: frontend-configmap-patch.yaml
+  - path: frontend-deployment-patch.yaml
+  - path: patches/frontend-resources.yaml
+  - path: patches/scaling-frontend.yaml
+  - path: patches/frontend-service-clusterip.yaml
+    target:
+      kind: Service
+      name: hotel-assistant-frontend
+
+images:
+  - name: putin111/stayledger-ai-assistant-frontend
+    newName: putin111/ai-hotel-assistant-frontend
+    newTag: "b7f47aa"

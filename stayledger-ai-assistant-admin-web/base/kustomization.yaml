@@ -1,0 +1,24 @@
+# Deploy: kubectl apply -k stayledger-ai-assistant-admin-web/base/
+# Requires namespace/datastores from stayledger-ai-assistant-api (same ns).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: stayledger-ai-assistant
+
+resources:
+  - namespace.yaml
+  - serviceaccounts.yaml
+  - app/hotel-assistant-frontend-configmap.yaml
+  - app/hotel-assistant-frontend.yaml
+  - scaling/frontend-hpa.yaml
+  - scaling/pdb.yaml
+  - security/network-policies/allow-frontend-egress.yaml
+  - security/network-policies/allow-frontend-ingress.yaml
+
+# Apply secrets separately (do not commit real secrets):
+#   app/hotel-assistant-frontend-secret.example.yaml → hotel-assistant-frontend-secret.yaml
+
+images:
+  - name: putin111/hotel-assistant-frontend
+    newName: putin111/stayledger-ai-assistant-frontend
+    newTag: "latest"

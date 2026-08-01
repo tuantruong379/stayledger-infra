@@ -1,0 +1,9 @@
+# Namespace for StayLedger AI Assistant (API + in-cluster datastores).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    # Enable Prometheus scraping for ServiceMonitor discovery.
+    monitoring: "true"

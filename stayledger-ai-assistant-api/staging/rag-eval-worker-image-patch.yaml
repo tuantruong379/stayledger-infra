@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hotel-assistant-rag-eval-worker
+spec:
+  template:
+    spec:
+      containers:
+        - name: rag-eval-worker
+          image: putin111/ai-hotel-assistant@sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
