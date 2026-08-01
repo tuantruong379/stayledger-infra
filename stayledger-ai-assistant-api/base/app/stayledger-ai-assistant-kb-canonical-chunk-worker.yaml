@@ -1,0 +1,70 @@
+# Canonical revision approval outbox consumer (Option A): claim → verify →
+# generation + chunks → mark done. Does not run inside the API process.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-kb-canonical-chunk-worker
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: kb-canonical-chunk-worker
+          image: putin111/stayledger-ai-assistant-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/venv/bin/python", "-m", "app.workers.kb_canonical_chunk_worker"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-api-secrets
+          env:
+            - name: RAG_CANONICAL_CHUNK_WORKER_POLL_SECONDS
+              value: "5"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3

@@ -47,6 +47,7 @@ resources:
   - app/stayledger-ai-assistant-kb-embed-worker.yaml
   - app/stayledger-ai-assistant-rag-eval-worker.yaml
   - app/stayledger-ai-assistant-kb-raw-processing-worker.yaml
+  - app/stayledger-ai-assistant-kb-canonical-chunk-worker.yaml
   # Manual/operator Job — DO NOT include in always-on kustomize apply (creates a Job each apply).
   # Apply explicitly when running a one-shot backfill:
   #   kubectl apply -f stayledger-ai-assistant-api/base/app/stayledger-ai-assistant-kb-embed-backfill-job.yaml

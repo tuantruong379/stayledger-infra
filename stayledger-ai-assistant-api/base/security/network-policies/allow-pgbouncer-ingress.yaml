@@ -39,6 +39,9 @@ spec:
               app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
         - podSelector:
             matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+        - podSelector:
+            matchLabels:
               app.kubernetes.io/name: stayledger-ai-assistant-kb-embed-backfill
         # Reasoning: dedicated catalog sync worker uses HOTEL_OPS_DSN → PgBouncer.
         - podSelector:

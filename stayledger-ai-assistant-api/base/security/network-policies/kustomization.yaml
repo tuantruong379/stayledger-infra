@@ -14,6 +14,7 @@ resources:
 - allow-kb-embed-backfill-egress.yaml
 - allow-kb-embed-worker-egress.yaml
 - allow-kb-raw-processing-worker-egress.yaml
+- allow-kb-canonical-chunk-worker-egress.yaml
 - allow-rag-eval-worker-egress.yaml
 - allow-pms-catalog-sync-egress.yaml
 - allow-egress-dns.yaml

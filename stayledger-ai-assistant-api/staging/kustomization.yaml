@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image built from API `a7cb358` (release/1.0.5) and admin web `d557856`.
-# Tag: staging-a7cb358
+# Immutable staging image built from API working tree on `a7cb358` + RAG eval CTA/reconcile fixes.
+# Tag: staging-a7cb358-wip
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:004258f62817dcee2d62592d0a8bb44377842bd8353eff4e537bbdffb175208f
+    digest: sha256:d6056911fd3f3f71b2fd440a563aeffd350a2fc62b625eea807e9db5df3d78fb
 
 
 

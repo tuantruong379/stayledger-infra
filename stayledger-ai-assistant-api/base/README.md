@@ -40,8 +40,8 @@ See [Deployment (GitOps)](../../docs/deployment/README.md#argo-cd-gitops-optiona
 | Source | Purpose |
 | ------ | ------- |
 | `stayledger-ai-assistant-api-secret.yaml` (from `*.example.yaml`, **gitignored**) | Shared secrets only: Azure OpenAI **API key**, Redis URL, `HOTEL_OPS_DSN` (+ optional `_DIRECT`), admin/feedback keys, `SECRET_ENCRYPTION_KEY`, `JWT_SECRET`, `STAYLEDGER_WEBHOOK_SIGNING_SECRET`, temporary global `API_KEY` fallback. Azure endpoint/deployment/version and `STAYLEDGER_PMS_INTERNAL_BASE_URL` belong in the ConfigMap. |
-| `tenant_runtime_config` table (PostgreSQL) | **Per tenant:** display name, slug, `kb_path` (legacy hint), timezone, prompt profile, ICS/holiday data. Edited via `/admin/tenants/upsert`. |
-| `tenants` table (PostgreSQL) | Page/OA id → `tenant_id` routing for webhooks. Edited via `/admin/tenants/upsert`. |
+| `tenant_runtime_config` table (PostgreSQL) | **Per tenant:** display name, slug, `kb_path` (legacy hint), timezone, prompt profile, ICS/holiday data. Edited via `/api/admin/tenants`. |
+| `tenants` table (PostgreSQL) | Page/OA id → `tenant_id` routing for webhooks. Edited via `/api/admin/tenants`. |
 | `tenant_channel_secrets` table (PostgreSQL) | **Per tenant:** direct webhook API key, Meta credentials, and Zalo credentials. Sensitive values are encrypted on write, managed from Admin -> Tenant -> Config, and returned to UI as masked status only. |
 
 Direct chat webhook auth (`POST /webhook*`) resolves keys in this order: tenant `webhook_api_key` from `tenant_channel_secrets`, then global `API_KEY` only while `WEBHOOK_REQUIRE_TENANT_API_KEY=0`. Set `WEBHOOK_REQUIRE_TENANT_API_KEY=1` after every tenant has a rotated key.
@@ -116,8 +116,9 @@ Tenant runtime config and channel-id mappings live in PostgreSQL. The canonical
 onboarding path is the admin API:
 
 ```bash
-curl -X POST https://<api-host>/admin/tenants/upsert \
-  -H "x-api-key: $ADMIN_API_KEY" \
+# Canonical: session cookie or X-Admin-Key against /api/admin (not legacy /admin/*).
+curl -X POST https://<api-host>/api/admin/tenants \
+  -H "X-Admin-Key: $ADMIN_API_KEY" \
   -H "Content-Type: application/json" \
   -d @payload.json
 ```

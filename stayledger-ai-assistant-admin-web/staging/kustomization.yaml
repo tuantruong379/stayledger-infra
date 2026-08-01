@@ -16,7 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
+# Tag: staging-d557856-wip (KB eval CTA beside pipeline + failed-eval re-run)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:458ad6fc7969276c9d3178f21efbc897b030766ea23a968ececf52014318a122
+    digest: sha256:aace18e61efecc7a912591e31e724c0d1b3430aaeb761f0defbc810d44c1520d
