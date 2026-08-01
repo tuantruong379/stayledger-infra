@@ -38,13 +38,13 @@ patches:
       kind: Deployment
       name: postgres
 
-# Immutable digest pin — RAG foundation staging candidate 2026-08-01.
-# Tag: staging-rag-foundation-20260801
-# Rollback API digest: sha256:fe966dffdb45dfa41b146134708108346d2ec37dec12ab5a4fe5638b294a4d94
+# Immutable digest pin — release/1.0.0 API (5061a6b) staging 2026-08-01.
+# Tag: 5061a6b
+# Rollback API digest: sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    digest: sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
+    digest: sha256:74ce00d3eb8775629926c56a865c78fd91607366346230830b7af0ea64a944e9
 
 
 

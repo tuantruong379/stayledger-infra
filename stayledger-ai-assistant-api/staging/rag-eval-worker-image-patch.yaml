@@ -7,4 +7,4 @@ spec:
     spec:
       containers:
         - name: rag-eval-worker
-          image: putin111/ai-hotel-assistant@sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
+          image: putin111/ai-hotel-assistant@sha256:74ce00d3eb8775629926c56a865c78fd91607366346230830b7af0ea64a944e9
