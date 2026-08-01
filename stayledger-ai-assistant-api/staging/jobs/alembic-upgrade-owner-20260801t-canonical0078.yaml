@@ -1,0 +1,107 @@
+# Owner-identity Alembic upgrade Job (template)
+#
+# CRITICAL: Do NOT run DDL as the least-privilege app DSN (stayledger_ai_app).
+# ALTER TABLE requires table owner (hotelassistant). The app secret must never
+# gain DDL ownership.
+#
+# Prerequisites:
+#   1. Create Secret `stayledger-ai-assistant-migration-secrets` with key
+#      HOTEL_OPS_DSN_OWNER pointing at the table-owner DSN (value never committed).
+#      Prefer host `stayledger-ai-assistant-postgres` (direct) — stayledger-ai-assistant-pgbouncer transaction mode is unsafe for DDL.
+#   2. Pin `image` to the candidate API digest being released.
+#   3. Rename metadata.name with a unique UTC suffix before each apply.
+#   4. Pod labels MUST be `app.kubernetes.io/name: alembic-upgrade` so
+#      NetworkPolicy allow-alembic-egress matches (do not use alembic-upgrade-owner
+#      as the name label).
+#
+# Apply (staging example):
+#   kubectl config use-context HK-HUB-Cluster
+#   kubectl apply -f stayledger-ai-assistant/staging/jobs/alembic-upgrade-owner-<UTC>.yaml
+#   kubectl -n stayledger-ai-assistant wait --for=condition=complete job/<name> --timeout=300s
+#   kubectl -n stayledger-ai-assistant exec deploy/stayledger-ai-assistant-postgres -- \
+#     psql -U hotelassistant -d hotel_ops -c "SELECT version_num FROM alembic_version;"
+#
+# This Job is NOT in kustomization resources (manual only).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-owner-20260801t-canonical0078
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database
+  annotations:
+    stayledger.io/migration-identity: "table-owner"
+    stayledger.io/do-not-use-app-dsn: "true"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          # Replace with candidate digest before apply.
+          image: putin111/stayledger-ai-assistant-api@sha256:fcdd0014e8e75e8783fab56f3df9b9df27da4b3223517d0223329ee055eced52
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              set -euo pipefail
+              # Prefer owner DSN; refuse to proceed if only app DSN is present.
+              if [ -z "${HOTEL_OPS_DSN_OWNER:-}" ]; then
+                echo "BLOCKED: HOTEL_OPS_DSN_OWNER unset — refusing app-DSN DDL" >&2
+                exit 2
+              fi
+              export HOTEL_OPS_DSN="$HOTEL_OPS_DSN_OWNER"
+              export STAYLEDGER_AI_DSN="$HOTEL_OPS_DSN_OWNER"
+              export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"
+              PYTHONPATH=/app alembic upgrade head
+              PYTHONPATH=/app alembic current
+          env:
+            - name: HOTEL_OPS_DSN_OWNER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-ai-assistant-migration-secrets
+                  key: HOTEL_OPS_DSN_OWNER
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi
