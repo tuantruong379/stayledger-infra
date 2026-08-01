@@ -1,0 +1,88 @@
+# Singleton PMS catalog sync worker. Keep replicas=0 until Phase 9 re-enable.
+# API pods must set PMS_WORKERS_IN_API=0 and PMS_CATALOG_SYNC_ENABLED=0.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-pms-catalog-sync
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-pms-catalog-sync
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  replicas: 0
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-pms-catalog-sync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-pms-catalog-sync
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pms-catalog-sync
+          image: putin111/stayledger-ai-assistant-api:3.0.11
+          imagePullPolicy: IfNotPresent
+          command: ["/venv/bin/python", "-m", "app.workers.pms_catalog_sync_worker"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-api-secrets
+          env:
+            - name: PMS_CATALOG_SYNC_ENABLED
+              value: "1"
+            - name: PMS_WORKERS_IN_API
+              value: "0"
+            - name: PMS_CATALOG_SYNC_POLL_SECONDS
+              value: "60"
+            - name: PMS_CATALOG_SYNC_MASS_CHANGE_RATIO
+              value: "0.10"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

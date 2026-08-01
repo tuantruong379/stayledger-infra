@@ -4,7 +4,7 @@ metadata:
   name: redis-pv
 spec:
   local:
-    path: /mnt/data/stayledger/ai-assistant/redis
+    path: /mnt/data/stayledger/ai-assistant/stayledger-ai-assistant-redis
   nodeAffinity:
     required:
       nodeSelectorTerms:

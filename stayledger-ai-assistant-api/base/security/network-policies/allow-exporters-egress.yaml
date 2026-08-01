@@ -9,22 +9,22 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         values:
-          - postgres-exporter
-          - redis-exporter
+          - stayledger-ai-assistant-postgres-exporter
+          - stayledger-ai-assistant-redis-exporter
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: postgres
+              app.kubernetes.io/name: stayledger-ai-assistant-postgres
       ports:
         - protocol: TCP
           port: 5432
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: redis
+              app.kubernetes.io/name: stayledger-ai-assistant-redis
       ports:
         - protocol: TCP
           port: 6379

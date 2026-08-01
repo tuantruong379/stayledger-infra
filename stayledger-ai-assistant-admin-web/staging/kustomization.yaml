@@ -12,11 +12,11 @@ resources:
   - ../base
 
 patches:
-  - path: frontend-configmap-patch.yaml
-  - path: frontend-hpa-oom-mitigation-patch.yaml
-  - path: scaling-frontend-patch.yaml
+  - path: admin-web-configmap-patch.yaml
+  - path: admin-web-hpa-oom-mitigation-patch.yaml
+  - path: scaling-admin-web-patch.yaml
 
 images:
-  - name: putin111/stayledger-ai-assistant-frontend
-    newName: putin111/ai-hotel-assistant-frontend
-    digest: sha256:aeb49cc39d8f2157309ecb3e8d56bc7080dad855eeb3274823c8ace0dcb99f18
+  - name: putin111/stayledger-ai-assistant-admin-web
+    newName: putin111/stayledger-ai-assistant-admin-web
+    digest: sha256:e895558dcb734016f603088c10345d3f8a83bbd07e6973ce2c66bbe61a7534b9

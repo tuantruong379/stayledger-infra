@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hotel-assistant-frontend
+  name: stayledger-ai-assistant-admin-web
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: hotel-assistant-frontend
+    app.kubernetes.io/name: stayledger-ai-assistant-admin-web
     app.kubernetes.io/part-of: stayledger-ai-assistant
     environment: production
   annotations:
@@ -25,6 +25,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: hotel-assistant-frontend
+                name: stayledger-ai-assistant-admin-web
                 port:
                   number: 3000

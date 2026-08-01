@@ -35,7 +35,7 @@ stayledger-infra/
 │   │   ├── helm/                   # Helm values: kube-prometheus-stack, Loki, Tempo, Promtail
 │   │   ├── alerting/               # PrometheusRules and AlertManager config
 │   │   ├── grafana/dashboards/     # Grafana dashboard ConfigMaps
-│   │   ├── exporters/              # postgres-exporter, redis-exporter, pgbouncer-exporter
+│   │   ├── exporters/              # stayledger-ai-assistant-postgres-exporter, stayledger-ai-assistant-redis-exporter, pgbouncer-exporter
 │   │   ├── otel-collector/         # OpenTelemetry collector
 │   │   ├── examples/               # Secret templates (alertmanager, grafana-admin)
 │   │   ├── namespace.yaml
@@ -164,13 +164,11 @@ kubectl apply -f stayledger-ai-assistant-api/observability/recording-rules/
 kubectl apply -f stayledger-ai-assistant-api/observability/dashboards/
 ```
 
-### 4. GitOps (ArgoCD manages AI Assistant automatically)
+### 4. GitOps
 
-```powershell
-kubectl apply -f stayledger-ai-assistant-api/argocd/project.yaml
-kubectl apply -f stayledger-ai-assistant-api/argocd/hotel-assistant-api-application.yaml
-kubectl apply -f stayledger-ai-assistant-admin-web/argocd/hotel-assistant-admin-web-application.yaml
-```
+AI Assistant workloads are deployed with the Kustomize commands above. Their ArgoCD
+`Application` manifests have been removed; the shared `AppProject` is retained at
+`stayledger-ai-assistant-api/argocd/project.yaml` for other in-scope resources.
 
 ### Staging TLS edge (PMS admin + API)
 

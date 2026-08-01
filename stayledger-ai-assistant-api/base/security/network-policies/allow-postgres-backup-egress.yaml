@@ -15,7 +15,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: postgres
+          app.kubernetes.io/name: stayledger-ai-assistant-postgres
     ports:
     - protocol: TCP
       port: 5432

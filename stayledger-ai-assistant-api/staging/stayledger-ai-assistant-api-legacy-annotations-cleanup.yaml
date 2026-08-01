@@ -1,0 +1,11 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-api
+  namespace: stayledger-ai-assistant
+  annotations:
+    # Remove stale release metadata emitted by the legacy annotation namespace.
+    # The stayledger.io annotations are the single immutable release evidence set.
+    stayledger.ai/image-digest: null
+    stayledger.ai/schema-head: null
+    stayledger.ai/source-sha: null

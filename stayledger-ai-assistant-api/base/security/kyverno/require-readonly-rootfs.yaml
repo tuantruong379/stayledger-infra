@@ -5,7 +5,7 @@ metadata:
   annotations:
     policies.kyverno.io/title: Require Read-Only Root Filesystem
     policies.kyverno.io/description: >
-      All containers in the hotel-assistant namespace must set
+      All containers in the stayledger-ai-assistant namespace must set
       readOnlyRootFilesystem: true. Prevents runtime writes to the image layer.
 spec:
   validationFailureAction: Enforce
@@ -18,7 +18,7 @@ spec:
               kinds:
                 - Pod
               namespaces:
-                - hotel-assistant
+                - stayledger-ai-assistant
       validate:
         message: "Containers must set readOnlyRootFilesystem: true"
         pattern:

@@ -7,14 +7,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-kb-embed-backfill
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-embed-backfill
   policyTypes:
   - Egress
   egress:
   - to:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: pgbouncer
+          app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     ports:
     - protocol: TCP
       port: 5432

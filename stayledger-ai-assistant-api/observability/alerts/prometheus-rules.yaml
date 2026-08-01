@@ -1,4 +1,4 @@
-# Five SLO/operational alerts for hotel-assistant.
+# Five SLO/operational alerts for stayledger-ai-assistant.
 #
 # Reasoning: Week 4/C7 — these expressions only reference metrics that already exist
 # (Phase C1 in app/observability/prom_client.py). Each alert pairs a `for:` clause
@@ -6,16 +6,16 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: hotel-assistant-slo
+  name: stayledger-ai-assistant-slo
   namespace: observability
   labels:
-    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/name: stayledger-ai-assistant-api
     app.kubernetes.io/part-of: stayledger-ai-assistant
     prometheus: kube-prometheus
     role: alert-rules
 spec:
   groups:
-    - name: hotel-assistant.slo
+    - name: stayledger-ai-assistant.slo
       interval: 30s
       rules:
         # --- SLO 1: Webhook latency p95 -------------------------------------
@@ -32,14 +32,14 @@ spec:
           for: 5m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: latency
           annotations:
             summary: "Webhook p95 latency > 2s ({{ $value | printf \"%.2f\" }}s)"
             description: |
               p95 of /webhook duration over the last 5m exceeded 2s for 5m.
               Check: AOAI latency, n8n booking workflow, Redis ping, recent deploys.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhighlatencyp95"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhighlatencyp95"
 
         # --- SLO 2: Webhook 5xx error rate ----------------------------------
         # Reasoning: error budget = 1% over a rolling 5m window. We bucket by route
@@ -54,14 +54,14 @@ spec:
           for: 5m
           labels:
             severity: p1
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: errors
           annotations:
             summary: "Webhook 5xx rate > 1% ({{ $value | humanizePercentage }})"
             description: |
               5xx error rate on /webhook exceeded 1% for 5m.
               Check pod logs for trace_id, then jump to Tempo via Grafana derived field.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhigherrorrate"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookhigherrorrate"
 
         # --- SLO 3: LLM token-cost spike ------------------------------------
         # Reasoning: compare a fast (10m) rate against a slow (1h) baseline; >2x for
@@ -83,14 +83,14 @@ spec:
           for: 30m
           labels:
             severity: p3
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: cost
           annotations:
             summary: "LLM token rate is >2x the 1h baseline"
             description: |
               Non-cached token throughput in the last 10m is more than twice the rolling
               1h average. Inspect intent breakdown on the LLM Cost dashboard.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-llmcostspike"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-llmcostspike"
 
         # --- SLO 4: Redis dependency down -----------------------------------
         # Reasoning: when Redis is down, /readyz returns 503 and pods fall out of
@@ -107,15 +107,15 @@ spec:
           for: 2m
           labels:
             severity: p1
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: dependency
-            dependency: redis
+            dependency: stayledger-ai-assistant-redis
           annotations:
             summary: "Redis dependency degraded — /readyz failing >50% for 2m"
             description: |
               Half or more of /readyz probes returned 503 for 2m. Likely Redis is
-              unreachable. Check redis pod, NetworkPolicy, and REDIS_URL secret.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-redisdown"
+              unreachable. Check stayledger-ai-assistant-redis pod, NetworkPolicy, and REDIS_URL secret.
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-redisdown"
 
         # --- SLO 5: webhook circuit breaker open -----------------------------
         # Reasoning: circuit_breaker_state is a Gauge (0=closed,1=half_open,2=open).
@@ -125,7 +125,7 @@ spec:
           for: 5m
           labels:
             severity: p1
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: dependency
             dependency: webhook
           annotations:
@@ -133,7 +133,7 @@ spec:
             description: |
               The webhook circuit breaker has been OPEN for 5m. Pricing/booking calls are
               short-circuited. Check downstream webhook health and auth.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookcircuitopen"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/WEEK4_OBSERVABILITY_AND_ASYNC.md#runbook-webhookcircuitopen"
 
         # --- Queue depth: channel worker backlog ----------------------------
         - alert: ChannelQueueDepthHigh
@@ -142,7 +142,7 @@ spec:
           for: 10m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: backlog
             dependency: channel_worker
           annotations:
@@ -157,7 +157,7 @@ spec:
           for: 10m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: backlog
             dependency: channel_worker
           annotations:
@@ -173,7 +173,7 @@ spec:
           for: 10m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: backlog
             dependency: webhook_worker
           annotations:
@@ -189,7 +189,7 @@ spec:
           for: 10m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: backlog
             dependency: webhook_worker
           annotations:
@@ -208,7 +208,7 @@ spec:
           for: 30m
           labels:
             severity: p3
-            service: hotel-assistant-frontend
+            service: stayledger-ai-assistant-admin-web
             slo: frontend
           annotations:
             summary: "Admin Web Vitals poor ratio > 20% over 15m"
@@ -227,7 +227,7 @@ spec:
           for: 10m
           labels:
             severity: p2
-            service: hotel-assistant-api
+            service: stayledger-ai-assistant-api
             slo: dependency
             dependency: smtp
           annotations:

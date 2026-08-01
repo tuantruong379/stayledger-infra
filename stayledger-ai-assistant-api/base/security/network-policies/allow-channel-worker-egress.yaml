@@ -6,21 +6,21 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-channel-worker
+      app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
   policyTypes:
   - Egress
   egress:
   - to:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: pgbouncer
+          app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     ports:
     - protocol: TCP
       port: 5432
   - to:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: redis
+          app.kubernetes.io/name: stayledger-ai-assistant-redis
     ports:
     - protocol: TCP
       port: 6379

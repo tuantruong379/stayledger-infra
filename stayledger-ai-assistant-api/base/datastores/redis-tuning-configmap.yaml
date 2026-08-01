@@ -1,5 +1,5 @@
 # Redis performance tuning configuration.
-# Mounted at /etc/redis/redis.conf in the redis container.
+# Mounted at /etc/redis/redis.conf in the stayledger-ai-assistant-redis container.
 # Password is injected at runtime via the REDIS_PASSWORD env var in redis-deployment.yaml
 # using the requirepass argument (kept in args to avoid hardcoding secrets here).
 #
@@ -10,7 +10,7 @@ metadata:
   name: redis-tuning
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: redis
+    app.kubernetes.io/name: stayledger-ai-assistant-redis
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache
 data:

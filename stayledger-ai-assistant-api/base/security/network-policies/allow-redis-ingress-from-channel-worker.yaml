@@ -6,14 +6,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: redis
+      app.kubernetes.io/name: stayledger-ai-assistant-redis
   policyTypes:
   - Ingress
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: hotel-assistant-channel-worker
+          app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
     ports:
     - protocol: TCP
       port: 6379

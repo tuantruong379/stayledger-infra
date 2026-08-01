@@ -4,7 +4,7 @@
 # Why this exists (assessment finding F-ING-001 / F-INV-006): retrieval requires
 # `status='embedded' AND embedding IS NOT NULL`, and `process_embedding_batch` — invoked only by
 # `app/workers/kb_embedding_worker.py` — is the sole writer of that state. Production ran
-# hotel-assistant-kb-embed-worker at replicas:0. Ingestion kept reporting success, the admin UI
+# stayledger-ai-assistant-kb-embed-worker at replicas:0. Ingestion kept reporting success, the admin UI
 # kept showing the chunks, and nothing became retrievable. There was no metric and no alert, which
 # is precisely why it went unnoticed.
 #
@@ -33,9 +33,9 @@ spec:
               tenant={{ $labels.tenant_id }}: the oldest un-embedded chunk is {{ $value | humanizeDuration }} old.
               Un-embedded chunks are NOT retrievable, so newly ingested knowledge is invisible to guests,
               and no generation can reach `qualified` because the RAG-eval controller is fed by the same worker.
-              First check that hotel-assistant-kb-embed-worker has a running replica.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
-            dashboard_url: "/d/hotel-golden/hotel-assistant-golden-signals?from=now-6h&to=now"
+              First check that stayledger-ai-assistant-kb-embed-worker has a running replica.
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+            dashboard_url: "/d/hotel-golden/stayledger-ai-assistant-golden-signals?from=now-6h&to=now"
 
         # Catches the exact production condition: worker scaled to zero, backlog frozen.
         - alert: KbEmbeddingWorkerNotDraining
@@ -52,10 +52,10 @@ spec:
             summary: "P1: embedding backlog is not draining — worker may be scaled to 0"
             description: >-
               tenant={{ $labels.tenant_id }}: {{ $value }} chunks pending and the backlog has not
-              decreased in 30 minutes. Verify replicas on hotel-assistant-kb-embed-worker; the
+              decreased in 30 minutes. Verify replicas on stayledger-ai-assistant-kb-embed-worker; the
               production overlay has previously pinned it to 0 in
-              production/patches/optional-workers-scale.yaml.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+              production/patches/stayledger-ai-assistant-optional-workers-scale.yaml.
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
 
         # Slow-burn signal for a backlog that drains but never keeps up.
         - alert: KbEmbeddingBacklogGrowing
@@ -70,4 +70,4 @@ spec:
             description: >-
               tenant={{ $labels.tenant_id }}: {{ $value }} chunks pending embedding. The worker is
               running but not keeping up — consider batch size (RAG_EMBEDDING_BATCH_SIZE) or replicas.
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"

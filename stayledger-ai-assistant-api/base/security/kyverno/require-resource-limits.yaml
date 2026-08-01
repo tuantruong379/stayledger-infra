@@ -18,7 +18,7 @@ spec:
               kinds:
                 - Pod
               namespaces:
-                - hotel-assistant
+                - stayledger-ai-assistant
       validate:
         message: "Containers must specify resources.limits.cpu and resources.limits.memory"
         pattern:

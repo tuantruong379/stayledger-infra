@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: redis-exporter
+  name: stayledger-ai-assistant-redis-exporter
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: redis-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-redis-exporter
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache-metrics
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: redis-exporter
+      app.kubernetes.io/name: stayledger-ai-assistant-redis-exporter
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: redis-exporter
+        app.kubernetes.io/name: stayledger-ai-assistant-redis-exporter
         app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: cache-metrics
     spec:
@@ -28,10 +28,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: redis-exporter
+        - name: stayledger-ai-assistant-redis-exporter
           image: oliver006/redis_exporter:v1.62.0
           args:
-            - "--redis.addr=redis://redis:6379"
+            - "--redis.addr=redis://stayledger-ai-assistant-redis:6379"
           ports:
             - name: metrics
               containerPort: 9121
@@ -55,7 +55,7 @@ spec:
               memory: 256Mi
           # /metrics triggers a live Redis INFO scrape; under load that can exceed 1s.
           # Historical restart loops (exit 0 / SIGTERM) matched kubelet liveness kills with
-          # the previous timeoutSeconds default of 1 — align with postgres-exporter.
+          # the previous timeoutSeconds default of 1 — align with stayledger-ai-assistant-postgres-exporter.
           livenessProbe:
             httpGet:
               path: /metrics
@@ -83,10 +83,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: redis-exporter
+  name: stayledger-ai-assistant-redis-exporter
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: redis-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-redis-exporter
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache-metrics
 spec:
@@ -96,4 +96,4 @@ spec:
       port: 9121
       targetPort: metrics
   selector:
-    app.kubernetes.io/name: redis-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-redis-exporter

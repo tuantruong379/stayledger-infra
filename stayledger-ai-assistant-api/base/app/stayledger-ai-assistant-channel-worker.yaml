@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: channel-worker
+          # Reasoning: Image tag is managed by kustomize (k8s/onprem/kustomization.yaml images: newTag).
+          image: putin111/stayledger-ai-assistant-api:3.0.11
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - configMapRef:
+                name: stayledger-ai-assistant-smtp-config
+            - configMapRef:
+                name: stayledger-ai-assistant-tenant-email-routing
+            - secretRef:
+                name: stayledger-ai-assistant-api-secrets
+            - secretRef:
+                name: stayledger-ai-assistant-smtp-secrets
+          env:
+            # Reasoning: prevent API/worker queue backend mismatch; worker must stop if Redis is unavailable.
+            - name: CHANNEL_QUEUE_FAIL_CLOSED
+              value: "1"
+            # Reasoning: envFrom inherits the API service name; override it so logs/traces identify this process.
+            - name: OTEL_SERVICE_NAME
+              value: "stayledger-ai-assistant-channel-worker"
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: "1"
+              memory: 192Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          # Reasoning: run a dedicated consumer loop to process queued Facebook/Zalo events and send replies.
+          command: ["/venv/bin/python", "-m", "app.workers.channel_worker"]
+          startupProbe:
+            exec:
+              # Reasoning: slim runtime images may not include `ps`; /proc/1 exists while PID 1 is alive.
+              command: ["sh", "-c", "test -d /proc/1"]
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              # Reasoning: Redis + Postgres (same probe as webhook worker; no external LLM).
+              command:
+                [
+                  "/venv/bin/python",
+                  "-c",
+                  "from app.observability.health_checks import check_worker_readiness; import sys; sys.exit(0 if check_worker_readiness().get('ok') else 1)",
+                ]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            # Reasoning: Redis connect + Postgres ping can exceed 2s under load; probe must not false-fail.
+            timeoutSeconds: 6
+            failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

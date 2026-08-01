@@ -1,80 +1,80 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: hotel-assistant-datastore-exporters
+  name: stayledger-ai-assistant-datastore-exporters
   namespace: observability
   labels:
     release: kps
-    app.kubernetes.io/name: hotel-assistant-datastore-exporters
+    app.kubernetes.io/name: stayledger-ai-assistant-datastore-exporters
     app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   groups:
-    - name: hotel-assistant.datastore-exporters
+    - name: stayledger-ai-assistant.datastore-exporters
       rules:
         - alert: PostgresExporterDown
-          expr: up{namespace="stayledger-ai-assistant", job="postgres-exporter"} == 0
+          expr: up{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-postgres-exporter"} == 0
           for: 3m
           labels:
             severity: p2
-            component: postgres
+            component: stayledger-ai-assistant-postgres
             category: datastore
           annotations:
             summary: "Postgres exporter is down"
-            description: "Prometheus cannot scrape postgres-exporter. Database internals are not observable."
+            description: "Prometheus cannot scrape stayledger-ai-assistant-postgres-exporter. Database internals are not observable."
 
         - alert: PostgresHighConnectionUtilization
           expr: |
             (
-              sum(pg_stat_activity_count{namespace="stayledger-ai-assistant", job="postgres-exporter"})
+              sum(pg_stat_activity_count{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-postgres-exporter"})
               /
-              max(pg_settings_max_connections{namespace="stayledger-ai-assistant", job="postgres-exporter"})
+              max(pg_settings_max_connections{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-postgres-exporter"})
             ) > 0.80
           for: 10m
           labels:
             severity: p2
-            component: postgres
+            component: stayledger-ai-assistant-postgres
             category: datastore
           annotations:
             summary: "Postgres connection utilization above 80%"
             description: "Postgres is close to max_connections. Check PgBouncer pool pressure and application connection usage."
 
         - alert: RedisExporterDown
-          expr: up{namespace="stayledger-ai-assistant", job="redis-exporter"} == 0
+          expr: up{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-redis-exporter"} == 0
           for: 3m
           labels:
             severity: p2
-            component: redis
+            component: stayledger-ai-assistant-redis
             category: datastore
           annotations:
             summary: "Redis exporter is down"
-            description: "Prometheus cannot scrape redis-exporter. Redis internals are not observable."
+            description: "Prometheus cannot scrape stayledger-ai-assistant-redis-exporter. Redis internals are not observable."
 
         - alert: RedisHighMemoryUtilization
           expr: |
             (
-              redis_memory_max_bytes{namespace="stayledger-ai-assistant", job="redis-exporter"} > 0
+              stayledger-ai-assistant-redis_memory_max_bytes{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-redis-exporter"} > 0
             )
             and
             (
-              redis_memory_used_bytes{namespace="stayledger-ai-assistant", job="redis-exporter"}
+              stayledger-ai-assistant-redis_memory_used_bytes{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-redis-exporter"}
               /
-              redis_memory_max_bytes{namespace="stayledger-ai-assistant", job="redis-exporter"}
+              stayledger-ai-assistant-redis_memory_max_bytes{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-redis-exporter"}
             ) > 0.85
           for: 10m
           labels:
             severity: p2
-            component: redis
+            component: stayledger-ai-assistant-redis
             category: datastore
           annotations:
             summary: "Redis memory utilization above 85%"
             description: "Redis is near maxmemory. Check cache TTLs, queue depth, and eviction policy."
 
         - alert: RedisEvictionsDetected
-          expr: increase(redis_evicted_keys_total{namespace="stayledger-ai-assistant", job="redis-exporter"}[10m]) > 0
+          expr: increase(stayledger-ai-assistant-redis_evicted_keys_total{namespace="stayledger-ai-assistant", job="stayledger-ai-assistant-redis-exporter"}[10m]) > 0
           for: 5m
           labels:
             severity: p3
-            component: redis
+            component: stayledger-ai-assistant-redis
             category: datastore
           annotations:
             summary: "Redis evicted keys"

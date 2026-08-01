@@ -1,0 +1,21 @@
+# Non-sensitive env for stayledger-ai-assistant-admin-web Deployment (envFrom).
+# NEXT_PUBLIC_* placeholders are baked at image build; docker-entrypoint.sh injects overlay values.
+# Secrets (HOTEL_OPS_DSN for /api/db/ping): stayledger-ai-assistant-admin-web-secrets.yaml (gitignored).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-admin-web-config
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-admin-web
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+data:
+  NODE_ENV: "production"
+  NEXT_TELEMETRY_DISABLED: "1"
+  PORT: "3000"
+  HOSTNAME: "0.0.0.0"
+  # Overlays must set the in-cluster API Service for Next rewrites (not public URL).
+  NEXT_PUBLIC_API_BASE_URL: "http://stayledger-ai-assistant-api:8000"
+  # Overlays must set APP_ENV (+ optional PMS base URL) so StayLedger auto Base URL is correct.
+  # NEXT_PUBLIC_APP_ENV: "staging" | "production"
+  # NEXT_PUBLIC_PMS_STAYLEDGER_BASE_URL: "https://stg-api.stayledger.io/api" | "https://api.stayledger.io/api"

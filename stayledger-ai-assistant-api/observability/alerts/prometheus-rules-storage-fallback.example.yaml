@@ -3,7 +3,7 @@
 # Tune `for` and thresholds for your SLOs.
 
 groups:
-  - name: hotel-assistant-storage
+  - name: stayledger-ai-assistant-storage
     rules:
       - alert: HotelAssistantStorageFallbackSpike
         expr: |

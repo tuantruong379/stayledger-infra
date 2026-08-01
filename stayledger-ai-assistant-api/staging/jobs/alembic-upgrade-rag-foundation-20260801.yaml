@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: alembic
-          image: putin111/ai-hotel-assistant@sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
+          image: putin111/stayledger-ai-assistant-api@sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
@@ -40,12 +40,12 @@ spec:
               PYTHONPATH=/app alembic upgrade head && PYTHONPATH=/app alembic current
           envFrom:
             - configMapRef:
-                name: hotel-assistant-api-config
+                name: stayledger-ai-assistant-api-config
           env:
             - name: HOTEL_OPS_DSN_OWNER
               valueFrom:
                 secretKeyRef:
-                  name: hotel-assistant-migration-secrets
+                  name: stayledger-ai-assistant-migration-secrets
                   key: HOTEL_OPS_DSN_OWNER
           securityContext:
             allowPrivilegeEscalation: false

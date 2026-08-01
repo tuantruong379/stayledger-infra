@@ -42,7 +42,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: alembic
-          image: putin111/ai-hotel-assistant:sha-312bf55
+          image: putin111/stayledger-ai-assistant-api:sha-312bf55
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
@@ -52,9 +52,9 @@ spec:
           command: ["sh", "-c", "PYTHONPATH=/app alembic upgrade head"]
           envFrom:
             - configMapRef:
-                name: hotel-assistant-api-config
+                name: stayledger-ai-assistant-api-config
             - secretRef:
-                name: hotel-assistant-api-secrets
+                name: stayledger-ai-assistant-api-secrets
           resources:
             requests:
               cpu: 100m

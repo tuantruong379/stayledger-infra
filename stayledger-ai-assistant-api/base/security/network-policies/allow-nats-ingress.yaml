@@ -6,23 +6,23 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: nats
+      app.kubernetes.io/name: stayledger-ai-assistant-nats
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-api
+              app.kubernetes.io/name: stayledger-ai-assistant-api
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+              app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-channel-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-webhook-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-webhook-worker
       ports:
         - protocol: TCP
           port: 4222

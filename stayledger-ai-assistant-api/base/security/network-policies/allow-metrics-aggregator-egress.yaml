@@ -6,28 +6,28 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+      app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: nats
+              app.kubernetes.io/name: stayledger-ai-assistant-nats
       ports:
         - protocol: TCP
           port: 4222
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: pgbouncer
+              app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
       ports:
         - protocol: TCP
           port: 5432
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: postgres
+              app.kubernetes.io/name: stayledger-ai-assistant-postgres
       ports:
         - protocol: TCP
           port: 5432

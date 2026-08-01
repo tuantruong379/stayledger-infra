@@ -1,0 +1,11 @@
+# Server-side Next.js rewrites target in-cluster API; browser uses same-origin /api/* via ingress.
+# NEXT_PUBLIC_APP_ENV / PMS base URL are baked as placeholders and injected by docker-entrypoint.sh.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-admin-web-config
+  namespace: stayledger-ai-assistant
+data:
+  NEXT_PUBLIC_API_BASE_URL: "http://stayledger-ai-assistant-api:8000"
+  NEXT_PUBLIC_APP_ENV: "production"
+  NEXT_PUBLIC_PMS_STAYLEDGER_BASE_URL: "https://api.stayledger.io/api"

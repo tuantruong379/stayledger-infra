@@ -18,7 +18,7 @@ spec:
               kinds:
                 - Pod
               namespaces:
-                - hotel-assistant
+                - stayledger-ai-assistant
       validate:
         message: "Image tag ':latest' or empty tag is not allowed. Use a specific tag."
         foreach:

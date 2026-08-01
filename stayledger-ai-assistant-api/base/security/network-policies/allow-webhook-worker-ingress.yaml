@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-webhook-worker
+      app.kubernetes.io/name: stayledger-ai-assistant-webhook-worker
   policyTypes:
   - Ingress
   ingress:

@@ -9,8 +9,8 @@ Standalone Kubernetes YAML for API + frontend only. Assumes PostgreSQL, Redis, a
 | File | Contents |
 | --- | --- |
 | `namespace.yaml` | `stayledger` namespace, ResourceQuota, LimitRange |
-| `api-deployment.yaml` | API Deployment, Service, alembic init container |
-| `frontend-deployment.yaml` | Frontend Deployment and Service |
+| `stayledger-ai-assistant-api-deployment.yaml` | API Deployment, Service, alembic init container |
+| `admin-web-deployment.yaml` | Frontend Deployment and Service |
 | `hpa.yaml` | CPU/memory HPAs for API and frontend |
 | `pdb.yaml` | PodDisruptionBudgets |
 | `network-policy.yaml` | Default-deny plus ingress-controller and datastore egress rules |
@@ -20,10 +20,10 @@ Standalone Kubernetes YAML for API + frontend only. Assumes PostgreSQL, Redis, a
 ```powershell
 # From stayledger-infra repo root
 kubectl apply -f stayledger-ai-assistant/minimal/namespace.yaml
-# Create ai-hotel-assistant-secrets, ai-hotel-assistant-config,
-# ai-hotel-assistant-frontend-config before workloads (see comments in yaml).
-kubectl apply -f stayledger-ai-assistant/minimal/api-deployment.yaml
-kubectl apply -f stayledger-ai-assistant/minimal/frontend-deployment.yaml
+# Create ai-stayledger-ai-assistant-secrets, ai-stayledger-ai-assistant-config,
+# ai-stayledger-ai-assistant-admin-web-config before workloads (see comments in yaml).
+kubectl apply -f stayledger-ai-assistant/minimal/stayledger-ai-assistant-api-deployment.yaml
+kubectl apply -f stayledger-ai-assistant/minimal/admin-web-deployment.yaml
 kubectl apply -f stayledger-ai-assistant/minimal/hpa.yaml
 kubectl apply -f stayledger-ai-assistant/minimal/pdb.yaml
 kubectl apply -f stayledger-ai-assistant/minimal/network-policy.yaml

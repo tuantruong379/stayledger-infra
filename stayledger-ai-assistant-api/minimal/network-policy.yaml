@@ -42,7 +42,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant
+      app: ai-stayledger-ai-assistant
       component: api
   policyTypes:
   - Ingress
@@ -68,7 +68,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant
+      app: ai-stayledger-ai-assistant
       component: api
   policyTypes:
   - Egress
@@ -87,7 +87,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant
+      app: ai-stayledger-ai-assistant
       component: api
   policyTypes:
   - Egress
@@ -109,7 +109,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant
+      app: ai-stayledger-ai-assistant
       component: api
   policyTypes:
   - Egress
@@ -128,7 +128,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant-frontend
+      app: ai-stayledger-ai-assistant-admin-web
       component: frontend
   policyTypes:
   - Ingress
@@ -156,7 +156,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: ai-hotel-assistant-frontend
+      app: ai-stayledger-ai-assistant-admin-web
       component: frontend
   policyTypes:
   - Egress
@@ -164,7 +164,7 @@ spec:
   - to:
     - podSelector:
         matchLabels:
-          app: ai-hotel-assistant
+          app: ai-stayledger-ai-assistant
           component: api
     ports:
     - port: 8000

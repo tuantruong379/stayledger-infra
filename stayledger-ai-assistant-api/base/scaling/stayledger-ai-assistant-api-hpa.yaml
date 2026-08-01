@@ -1,0 +1,60 @@
+# Phase B4 — Horizontal Pod Autoscaler for the API.
+# Pre-req: metrics-server installed in the cluster (kubectl top pods must work).
+# Min replicas matches the PDB minAvailable=1 + buffer (so a single drain doesn't dip below ready capacity).
+# Custom metrics (webhook queue depth, oldest job age) require prometheus-adapter — see
+# hpa-external-metrics.example.yaml and hotel_assistant_queue_depth in app/observability/prom_client.py.
+# CPU/memory remain the default signals until the adapter is wired in your cluster.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stayledger-ai-assistant-api
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-api
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stayledger-ai-assistant-api
+  # Reasoning: production p95 showed significant queueing outside the app (client p95 >> server p95).
+  # Raise the floor so we have enough concurrent workers to absorb bursty arrivals without waiting on
+  # ingress / kube-proxy scheduling. Tune down later once we confirm stable p95.
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          # Reasoning: secondary safety net — Azure OpenAI client + RAG embeddings + KB cache push
+          # baseline RSS to ~300-400Mi; 80% of the 2Gi limit leaves headroom for spikes.
+          averageUtilization: 80
+  behavior:
+    scaleUp:
+      # Reasoning: aggressive on the way up — chat traffic spikes in seconds (e.g. promo blast).
+      stabilizationWindowSeconds: 30
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 30
+        - type: Pods
+          value: 2
+          periodSeconds: 30
+      selectPolicy: Max
+    scaleDown:
+      # Reasoning: gentle on the way down — Azure OpenAI prompt cache warms up per process; killing
+      # too eagerly resets cache hit rate and inflates token cost on the next ramp.
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+      selectPolicy: Min

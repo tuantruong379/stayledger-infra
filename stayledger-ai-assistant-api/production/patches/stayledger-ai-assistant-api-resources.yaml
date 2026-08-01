@@ -1,0 +1,19 @@
+# Right-size API for single-node stayledger k3s.
+# Live usage ~7m CPU / ~289Mi; base request 1 CPU / 768Mi blocked rollouts and HPA.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: api
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "384Mi"
+            limits:
+              cpu: "500m"
+              memory: "1Gi"

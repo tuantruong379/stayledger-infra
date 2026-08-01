@@ -6,9 +6,9 @@ This document outlines the roadmap to make the multi-tenant Kubernetes deploymen
 
 | Component | Replicas | Storage | Failover | Risk Level |
 |-----------|----------|---------|----------|-----------|
-| hotel-assistant-api | 3 (HPA: 2-10) | Local PV | Auto (via HPA) | **LOW** ✓ |
-| hotel-assistant-channel-worker | 1 | Shared PVC | Manual | **MEDIUM** ⚠️ |
-| hotel-assistant-webhook-worker | 1 | Shared PVC | Manual | **MEDIUM** ⚠️ |
+| stayledger-ai-assistant-api | 3 (HPA: 2-10) | Local PV | Auto (via HPA) | **LOW** ✓ |
+| stayledger-ai-assistant-channel-worker | 1 | Shared PVC | Manual | **MEDIUM** ⚠️ |
+| stayledger-ai-assistant-webhook-worker | 1 | Shared PVC | Manual | **MEDIUM** ⚠️ |
 | Redis | 1 | Local PV (RWO) | Manual | **HIGH** 🔴 |
 | Postgres (workflow metadata) | 1 | Local PV (RWO) | Manual | **HIGH** 🔴 |
 | Workflow engine | 1 | Local PV (RWO) | Manual | **HIGH** 🔴 |
@@ -290,8 +290,8 @@ Use Prometheus + Grafana (already deployed in `k8s/observability/`).
 
 ## References
 
-- [Redis Helm Chart (Bitnami)](https://github.com/bitnami/charts/tree/master/bitnami/redis)
-- [Redis Sentinel Setup](https://redis.io/topics/sentinel)
+- [Redis Helm Chart (Bitnami)](https://github.com/bitnami/charts/tree/master/bitnami/stayledger-ai-assistant-redis)
+- [Redis Sentinel Setup](https://stayledger-ai-assistant-redis.io/topics/sentinel)
 - [Postgres Operator (Zalando)](https://github.com/zalando/postgres-operator)
 - Workflow Queue Mode documentation (vendor-specific)
 - [Kubernetes Local Storage Best Practices](https://kubernetes.io/docs/concepts/storage/volumes/#local)

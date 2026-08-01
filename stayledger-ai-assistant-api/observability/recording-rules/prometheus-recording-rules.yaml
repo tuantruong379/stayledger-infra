@@ -10,7 +10,7 @@ metadata:
   name: hotel-ai-recording-rules
   namespace: observability
   labels:
-    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/name: stayledger-ai-assistant-api
     app.kubernetes.io/part-of: stayledger-ai-assistant
     prometheus: kube-prometheus
     role: recording-rules

@@ -9,7 +9,7 @@ role `stayledger_ai_app` must never gain DDL.
 ## Procedure
 
 1. Confirm context: `kubectl config current-context` → `HK-HUB-Cluster`.
-2. Ensure Secret `hotel-assistant-migration-secrets` exists with key
+2. Ensure Secret `stayledger-ai-assistant-migration-secrets` exists with key
    `HOTEL_OPS_DSN_OWNER` (owner DSN only; never copy into app secret).
 3. Copy `alembic-upgrade-owner-TEMPLATE.yaml` → unique UTC name.
 4. Pin Job image to the candidate API digest.

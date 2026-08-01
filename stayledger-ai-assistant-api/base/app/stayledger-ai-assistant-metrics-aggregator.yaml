@@ -1,0 +1,126 @@
+# Metrics aggregator Deployment + ConfigMap.
+# Deploys app.metrics.aggregator as a separate single-replica process.
+# Enable by setting FEATURE_METRICS_PIPELINE=1 and pointing NATS_URL at your
+# NATS server.  The aggregator uses the same image as the API pod.
+#
+# Prerequisites:
+#   1. NATS server running (add a NATS Deployment or use a managed service).
+#   2. Alembic migration 0009 applied (metrics_1m table created).
+#   3. Secret stayledger-ai-assistant-api-secrets includes HOTEL_OPS_DSN or DATABASE_URL.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-metrics-aggregator-config
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+data:
+  # ── Feature flag ────────────────────────────────────────────────────────────
+  FEATURE_METRICS_PIPELINE: "1"
+
+  # ── NATS ────────────────────────────────────────────────────────────────────
+  # Point at the in-cluster NATS Service. Override in Secret if auth is required.
+  NATS_URL: "nats://stayledger-ai-assistant-nats:4222"
+
+  # ── Aggregator tuning ────────────────────────────────────────────────────────
+  # How often completed minute-buckets are flushed to metrics_1m (seconds).
+  METRICS_FLUSH_INTERVAL_S: "60"
+
+  # ── Observability ────────────────────────────────────────────────────────────
+  PYTHONUNBUFFERED: "1"
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  LOG_JSON: "1"
+  LOG_FORMAT: "json"
+  OTEL_SERVICE_NAME: "stayledger-ai-assistant-metrics-aggregator"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  OTEL_PROPAGATORS: "tracecontext,baggage"
+  # deployment.environment is set via overlay patches when needed (staging|production).
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-metrics-aggregator
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  # Single replica — the NATS queue group ensures only one pod processes each
+  # message.  Scale to 2 for HA; duplicate events are handled by ON CONFLICT.
+  replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: metrics-aggregator
+          # Image tag managed by kustomize (k8s/onprem/kustomization.yaml).
+          image: putin111/stayledger-ai-assistant-api:3.0.11
+          imagePullPolicy: IfNotPresent
+          command: ["/venv/bin/python", "-m", "app.metrics.aggregator"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-metrics-aggregator-config
+            - secretRef:
+                name: stayledger-ai-assistant-api-secrets   # provides HOTEL_OPS_DSN
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi

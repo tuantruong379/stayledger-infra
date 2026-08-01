@@ -3,7 +3,7 @@ kind: PersistentVolume
 metadata:
   name: redis-pv
   labels:
-    app.kubernetes.io/name: redis
+    app.kubernetes.io/name: stayledger-ai-assistant-redis
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: cache
 spec:

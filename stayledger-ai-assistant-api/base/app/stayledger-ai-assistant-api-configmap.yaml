@@ -1,0 +1,186 @@
+# Non-sensitive env for stayledger-ai-assistant-api Deployment (envFrom).
+# Aligned with .env.example and app reads (bootstrap ignores missing .env in-cluster).
+# Secrets: stayledger-ai-assistant-api-secret.yaml (gitignored) — see stayledger-ai-assistant-api-secret.example.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-api-config
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-api
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+data:
+  # --- Redis (in-cluster Service: stayledger-ai-assistant-redis) ---
+  # Reasoning (B1): REDIS_URL moved to the api Secret because it now embeds a password
+  # (redis://:<password>@stayledger-ai-assistant-redis:6379/0). Set it in stayledger-ai-assistant-api-secret.yaml.
+  # Keys use chat:v1:t:{tenant}:... (see app/shared/utils/stayledger-ai-assistant-redis_client.py); legacy
+  # memory:/booking: prefixes are code defaults only — not configured here.
+  BOOKING_STATE_TTL_S: "900"
+  CONVERSATION_MEMORY_TTL_S: "1800"
+  PRICING_CACHE_TTL_S: "420"
+  # Reasoning: socket timeout for BRPOP (blocking ops); must exceed BRPOP timeout to avoid read timeouts.
+  REDIS_SOCKET_TIMEOUT_S: "5"
+  # Reasoning: channel queue must use Redis only and fail fast if unavailable (startup safety in deployed envs).
+  CHANNEL_QUEUE_FAIL_CLOSED: "1"
+
+  # --- Process / logs ---
+  PYTHONUNBUFFERED: "1"
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  # Reasoning: 2 workers per 1 CPU request (see production-performance-speed-review §7); raise CPU request before raising workers.
+  UVICORN_WORKERS: "2"
+  # Reasoning: budget ~15 conn/pod × replicas + workers + PgBouncer; Postgres max_connections=100 in postgres-tuning.
+  PG_POOL_MAX_SIZE: "15"
+  FEEDBACK_AUTO_COLLECT: "1"
+  LOG_JSON: "1"
+  LOG_FORMAT: "json"
+  LOG_MASK_NAMES: "1"
+
+  # --- Multi-tenant SaaS + billing (DB-native) ---
+  # Phase C: tenant runtime config + channel registry + usage events + feedback
+  # all live in PostgreSQL. The legacy env switches
+  # (TENANT_CONFIG_SOURCE, TENANT_REGISTRY_SOURCE, USAGE_EVENTS_STORE_BACKEND,
+  # FEEDBACK_STORE_BACKEND, TENANTS_REGISTRY_PATH, USAGE_EVENTS_LOG_PATH)
+  # are no longer read by the application.
+  # Fail-closed tenant resolution: never rely on a default hotel id in deployed envs.
+  DEFAULT_TENANT_ID: ""
+  REQUIRE_RESOLVED_PROPERTY: "1"
+  TENANT_DAILY_CHAT_TURN_LIMIT: "0"   # 0=disabled; set per cluster (or later per-tenant)
+  # Phase C: /readyz fails closed when Postgres is unreachable.
+  READY_REQUIRES_POSTGRES: "1"
+  # BILLING: USD per 1000 tokens.
+  #
+  # Azure prompt caching is priced differently for cached input tokens. We support this by
+  # emitting token breakdown dimensions and computing:
+  #   non_cached_prompt = max(0, prompt_tokens - cached_prompt_tokens)
+  #   cost = non_cached_prompt*prompt_rate + cached_prompt_tokens*cached_rate + completion_tokens*completion_rate
+  #
+  # Azure Global list (GPT-4o-mini):
+  #   prompt (input):     $0.15 / 1M => 0.00015 USD / 1K
+  #   cached input:       $0.075/ 1M => 0.000075 USD / 1K
+  #   completion (output):$0.60 / 1M => 0.0006  USD / 1K
+  #
+  # NOTE: cached_prompt_tokens is a subset of prompt_tokens; dashboards must not add cached
+  # tokens to total tokens. BILLING_USD_PER_1K_TOKENS remains a blended fallback for older
+  # data that lacks prompt/completion/cached dimensions.
+  BILLING_USD_PER_1K_TOKENS: "0.000263"
+  BILLING_USD_PER_1K_TOKENS_PROMPT: "0.00015"
+  BILLING_USD_PER_1K_TOKENS_CACHED: "0.000075"
+  BILLING_USD_PER_1K_TOKENS_COMPLETION: "0.0006"
+  # Channel credentials are stored in PostgreSQL tenant_channel_secrets and managed by Admin UI.
+  # Real-time admin metrics pipeline: API publishes per-turn events to NATS;
+  # the metrics aggregator writes 1-minute materialized rows to metrics_1m.
+  # Tenant KPI cards still use Postgres usage_events as the source of truth.
+  FEATURE_METRICS_PIPELINE: "1"
+  NATS_URL: "nats://stayledger-ai-assistant-nats:4222"
+
+  # --- Public URL + CORS (cors_setup.py) ---
+  # Reasoning: ENVIRONMENT=production activates strict CORS; CORS_ORIGINS must list every
+  # origin that the browser admin UI is served from, otherwise cors_setup.py returns an
+  # empty allow-list and the browser blocks all cross-origin requests to the API.
+  ENVIRONMENT: "production"
+  APP_ENV: "production"
+  # APP_VERSION is set per overlay from the pinned image tag (do not hardcode here).
+  # Overlay patches override these for staging/production stayledger hosts.
+  ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
+  CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
+
+  # --- POST /webhook (webhook_auth.py, rate_limiter.py) ---
+  ALLOW_NO_AUTH: "false"
+  # Per-tenant webhook_api_key in tenant_channel_secrets is required; no shared API_KEY fallback.
+  WEBHOOK_REQUIRE_TENANT_API_KEY: "1"
+  WEBHOOK_TRUST_X_FORWARDED_FOR: "1"
+  # Reasoning: allow higher throughput during k6/scenario validation; tune back down after load-test baselining.
+  WEBHOOK_RATE_LIMIT_PER_MINUTE: "600"
+  WEBHOOK_RATE_LIMIT_WINDOW_S: "60"
+  WEBHOOK_RATE_LIMIT_FAIL_CLOSED: "1"
+  # Reasoning: cap end-to-end webhook work to stay under edge/LB upstream timeouts and avoid 502s.
+  # Reasoning: allow booking confirm + downstream webhook without outer deadline killing the turn before inner budget.
+  WEBHOOK_CHAT_TURN_TIMEOUT_S: "60"
+  CHAT_TURN_BUDGET_S: "55"
+
+  # --- Pricing (Postgres-native; n8n/webhook path retired) ---
+  PRICING_RESOLVE_TOTAL_BUDGET_S: "15"
+  PRICING_REJECT_PAST_DATES: "1"
+  # Legacy pricing-webhook health probe — keep off (path retired).
+  PRICING_WEBHOOK_HEALTH_PROBE: "0"
+
+  # --- PMS connector gates ---
+  # Deployment gates only. Per-property provider/capabilities live in pms_connections.
+  # Overlays enable StayLedger / conversation sync when qualified.
+  PMS_CONNECTOR_ENABLED: "1"
+  PMS_PROVIDER_DEFAULT: "local"
+  PMS_STAYLEDGER_ENABLED: "0"
+  PMS_DRAFT_BOOKING_ENABLED: "0"
+  PMS_CONVERSATION_SYNC_ENABLED: "0"
+  PMS_READ_FALLBACK_MODE: "fail_closed"
+  PMS_OUTBOX_WORKER_ENABLED: "0"
+  PMS_OUTBOX_WORKER_POLL_SECONDS: "15"
+
+  # --- RAG (pgvector primary; startup safety requires this in deployed envs) ---
+  RAG_RETRIEVAL_BACKEND: "pgvector"
+  RAG_CHUNK_PERSIST: "1"
+  RAG_EMBEDDING_DIMENSIONS: "1536"
+  FEATURE_RAG_PGVECTOR: "1"
+
+  # --- LLM in-process cache (llm_cache.py) ---
+  LLM_CACHE_TTL_S: "300"
+  LLM_CACHE_MAX_ENTRIES: "512"
+  LLM_CACHE_DISABLE: "0"
+  # Reasoning: keep RAG prompts bounded for SLO tail latency; retrieval still logs original context chars.
+  RAG_MAX_CONTEXT_CHARS: "4000"
+  RAG_ANSWER_MIN_BUDGET_S: "3.0"
+  RAG_RESPONSE_CACHE_TTL_S: "21600"
+  RAG_EMBEDDING_CACHE_TTL_S: "900"
+  RAG_RETRIEVAL_CACHE_TTL_S: "300"
+  RAG_EMBEDDING_CACHE_REDIS_DISABLE: "0"
+  RAG_RETRIEVAL_CACHE_REDIS_DISABLE: "0"
+  LLM_OPERATION_RAG_ANSWER_TIMEOUT_S: "6"
+  LLM_OPERATION_RAG_ANSWER_MAX_TOKENS: "300"
+  # Reasoning: EN unanswerable path must abstain quickly; translate is best-effort only.
+  LLM_OPERATION_RAG_TRANSLATE_TIMEOUT_S: "2"
+  LLM_OPERATION_RAG_TRANSLATE_MAX_TOKENS: "96"
+  LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "3.5"
+  LLM_OPERATION_BOOKING_EXTRACT_MAX_TOKENS: "96"
+  # Azure OpenAI routing (non-secret). API key stays in stayledger-ai-assistant-api-secrets.
+  # Overlay patches override endpoint/deployment per environment.
+  AZURE_OPENAI_ENDPOINT: "https://stayledger-resource.openai.azure.com"
+  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
+  AZURE_OPENAI_CLIENT_MAX_RETRIES: "0"
+  # Reasoning: admin overview polls frequently; short TTL cuts repeated aggregate DB scans without hiding changes for long.
+  ADMIN_OVERVIEW_CACHE_TTL_S: "30"
+
+  # --- AI capacity gate (ai_capacity_gate.py) ---
+  # Reasoning: prod runs show occasional false "busy" due to short queue wait under brief spikes.
+  # Allow a short bounded wait and a bit more concurrency (tune with AOAI quota and CPU).
+  AI_EXPENSIVE_CONCURRENCY: "32"
+  AI_CAPACITY_QUEUE_WAIT_S: "2.0"
+
+  # --- Meta / Zalo webhook safety (channel_facebook.py, channel_zalo.py) — never enable skip flags in prod ---
+  FACEBOOK_GRAPH_API_VERSION: "v25.0"
+  FACEBOOK_SKIP_SIGNATURE_VERIFY: "0"
+  ZALO_WEBHOOK_SKIP_MAC_VERIFY: "0"
+  ZALO_WEBHOOK_REQUIRE_MAC: "1"
+  # Unknown channel bindings must drop, not enqueue.
+  CHANNEL_BINDING_ENFORCEMENT: "enforce"
+
+  # --- Optional log truncation (observability/ai_pipeline.py); omit to use code defaults ---
+  LOG_AI_PROMPT_MAX_CHARS: "6000"
+  LOG_AI_RESPONSE_MAX_CHARS: "2000"
+
+  # --- Optional router QA (routing/router_shadow.py) — keep off in prod unless you run shadow validation ---
+  ROUTER_SHADOW_VALIDATE: "0"
+  # --- Optional keyword-alias regex-migration QA (services/ai/routing/keyword_alias.py) —
+  # observation-only (never changes the actual routing decision); keep off in prod ---
+  KEYWORD_ALIAS_SHADOW_VALIDATE: "0"
+
+  # --- OpenTelemetry (app/observability/otel.py — manual SDK init, not opentelemetry-instrument) ---
+  OTEL_SERVICE_NAME: "stayledger-ai-assistant-api"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
+  # Reasoning: some OTLP HTTP exporters behave more reliably with an explicit trace endpoint.
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318/v1/traces"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  OTEL_EXPORTER_OTLP_TIMEOUT: "5"
+  # deployment.environment is set per overlay (staging|production) — do not hardcode onprem.

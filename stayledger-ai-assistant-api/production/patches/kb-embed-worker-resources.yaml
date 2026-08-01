@@ -3,7 +3,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hotel-assistant-kb-embed-worker
+  name: stayledger-ai-assistant-kb-embed-worker
   namespace: stayledger-ai-assistant
 spec:
   template:

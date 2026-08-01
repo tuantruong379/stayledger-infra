@@ -16,7 +16,7 @@
 | 🔴 Webhook worker missing /tmp scratch | Added emptyDir for writeable tmp | `webhook-worker.yaml` |
 | 🟠 Redis timeout duplicated across services | Moved to global ConfigMap | `api-configmap.yaml`, `channel-worker.yaml` |
 | 🟠 Node affinity hardcoded to hostname | Changed to label-based selector | `api-pv.yaml` |
-| 🟠 PDB conflict (minAvailable on single-replica) | Changed to maxUnavailable:0 | `pdb.yaml` |
+| 🟠 PDB conflict (minAvailable on single-replica) | Changed to maxUnavailable:0 | `stayledger-ai-assistant-api-pdb.yaml` |
 | 🟡 Namespace not discoverable by Prometheus | Added monitoring label | `namespace.yaml` |
 
 ### 2. ✅ Autoscaling Added (2 new HPAs)
@@ -45,8 +45,8 @@ kubectl label nodes hkk8s-hub-master node-role.kubernetes.io/api-data=true --ove
 kubectl apply -k k8s/onprem/
 
 # Step 3: Wait for rollout
-kubectl rollout status deployment/hotel-assistant-api -n stayledger-ai-assistant
-kubectl rollout status deployment/hotel-assistant-webhook-worker -n stayledger-ai-assistant
+kubectl rollout status deployment/stayledger-ai-assistant-api -n stayledger-ai-assistant
+kubectl rollout status deployment/stayledger-ai-assistant-webhook-worker -n stayledger-ai-assistant
 
 # Step 4: Verify everything is working
 kubectl get pods,svc,hpa,networkpolicies -n stayledger-ai-assistant
@@ -62,8 +62,8 @@ kubectl get pods,svc,hpa,networkpolicies -n stayledger-ai-assistant
 - [ ] HPA is active: `kubectl get hpa -n stayledger-ai-assistant` (should show 3 HPAs)
 - [ ] Network policies applied: `kubectl get networkpolicies -n stayledger-ai-assistant` (14 policies)
 - [ ] Node label exists: `kubectl get nodes --show-labels | grep api-data`
-- [ ] ConfigMap updated: `kubectl get cm hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET`
-- [ ] Webhook worker has /tmp: `kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- ls /tmp`
+- [ ] ConfigMap updated: `kubectl get cm stayledger-ai-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET`
+- [ ] Webhook worker has /tmp: `kubectl exec -n stayledger-ai-assistant deploy/stayledger-ai-assistant-webhook-worker -- ls /tmp`
 - [ ] Tenant channel credentials configured in `tenant_channel_secrets` via Admin -> Tenant -> Config
 
 ---
@@ -148,7 +148,7 @@ STATEFUL LAYER (Single-Replica, Pre-HA)
 - [README.md](./README.md) — General deployment info
 
 **External Resources:**
-- [Redis Sentinel](https://redis.io/topics/sentinel)
+- [Redis Sentinel](https://stayledger-ai-assistant-redis.io/topics/sentinel)
 - [Postgres Patroni](https://github.com/zalando/postgres-operator)
 - Workflow Queue Mode documentation (vendor-specific)
 - [Kubernetes NetworkPolicy](https://kubernetes.io/docs/concepts/services-networking/network-policies/)

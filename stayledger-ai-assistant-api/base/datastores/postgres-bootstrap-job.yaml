@@ -4,7 +4,7 @@ metadata:
   name: postgres-bootstrap
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: postgres
+        app.kubernetes.io/name: stayledger-ai-assistant-postgres
         app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: database
     spec:
@@ -36,7 +36,7 @@ spec:
               ephemeral-storage: 128Mi
           env:
             - name: PGHOST
-              value: postgres
+              value: stayledger-ai-assistant-postgres
             - name: PGPORT
               value: "5432"
             - name: POSTGRES_USER
@@ -76,7 +76,7 @@ spec:
 
               echo "Ensuring role and database exist..."
               # Reasoning: avoid DO $$ blocks (shell/psql quoting pitfalls); use \gexec for idempotent role creation.
-              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -v ON_ERROR_STOP=1 \
+              psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d stayledger-ai-assistant-postgres -v ON_ERROR_STOP=1 \
                 -v non_root_user="${POSTGRES_NON_ROOT_USER}" \
                 -v non_root_pass="${POSTGRES_NON_ROOT_PASSWORD}" <<'EOSQL'
               SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'non_root_user', :'non_root_pass')
@@ -85,7 +85,7 @@ spec:
               EOSQL
 
               # Create DB if missing, then grant + set owner.
-              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
+              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d stayledger-ai-assistant-postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
                 createdb -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" "${POSTGRES_DB}"
               fi
 
@@ -103,7 +103,7 @@ spec:
               EOSQL
 
               echo "Ensuring shared operational database ${OPERATIONAL_DB} exists..."
-              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${OPERATIONAL_DB}'" | grep -q 1; then
+              if ! psql -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" -d stayledger-ai-assistant-postgres -tAc "SELECT 1 FROM pg_database WHERE datname='${OPERATIONAL_DB}'" | grep -q 1; then
                 createdb -h "${PGHOST}" -p "${PGPORT}" -U "${POSTGRES_USER}" "${OPERATIONAL_DB}"
               fi
 

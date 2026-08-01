@@ -1,4 +1,4 @@
-# Allow pgbouncer to connect to postgres on port 5432 and resolve DNS.
+# Allow stayledger-ai-assistant-pgbouncer to connect to stayledger-ai-assistant-postgres on port 5432 and resolve DNS.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -7,14 +7,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: pgbouncer
+      app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: postgres
+              app.kubernetes.io/name: stayledger-ai-assistant-postgres
       ports:
         - protocol: TCP
           port: 5432

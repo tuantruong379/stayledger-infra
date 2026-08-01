@@ -2,11 +2,11 @@
 # Dumps hotel_ops database into a timestamped file on the backup PVC, then prunes
 # files older than 7 days (daily) and keeps one weekly (Sunday) up to 4 weeks.
 #
-# Labels MUST use app.kubernetes.io/name=postgres-backup (not postgres) so Job pods
-# are not selected into the headless postgres Service endpoints.
+# Labels MUST use app.kubernetes.io/name=postgres-backup (not stayledger-ai-assistant-postgres) so Job pods
+# are not selected into the headless stayledger-ai-assistant-postgres Service endpoints.
 #
 # Apply: included in kustomization.yaml
-# Restore test: kubectl exec -it <pod> -- pg_restore -h postgres -U $POSTGRES_USER -d hotel_ops_restore /backup/hotel_ops_YYYY-MM-DD.dump
+# Restore test: kubectl exec -it <pod> -- pg_restore -h stayledger-ai-assistant-postgres -U $POSTGRES_USER -d hotel_ops_restore /backup/hotel_ops_YYYY-MM-DD.dump
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -22,7 +22,7 @@ data:
     set -euo pipefail
 
     BACKUP_DIR="/backup"
-    DB_HOST="postgres"
+    DB_HOST="stayledger-ai-assistant-postgres"
     DB_PORT="5432"
     DB_NAME="hotel_ops"
     TIMESTAMP=$(date +%Y-%m-%d)

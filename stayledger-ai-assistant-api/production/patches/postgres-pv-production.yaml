@@ -4,7 +4,7 @@ metadata:
   name: postgres-pv
 spec:
   local:
-    path: /mnt/data/stayledger/ai-assistant/postgres
+    path: /mnt/data/stayledger/ai-assistant/stayledger-ai-assistant-postgres
   nodeAffinity:
     required:
       nodeSelectorTerms:

@@ -24,7 +24,7 @@ kubectl get networkpolicies -n stayledger-ai-assistant
 ---
 
 ### 2. **Webhook Worker /tmp emptyDir** ✓
-**Files Modified:** `k8s/onprem/hotel-assistant-webhook-worker.yaml`
+**Files Modified:** `k8s/onprem/stayledger-ai-assistant-webhook-worker.yaml`
 
 - ✅ Added `emptyDir` (memory-based) for `/tmp` scratch space
 - ✅ Prevents ENOENT when container needs writable tmp under `readOnlyRootFilesystem`
@@ -32,7 +32,7 @@ kubectl get networkpolicies -n stayledger-ai-assistant
 **Verification:**
 ```bash
 kubectl apply -k k8s/onprem/
-kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- ls -la /tmp
+kubectl exec -n stayledger-ai-assistant deploy/stayledger-ai-assistant-webhook-worker -- ls -la /tmp
 # Should be writable
 ```
 
@@ -40,22 +40,22 @@ kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker --
 
 ### 3. **Redis Socket Timeout to ConfigMap** ✓
 **Files Modified:** 
-- `k8s/onprem/hotel-assistant-api-configmap.yaml` — added `REDIS_SOCKET_TIMEOUT_S: "5"`
-- `k8s/onprem/hotel-assistant-channel-worker.yaml` — removed duplicate env var
+- `k8s/onprem/stayledger-ai-assistant-api-configmap.yaml` — added `REDIS_SOCKET_TIMEOUT_S: "5"`
+- `k8s/onprem/stayledger-ai-assistant-channel-worker.yaml` — removed duplicate env var
 
 - ✅ Global config for blocking socket operations (BRPOP)
 - ✅ Single source of truth, no env overrides needed
 
 **Verification:**
 ```bash
-kubectl get configmap hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET_TIMEOUT_S
+kubectl get configmap stayledger-ai-assistant-api-config -n stayledger-ai-assistant -o yaml | grep REDIS_SOCKET_TIMEOUT_S
 # Should return: REDIS_SOCKET_TIMEOUT_S: "5"
 ```
 
 ---
 
 ### 4. **Node Affinity: Hostname → Labels** ✓
-**Files Modified:** `k8s/onprem/hotel-assistant-api-pv.yaml`
+**Files Modified:** `k8s/onprem/stayledger-ai-assistant-api-pv.yaml`
 
 **Before:**
 ```yaml
@@ -91,7 +91,7 @@ kubectl get nodes --show-labels | grep api-data
 ---
 
 ### 5. **PDB for workflow engine: Single-Replica Conflict** ✓
-**Files Modified:** `k8s/onprem/pdb.yaml`
+**Files Modified:** `k8s/onprem/stayledger-ai-assistant-api-pdb.yaml`
 
 **Before:**
 ```yaml
@@ -118,7 +118,7 @@ spec:
 
 **Verification:**
 ```bash
-kubectl get ns hotel-assistant --show-labels | grep monitoring
+kubectl get ns stayledger-ai-assistant --show-labels | grep monitoring
 ```
 
 ---
@@ -126,30 +126,30 @@ kubectl get ns hotel-assistant --show-labels | grep monitoring
 ## 🟢 HIGH PRIORITY: AUTOSCALING
 
 ### 7. **HPA for Channel Worker** ✓
-**Files Created:** `k8s/onprem/channel-worker-hpa.yaml`
+**Files Created:** `k8s/onprem/stayledger-ai-assistant-channel-worker-hpa.yaml`
 
 - ✅ Min replicas: 1, Max: 5
 - ✅ CPU threshold: 70%, Memory: 80%
 - ✅ Moderate scale-up (50% every 60s), gentle scale-down (1 pod every 180s)
 
-**File Updated:** `k8s/onprem/kustomization.yaml` — added `channel-worker-hpa.yaml` to resources
+**File Updated:** `k8s/onprem/kustomization.yaml` — added `stayledger-ai-assistant-channel-worker-hpa.yaml` to resources
 
 ---
 
 ### 8. **HPA for Webhook Worker** ✓
-**Files Created:** `k8s/onprem/webhook-worker-hpa.yaml`
+**Files Created:** `k8s/onprem/stayledger-ai-assistant-webhook-worker-hpa.yaml`
 
 - ✅ Min replicas: 1, Max: 10
 - ✅ CPU threshold: 65% (more aggressive than API, for LLM latency)
 - ✅ Aggressive scale-up (100% every 30s), gentle scale-down (1 pod every 180s)
 
-**File Updated:** `k8s/onprem/kustomization.yaml` — added `webhook-worker-hpa.yaml` to resources
+**File Updated:** `k8s/onprem/kustomization.yaml` — added `stayledger-ai-assistant-webhook-worker-hpa.yaml` to resources
 
 **Verification:**
 ```bash
 kubectl get hpa -n stayledger-ai-assistant
-# Should see: hotel-assistant-api, hotel-assistant-channel-worker, hotel-assistant-webhook-worker
-kubectl describe hpa hotel-assistant-webhook-worker -n stayledger-ai-assistant
+# Should see: stayledger-ai-assistant-api, stayledger-ai-assistant-channel-worker, stayledger-ai-assistant-webhook-worker
+kubectl describe hpa stayledger-ai-assistant-webhook-worker -n stayledger-ai-assistant
 ```
 
 ---
@@ -190,11 +190,11 @@ Each phase includes:
 | File | Change | Impact |
 |------|--------|--------|
 | `networkpolicies.yaml` | +3 webhook-worker policies | ✅ Network communication restored |
-| `hotel-assistant-webhook-worker.yaml` | +`/tmp emptyDir` | ✅ Container scratch space |
-| `hotel-assistant-api-configmap.yaml` | +`REDIS_SOCKET_TIMEOUT_S` | ✅ Single source of truth |
-| `hotel-assistant-channel-worker.yaml` | −duplicate env | ✅ Cleanup |
-| `hotel-assistant-api-pv.yaml` | hostname → labels | ✅ Portable node selection |
-| `pdb.yaml` | `minAvailable` → `maxUnavailable: 0` | ✅ Prevents silent PDB block |
+| `stayledger-ai-assistant-webhook-worker.yaml` | +`/tmp emptyDir` | ✅ Container scratch space |
+| `stayledger-ai-assistant-api-configmap.yaml` | +`REDIS_SOCKET_TIMEOUT_S` | ✅ Single source of truth |
+| `stayledger-ai-assistant-channel-worker.yaml` | −duplicate env | ✅ Cleanup |
+| `stayledger-ai-assistant-api-pv.yaml` | hostname → labels | ✅ Portable node selection |
+| `stayledger-ai-assistant-api-pdb.yaml` | `minAvailable` → `maxUnavailable: 0` | ✅ Prevents silent PDB block |
 | `namespace.yaml` | +`monitoring: "true"` | ✅ Prometheus discovery |
 | `kustomization.yaml` | +HPA files | ✅ Autoscaling enabled |
 
@@ -213,7 +213,7 @@ kubectl apply -k k8s/onprem/
 kubectl get pods,svc,hpa,pdb,networkpolicies -n stayledger-ai-assistant
 
 # 4. Wait for rollout (new images with /tmp mount, etc.)
-kubectl rollout status deployment/hotel-assistant-webhook-worker -n stayledger-ai-assistant
+kubectl rollout status deployment/stayledger-ai-assistant-webhook-worker -n stayledger-ai-assistant
 ```
 
 ---
@@ -291,16 +291,16 @@ kubectl get networkpolicies -n stayledger-ai-assistant
 
 # HPA status
 kubectl get hpa -n stayledger-ai-assistant
-kubectl describe hpa hotel-assistant-webhook-worker -n stayledger-ai-assistant
+kubectl describe hpa stayledger-ai-assistant-webhook-worker -n stayledger-ai-assistant
 
 # ConfigMap
-kubectl get configmap hotel-assistant-api-config -n stayledger-ai-assistant -o yaml | head -30
+kubectl get configmap stayledger-ai-assistant-api-config -n stayledger-ai-assistant -o yaml | head -30
 
 # Node labels
 kubectl get nodes --show-labels | grep api-data
 
 # Pod /tmp
-kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-webhook-worker -- touch /tmp/test
+kubectl exec -n stayledger-ai-assistant deploy/stayledger-ai-assistant-webhook-worker -- touch /tmp/test
 # Should succeed (no EROFS error)
 
 # Tenant channel credentials

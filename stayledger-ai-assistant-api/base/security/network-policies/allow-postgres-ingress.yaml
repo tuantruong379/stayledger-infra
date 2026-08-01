@@ -6,26 +6,26 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: postgres
+      app.kubernetes.io/name: stayledger-ai-assistant-postgres
   policyTypes:
   - Ingress
   ingress:
   - from:
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: postgres
+          app.kubernetes.io/name: stayledger-ai-assistant-postgres
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: postgres-backup
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: pgbouncer
+          app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: postgres-exporter
+          app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter
     - podSelector:
         matchLabels:
-          app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+          app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
     ports:
     - protocol: TCP
       port: 5432

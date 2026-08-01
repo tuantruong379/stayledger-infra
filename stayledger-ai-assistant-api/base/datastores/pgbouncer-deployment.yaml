@@ -5,8 +5,8 @@
 # Postgres server connections).
 #
 # HOTEL_OPS_DSN change required after applying:
-#   Before: postgresql://hotelassistant:<pw>@postgres:5432/hotel_ops
-#   After:  postgresql://hotelassistant:<pw>@pgbouncer:5432/hotel_ops
+#   Before: postgresql://hotelassistant:<pw>@stayledger-ai-assistant-postgres:5432/hotel_ops
+#   After:  postgresql://hotelassistant:<pw>@stayledger-ai-assistant-pgbouncer:5432/hotel_ops
 #
 # The pgbouncer-secret (see pgbouncer-secret.example.yaml) must be applied first:
 #   kubectl apply -f k8s/onprem/pgbouncer-secret.yaml
@@ -16,18 +16,18 @@ metadata:
   name: pgbouncer-config
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 data:
   pgbouncer.ini: |
     [databases]
-    hotel_ops = host=postgres port=5432 dbname=hotel_ops
+    hotel_ops = host=stayledger-ai-assistant-postgres port=5432 dbname=hotel_ops
 
     [pgbouncer]
     listen_addr = 0.0.0.0
     listen_port = 5432
-    ; plain: client sends cleartext, pgbouncer hashes for pg. Safe in-cluster (NetworkPolicy + no external exposure).
+    ; plain: client sends cleartext, stayledger-ai-assistant-pgbouncer hashes for pg. Safe in-cluster (NetworkPolicy + no external exposure).
     auth_type = plain
     auth_file = /etc/pgbouncer/userlist.txt
 
@@ -55,21 +55,21 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pgbouncer
+  name: stayledger-ai-assistant-pgbouncer
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: pgbouncer
+      app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: pgbouncer
+        app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
         app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: database
     spec:
@@ -141,10 +141,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: pgbouncer
+  name: stayledger-ai-assistant-pgbouncer
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 spec:
@@ -154,4 +154,4 @@ spec:
       port: 5432
       targetPort: pgbouncer
   selector:
-    app.kubernetes.io/name: pgbouncer
+    app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer

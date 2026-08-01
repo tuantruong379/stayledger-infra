@@ -15,7 +15,7 @@
 
 ---
 
-### 2. k8s/onprem/hotel-assistant-webhook-worker.yaml
+### 2. k8s/onprem/stayledger-ai-assistant-webhook-worker.yaml
 **Change:** Added `/tmp` emptyDir volume mount  
 **Lines Changed:** 2 sections modified  
 **Details:**
@@ -27,7 +27,7 @@
 
 ---
 
-### 3. k8s/onprem/hotel-assistant-api-configmap.yaml
+### 3. k8s/onprem/stayledger-ai-assistant-api-configmap.yaml
 **Change:** Added global `REDIS_SOCKET_TIMEOUT_S`  
 **Lines Changed:** 1 line added  
 **Details:**
@@ -38,7 +38,7 @@
 
 ---
 
-### 4. k8s/onprem/hotel-assistant-channel-worker.yaml
+### 4. k8s/onprem/stayledger-ai-assistant-channel-worker.yaml
 **Change:** Removed duplicate `REDIS_SOCKET_TIMEOUT_S` env var  
 **Lines Removed:** 4 lines  
 **Details:**
@@ -49,7 +49,7 @@
 
 ---
 
-### 5. k8s/onprem/hotel-assistant-api-pv.yaml
+### 5. k8s/onprem/stayledger-ai-assistant-api-pv.yaml
 **Change:** Node affinity: hostname → label-based  
 **Lines Changed:** 5 lines modified  
 **Details:**
@@ -78,7 +78,7 @@ nodeAffinity:
 
 ---
 
-### 6. k8s/onprem/pdb.yaml
+### 6. k8s/onprem/stayledger-ai-assistant-api-pdb.yaml
 **Change:** workflow engine PDB: `minAvailable: 1` → `maxUnavailable: 0`  
 **Lines Changed:** 3 lines modified  
 **Details:**
@@ -114,8 +114,8 @@ spec:
 **Change:** Added new HPA files to resources  
 **Lines Changed:** 2 lines added  
 **Details:**
-- `- channel-worker-hpa.yaml`
-- `- webhook-worker-hpa.yaml`
+- `- stayledger-ai-assistant-channel-worker-hpa.yaml`
+- `- stayledger-ai-assistant-webhook-worker-hpa.yaml`
 
 **Before:** 31 resources  
 **After:** 33 resources
@@ -124,7 +124,7 @@ spec:
 
 ## New Files (6)
 
-### 1. k8s/onprem/channel-worker-hpa.yaml
+### 1. k8s/onprem/stayledger-ai-assistant-channel-worker-hpa.yaml
 **Lines:** 54  
 **Purpose:** Horizontal Pod Autoscaler for channel-worker  
 **Config:**
@@ -135,7 +135,7 @@ spec:
 
 ---
 
-### 2. k8s/onprem/webhook-worker-hpa.yaml
+### 2. k8s/onprem/stayledger-ai-assistant-webhook-worker-hpa.yaml
 **Lines:** 58  
 **Purpose:** Horizontal Pod Autoscaler for webhook-worker  
 **Config:**
@@ -222,7 +222,7 @@ To see all changes:
 git diff k8s/onprem/networkpolicies.yaml
 
 # See ConfigMap changes
-git diff k8s/onprem/hotel-assistant-api-configmap.yaml
+git diff k8s/onprem/stayledger-ai-assistant-api-configmap.yaml
 
 # See all modified files
 git status k8s/onprem/

@@ -6,15 +6,15 @@
 #   kubectl apply -f k8s/onprem/cert-manager-issuer.yaml
 #   kubectl apply -f k8s/onprem/ingress.yaml
 #
-# The Ingress fronts the ``hotel-assistant-api`` Service (port 8000). Replace
-# ``hotel-assistant.tekcent.com`` with your real public host before applying.
+# The Ingress fronts the ``stayledger-ai-assistant-api`` Service (port 8000). Replace
+# ``stayledger-ai-assistant.tekcent.com`` with your real public host before applying.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hotel-assistant-api
+  name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/name: stayledger-ai-assistant-api
     app.kubernetes.io/part-of: stayledger-ai-assistant
   annotations:
     # Reasoning: ClusterIssuer name must match cert-manager-issuer.yaml below.
@@ -28,16 +28,16 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - hotel-assistant.tekcent.com
-      secretName: hotel-assistant-tls
+        - stayledger-ai-assistant.tekcent.com
+      secretName: stayledger-ai-assistant-tls
   rules:
-    - host: hotel-assistant.tekcent.com
+    - host: stayledger-ai-assistant.tekcent.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: hotel-assistant-api
+                name: stayledger-ai-assistant-api
                 port:
                   number: 8000

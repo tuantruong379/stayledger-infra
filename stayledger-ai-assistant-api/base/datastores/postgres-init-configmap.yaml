@@ -4,7 +4,7 @@ metadata:
   name: postgres-init
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 data:

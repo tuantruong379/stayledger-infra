@@ -48,7 +48,7 @@ spec:
                   name: postgres-secret
                   key: POSTGRES_USER
             - name: PGHOST
-              value: postgres
+              value: stayledger-ai-assistant-postgres
             - name: PGPORT
               value: "5432"
             - name: SOURCE_DUMP
@@ -69,13 +69,13 @@ spec:
               echo "[iso] sha256=$ACTUAL"
               test "$ACTUAL" = "$EXPECTED_SHA256"
               case "$TARGET_DB" in
-                hotel_ops|postgres|template0|template1)
+                hotel_ops|stayledger-ai-assistant-postgres|template0|template1)
                   echo "REFUSE: TARGET_DB=$TARGET_DB is protected" >&2; exit 3 ;;
               esac
               echo "[iso] drop/create isolated DB (not hotel_ops)"
-              psql -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${TARGET_DB}' AND pid <> pg_backend_pid();" || true
-              psql -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ${TARGET_DB};"
-              psql -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${TARGET_DB} TEMPLATE template0;"
+              psql -d stayledger-ai-assistant-postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='${TARGET_DB}' AND pid <> pg_backend_pid();" || true
+              psql -d stayledger-ai-assistant-postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS ${TARGET_DB};"
+              psql -d stayledger-ai-assistant-postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${TARGET_DB} TEMPLATE template0;"
               echo "[iso] pg_restore into ${TARGET_DB}"
               set +e
               pg_restore -d "$TARGET_DB" --no-owner --no-acl "$SOURCE_DUMP"

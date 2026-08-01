@@ -9,8 +9,8 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         values:
-          - postgres-exporter
-          - redis-exporter
+          - stayledger-ai-assistant-postgres-exporter
+          - stayledger-ai-assistant-redis-exporter
   policyTypes:
     - Ingress
   ingress:

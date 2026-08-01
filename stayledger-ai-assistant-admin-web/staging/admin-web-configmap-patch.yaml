@@ -1,0 +1,14 @@
+# Server-side Next.js rewrites must target the in-cluster API Service (NetworkPolicy
+# blocks frontend egress to Cloudflare). Browser calls use same-origin /api/* paths.
+# NEXT_PUBLIC_APP_ENV / PMS base URL are baked as placeholders and injected by docker-entrypoint.sh.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-admin-web-config
+  namespace: stayledger-ai-assistant
+data:
+  NEXT_PUBLIC_API_BASE_URL: "http://stayledger-ai-assistant-api:8000"
+  NEXT_PUBLIC_API_URL: "http://stayledger-ai-assistant-api:8000/api"
+  NEXT_PUBLIC_BOOKING_WEB_URL: "https://stg-app.stayledger.io"
+  NEXT_PUBLIC_APP_ENV: "staging"
+  NEXT_PUBLIC_PMS_STAYLEDGER_BASE_URL: "https://stg-api.stayledger.io/api"

@@ -8,17 +8,17 @@ namespace: stayledger-ai-assistant
 resources:
   - namespace.yaml
   - serviceaccounts.yaml
-  - app/hotel-assistant-frontend-configmap.yaml
-  - app/hotel-assistant-frontend.yaml
-  - scaling/frontend-hpa.yaml
-  - scaling/pdb.yaml
-  - security/network-policies/allow-frontend-egress.yaml
-  - security/network-policies/allow-frontend-ingress.yaml
+  - app/stayledger-ai-assistant-admin-web-configmap.yaml
+  - app/stayledger-ai-assistant-admin-web.yaml
+  - scaling/admin-web-hpa.yaml
+  - scaling/stayledger-ai-assistant-admin-web-pdb.yaml
+  - security/network-policies/allow-admin-web-egress.yaml
+  - security/network-policies/allow-admin-web-ingress.yaml
 
 # Apply secrets separately (do not commit real secrets):
-#   app/hotel-assistant-frontend-secret.example.yaml → hotel-assistant-frontend-secret.yaml
+#   app/stayledger-ai-assistant-admin-web-secret.example.yaml → stayledger-ai-assistant-admin-web-secret.yaml
 
 images:
-  - name: putin111/hotel-assistant-frontend
-    newName: putin111/stayledger-ai-assistant-frontend
+  - name: putin111/stayledger-ai-assistant-admin-web
+    newName: putin111/stayledger-ai-assistant-admin-web
     newTag: "latest"

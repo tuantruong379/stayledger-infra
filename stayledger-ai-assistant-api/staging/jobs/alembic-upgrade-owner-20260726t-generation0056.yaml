@@ -34,7 +34,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: alembic
-          image: putin111/ai-hotel-assistant@sha256:53f7802ff7dc962dbd206c022b460c8d3bb475654d2161e9a93b06f586baaf56
+          image: putin111/stayledger-ai-assistant-api@sha256:53f7802ff7dc962dbd206c022b460c8d3bb475654d2161e9a93b06f586baaf56
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -59,11 +59,11 @@ spec:
             - name: HOTEL_OPS_DSN_OWNER
               valueFrom:
                 secretKeyRef:
-                  name: hotel-assistant-migration-secrets
+                  name: stayledger-ai-assistant-migration-secrets
                   key: HOTEL_OPS_DSN_OWNER
           envFrom:
             - configMapRef:
-                name: hotel-assistant-api-config
+                name: stayledger-ai-assistant-api-config
           resources:
             requests:
               cpu: 100m

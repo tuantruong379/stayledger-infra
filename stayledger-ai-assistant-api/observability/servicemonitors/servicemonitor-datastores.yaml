@@ -2,11 +2,11 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: hotel-assistant-datastore-exporters
+  name: stayledger-ai-assistant-datastore-exporters
   namespace: observability
   labels:
     release: kps
-    app.kubernetes.io/name: hotel-assistant-datastore-exporters
+    app.kubernetes.io/name: stayledger-ai-assistant-datastore-exporters
     app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   namespaceSelector:
@@ -17,8 +17,8 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         values:
-          - postgres-exporter
-          - redis-exporter
+          - stayledger-ai-assistant-postgres-exporter
+          - stayledger-ai-assistant-redis-exporter
   jobLabel: app.kubernetes.io/name
   endpoints:
     - port: metrics

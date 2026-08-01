@@ -9,15 +9,15 @@ spec:
       - key: app.kubernetes.io/name
         operator: In
         values:
-          - hotel-assistant-channel-worker
-          - hotel-assistant-webhook-worker
+          - stayledger-ai-assistant-channel-worker
+          - stayledger-ai-assistant-webhook-worker
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: nats
+              app.kubernetes.io/name: stayledger-ai-assistant-nats
       ports:
         - protocol: TCP
           port: 4222

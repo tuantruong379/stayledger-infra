@@ -20,20 +20,20 @@ labels:
     includeSelectors: false
 
 patches:
-  - path: api-configmap-patch.yaml
-  - path: metrics-aggregator-configmap-patch.yaml
-  - path: patches/scaling-production.yaml
-  - path: patches/api-resources.yaml
+  - path: stayledger-ai-assistant-api-configmap-patch.yaml
+  - path: stayledger-ai-assistant-metrics-aggregator-configmap-patch.yaml
+  - path: patches/stayledger-ai-assistant-scaling-production.yaml
+  - path: patches/stayledger-ai-assistant-api-resources.yaml
   - path: patches/postgres-resources.yaml
   - path: patches/kb-embed-worker-resources.yaml
   - path: patches/redis-resources.yaml
-  - path: patches/webhook-worker-resources.yaml
-  - path: patches/channel-worker-resources.yaml
-  - path: patches/optional-workers-scale.yaml
-  - path: patches/api-service-clusterip.yaml
+  - path: patches/stayledger-ai-assistant-webhook-worker-resources.yaml
+  - path: patches/stayledger-ai-assistant-channel-worker-resources.yaml
+  - path: patches/stayledger-ai-assistant-optional-workers-scale.yaml
+  - path: patches/stayledger-ai-assistant-api-service-clusterip.yaml
     target:
       kind: Service
-      name: hotel-assistant-api
+      name: stayledger-ai-assistant-api
   - path: patches/postgres-pv-production.yaml
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
@@ -41,6 +41,6 @@ patches:
 # Pin to clean-tree wave2 release digest (backend commit f05db1023eb114e5ae56041d4055844608e6b8cf).
 # Match post-base-transform image names, then remap to published repos.
 images:
-  - name: putin111/stayledger-ai-assistant
-    newName: putin111/ai-hotel-assistant
+  - name: putin111/stayledger-ai-assistant-api
+    newName: putin111/stayledger-ai-assistant-api
     digest: sha256:098318c7eca630b25885e006fe6fbb880d546c74b51d7d5025e2b2707d2d4dcf

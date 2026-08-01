@@ -7,21 +7,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: postgres-exporter
+  name: stayledger-ai-assistant-postgres-exporter
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database-metrics
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: postgres-exporter
+      app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: postgres-exporter
+        app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter
         app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: database-metrics
     spec:
@@ -33,7 +33,7 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: postgres-exporter
+        - name: stayledger-ai-assistant-postgres-exporter
           image: quay.io/prometheuscommunity/postgres-exporter:v0.15.0
           args:
             # Reasoning: avoid pg_ls_waldir permission errors for non-superuser DB role.
@@ -43,7 +43,7 @@ spec:
               containerPort: 9187
           env:
             - name: DATA_SOURCE_URI
-              value: "postgres:5432/hotel_ops?sslmode=disable"
+              value: "stayledger-ai-assistant-postgres:5432/hotel_ops?sslmode=disable"
             - name: DATA_SOURCE_USER
               valueFrom:
                 secretKeyRef:
@@ -84,10 +84,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: postgres-exporter
+  name: stayledger-ai-assistant-postgres-exporter
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database-metrics
 spec:
@@ -97,4 +97,4 @@ spec:
       port: 9187
       targetPort: metrics
   selector:
-    app.kubernetes.io/name: postgres-exporter
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres-exporter

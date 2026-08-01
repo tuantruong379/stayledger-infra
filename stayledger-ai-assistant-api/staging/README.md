@@ -29,14 +29,14 @@ curl -fsS http://<node-ip>:30081/
 
 ```powershell
 # Secrets (once) — see ../base/ README
-kubectl apply -f stayledger-ai-assistant-api/base/app/hotel-assistant-api-secret.yaml
-kubectl apply -f stayledger-ai-assistant-admin-web/base/app/hotel-assistant-frontend-secret.yaml
+kubectl apply -f stayledger-ai-assistant-api/base/app/stayledger-ai-assistant-api-secret.yaml
+kubectl apply -f stayledger-ai-assistant-admin-web/base/app/stayledger-ai-assistant-admin-web-secret.yaml
 # ... other base secrets as needed
 
 kubectl apply -k stayledger-ai-assistant-api/staging/
 kubectl apply -k stayledger-ai-assistant-admin-web/staging/
 
-kubectl rollout restart deployment/hotel-assistant-frontend deployment/hotel-assistant-api -n stayledger-ai-assistant
+kubectl rollout restart deployment/stayledger-ai-assistant-admin-web deployment/stayledger-ai-assistant-api -n stayledger-ai-assistant
 ```
 
 Do **not** apply `ingress.yaml` — staging is NodePort-only.
@@ -46,10 +46,10 @@ Do **not** apply `ingress.yaml` — staging is NodePort-only.
 `NEXT_PUBLIC_API_BASE_URL` in the staging ConfigMap must be the **in-cluster** API service:
 
 ```yaml
-NEXT_PUBLIC_API_BASE_URL: "http://hotel-assistant-api:8000"
+NEXT_PUBLIC_API_BASE_URL: "http://stayledger-ai-assistant-api:8000"
 ```
 
-The frontend NetworkPolicy only allows egress to `hotel-assistant-api:8000`. Do **not** set this
+The frontend NetworkPolicy only allows egress to `stayledger-ai-assistant-api:8000`. Do **not** set this
 to the public Cloudflare URL — server-side Next.js rewrites would fail with 500.
 
 Browsers still use `https://stg-assistant.stayledger.io` and same-origin `/api/*` paths.

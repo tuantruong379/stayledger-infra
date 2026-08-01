@@ -4,7 +4,7 @@
 #
 # Deploy (after base secrets):
 #   kubectl apply -k stayledger-ai-assistant-api/staging/
-#   kubectl rollout status deployment/hotel-assistant-api -n stayledger-ai-assistant
+#   kubectl rollout status deployment/stayledger-ai-assistant-api -n stayledger-ai-assistant
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -12,39 +12,38 @@ namespace: stayledger-ai-assistant
 
 resources:
   - ../base
-  - pms-outbox-network-patch.yaml
+  - stayledger-ai-assistant-pms-outbox-network-patch.yaml
 
 patches:
-  - path: api-configmap-patch.yaml
-  - path: metrics-aggregator-configmap-patch.yaml
-  - path: channel-worker-resources-patch.yaml
-  - path: webhook-worker-resources-patch.yaml
-  - path: scaling-production-patch.yaml
-  - path: api-release-annotations-patch.yaml
-  - path: api-legacy-annotations-cleanup.yaml
-  - path: canonical-turn-canary-patch.yaml
-  - path: worker-freeze-replicas-patch.yaml
-  - path: nonmutating-canary-replicas-patch.yaml
-  - path: rag-eval-worker-image-patch.yaml
+  - path: stayledger-ai-assistant-api-configmap-patch.yaml
+  - path: stayledger-ai-assistant-metrics-aggregator-configmap-patch.yaml
+  - path: stayledger-ai-assistant-channel-worker-resources-patch.yaml
+  - path: stayledger-ai-assistant-webhook-worker-resources-patch.yaml
+  - path: stayledger-ai-assistant-scaling-production-patch.yaml
+  - path: stayledger-ai-assistant-api-release-annotations-patch.yaml
+  - path: stayledger-ai-assistant-api-legacy-annotations-cleanup.yaml
+  - path: stayledger-ai-assistant-canonical-turn-canary-patch.yaml
+  - path: stayledger-ai-assistant-worker-freeze-replicas-patch.yaml
+  - path: stayledger-ai-assistant-nonmutating-canary-replicas-patch.yaml
+  - path: stayledger-ai-assistant-rag-eval-worker-image-patch.yaml
     target:
       group: apps
       version: v1
       kind: Deployment
-      name: hotel-assistant-rag-eval-worker
-  - path: postgres-observability-patch.yaml
+      name: stayledger-ai-assistant-rag-eval-worker
+  - path: stayledger-ai-assistant-postgres-observability-patch.yaml
     target:
       group: apps
       version: v1
       kind: Deployment
-      name: postgres
+      name: stayledger-ai-assistant-postgres
 
-# Immutable digest pin — release/1.0.0 API (5061a6b) staging 2026-08-01.
-# Tag: 5061a6b
-# Rollback API digest: sha256:9a8f6f952a6e5d4886b0ab803eb646367d55deadb826e38999d7600a98cf0bc8
+# Immutable staging image built from API `5061a6b` and admin web `3c261af`.
+# Tag: staging-20260801-5061a6b-3c261af
 images:
-  - name: putin111/stayledger-ai-assistant
-    newName: putin111/ai-hotel-assistant
-    digest: sha256:74ce00d3eb8775629926c56a865c78fd91607366346230830b7af0ea64a944e9
+  - name: putin111/stayledger-ai-assistant-api
+    newName: putin111/stayledger-ai-assistant-api
+    digest: sha256:3961a528490f2ca12b6cc25bee814714fbd11cc4f21eaf0904a2d918ae8412e7
 
 
 

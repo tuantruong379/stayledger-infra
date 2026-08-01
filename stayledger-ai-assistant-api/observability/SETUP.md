@@ -229,7 +229,7 @@ kubectl apply -f k8s/observability/servicemonitor-datastores.yaml
 kubectl apply -f k8s/observability/prometheus-rules.yaml
 kubectl apply -f k8s/observability/prometheus-recording-rules.yaml
 kubectl apply -f k8s/observability/prometheus-infrastructure-alerts.yaml
-kubectl apply -f k8s/observability/hotel-ai-alerts.yaml
+kubectl apply -f k8s/observability/stayledger-ai-assistant-alerts.yaml
 kubectl apply -f k8s/observability/datastore-exporter-alerts.yaml
 kubectl apply -f k8s/observability/metrics-pipeline-alerts.yaml
 kubectl apply -f k8s/observability/grafana-dashboard-golden-signals.yaml
@@ -247,7 +247,7 @@ kubectl apply -f k8s/observability/pod-disruption-budgets.yaml
 | [otel-collector.yaml](otel-collector.yaml) | OTLP → Tempo; ServiceMonitor on collector metrics |
 | [servicemonitor-api.yaml](servicemonitor-api.yaml) | Scrape `/metrics/prom` on `stayledger-ai-api` |
 | [prometheus-rules.yaml](prometheus-rules.yaml) | `stayledger-ai-slo` |
-| [hotel-ai-alerts.yaml](hotel-ai-alerts.yaml) | App alerts (`severity: p1\|p2\|p3`) |
+| [stayledger-ai-assistant-alerts.yaml](stayledger-ai-assistant-alerts.yaml) | App alerts (`severity: p1\|p2\|p3`) |
 | 5× `grafana-dashboard-*.yaml` | Dashboard ConfigMaps (`grafana_dashboard: "1"`) |
 
 Active index: [README.md](README.md).

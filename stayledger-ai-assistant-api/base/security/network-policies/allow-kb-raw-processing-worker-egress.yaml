@@ -8,14 +8,14 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-kb-raw-processing-worker
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
   policyTypes:
     - Egress
   egress:
     - to:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: pgbouncer
+              app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
       ports:
         - protocol: TCP
           port: 5432

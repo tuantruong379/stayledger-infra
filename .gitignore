@@ -5,6 +5,8 @@
 **/pgbouncer-secret.yaml
 **/*-secret.yaml
 **/*-secrets.yaml
+# Local, plaintext Secret exports (staging backup/restore only; never commit).
+secrets/
 
 # Local env / credential files (defense in depth)
 .env

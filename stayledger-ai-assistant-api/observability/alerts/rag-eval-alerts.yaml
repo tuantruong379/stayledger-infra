@@ -23,8 +23,8 @@ spec:
           annotations:
             summary: "P1: RAG eval detected a critical hallucination/factual failure"
             description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: judge flagged an unsupported price/policy/availability claim in the nightly RAG eval."
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
-            dashboard_url: "/d/hotel-golden/hotel-assistant-golden-signals?from=now-24h&to=now"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+            dashboard_url: "/d/hotel-golden/stayledger-ai-assistant-golden-signals?from=now-24h&to=now"
 
         - alert: RagEvalFaithfulnessLow
           expr: rag_eval_faithfulness_p10 < 0.7
@@ -36,7 +36,7 @@ spec:
           annotations:
             summary: "Nightly RAG eval faithfulness p10 below 0.7"
             description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: 10th-percentile faithfulness score is {{ $value }}, below the 0.7 gate."
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
 
         - alert: RagEvalRecallLow
           expr: rag_eval_recall_at_5 < 0.85
@@ -48,7 +48,7 @@ spec:
           annotations:
             summary: "Nightly RAG eval recall@5 below 0.85"
             description: "tenant={{ $labels.tenant_id }} language={{ $labels.language }}: recall@5 is {{ $value }}, below the 0.85 gate."
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
 
         - alert: RagEvalVnEnRecallGap
           # Reasoning: rag_eval_* gauges are scraped from every API pod; without collapsing
@@ -67,4 +67,4 @@ spec:
           annotations:
             summary: "Vietnamese/English recall@5 gap exceeds 10 points"
             description: "tenant={{ $labels.tenant_id }}: recall@5 diverges by more than 0.10 between vi/en, suggesting the embedding model is measurably weaker on one language."
-            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/rag-eval-quality.md"
+            runbook_url: "https://github.com/tuantruong379/ai-stayledger-ai-assistant/blob/main/docs/runbooks/rag-eval-quality.md"

@@ -1,29 +1,29 @@
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
-  name: hotel-assistant-metrics-pipeline
+  name: stayledger-ai-assistant-metrics-pipeline
   namespace: observability
   labels:
     release: kps
-    app.kubernetes.io/name: hotel-assistant-metrics-pipeline
+    app.kubernetes.io/name: stayledger-ai-assistant-metrics-pipeline
     app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   groups:
-    - name: hotel-assistant.metrics-pipeline
+    - name: stayledger-ai-assistant.metrics-pipeline
       rules:
         - alert: NATSDeploymentUnavailable
-          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="nats"} < 1
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="stayledger-ai-assistant-nats"} < 1
           for: 3m
           labels:
             severity: p2
-            component: nats
+            component: stayledger-ai-assistant-nats
             category: metrics-pipeline
           annotations:
             summary: "NATS is unavailable"
             description: "The real-time tenant metrics pipeline cannot accept per-turn events."
 
         - alert: MetricsAggregatorUnavailable
-          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="hotel-assistant-metrics-aggregator"} < 1
+          expr: kube_deployment_status_replicas_available{namespace="stayledger-ai-assistant", deployment="stayledger-ai-assistant-metrics-aggregator"} < 1
           for: 3m
           labels:
             severity: p2

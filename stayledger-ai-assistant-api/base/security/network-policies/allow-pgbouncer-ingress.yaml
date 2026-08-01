@@ -7,46 +7,46 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: pgbouncer
+      app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
   policyTypes:
     - Ingress
   ingress:
     - from:
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-api
+              app.kubernetes.io/name: stayledger-ai-assistant-api
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-channel-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-channel-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-webhook-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-webhook-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-metrics-aggregator
+              app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: alembic-upgrade
         # Reasoning: embed worker/backfill poll kb_chunks via HOTEL_OPS_DSN → PgBouncer.
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-kb-embed-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-kb-embed-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-rag-eval-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-rag-eval-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-kb-raw-processing-worker
+              app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-kb-embed-backfill
+              app.kubernetes.io/name: stayledger-ai-assistant-kb-embed-backfill
         # Reasoning: dedicated catalog sync worker uses HOTEL_OPS_DSN → PgBouncer.
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-pms-catalog-sync
+              app.kubernetes.io/name: stayledger-ai-assistant-pms-catalog-sync
         - podSelector:
             matchLabels:
-              app.kubernetes.io/name: postgres   # bootstrap job uses postgres SA
+              app.kubernetes.io/name: stayledger-ai-assistant-postgres   # bootstrap job uses stayledger-ai-assistant-postgres SA
       ports:
         - protocol: TCP
           port: 5432

@@ -18,16 +18,16 @@ labels:
     includeSelectors: false
 
 patches:
-  - path: frontend-configmap-patch.yaml
-  - path: frontend-deployment-patch.yaml
-  - path: patches/frontend-resources.yaml
-  - path: patches/scaling-frontend.yaml
-  - path: patches/frontend-service-clusterip.yaml
+  - path: admin-web-configmap-patch.yaml
+  - path: admin-web-deployment-patch.yaml
+  - path: patches/admin-web-resources.yaml
+  - path: patches/scaling-admin-web.yaml
+  - path: patches/admin-web-service-clusterip.yaml
     target:
       kind: Service
-      name: hotel-assistant-frontend
+      name: stayledger-ai-assistant-admin-web
 
 images:
-  - name: putin111/stayledger-ai-assistant-frontend
-    newName: putin111/ai-hotel-assistant-frontend
+  - name: putin111/stayledger-ai-assistant-admin-web
+    newName: putin111/stayledger-ai-assistant-admin-web
     newTag: "b7f47aa"

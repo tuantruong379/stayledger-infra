@@ -6,15 +6,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: hotel-assistant-api
+  name: stayledger-ai-assistant-api
   namespace: observability
   labels:
-    app.kubernetes.io/name: hotel-assistant-api
+    app.kubernetes.io/name: stayledger-ai-assistant-api
     app.kubernetes.io/part-of: stayledger-ai-assistant
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: hotel-assistant-api
+      app.kubernetes.io/name: stayledger-ai-assistant-api
   namespaceSelector:
     matchNames: [stayledger-ai-assistant]
   endpoints:

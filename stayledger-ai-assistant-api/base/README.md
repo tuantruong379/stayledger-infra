@@ -1,4 +1,4 @@
-# On-prem Kubernetes (hotel-assistant)
+# On-prem Kubernetes (stayledger-ai-assistant)
 
 ## 🆕 Multi-Tenant K8s Review & Fixes (2026-04-29)
 
@@ -28,7 +28,7 @@ kubectl get hpa -n stayledger-ai-assistant --watch
 ```bash
 # Register the Argo CD project/application after runtime secrets are present.
 kubectl apply -k k8s/argocd/
-kubectl -n argocd get application hotel-assistant-onprem
+kubectl -n argocd get application stayledger-ai-assistant-onprem
 ```
 
 See [Deployment (GitOps)](../../docs/deployment/README.md#argo-cd-gitops-optional).
@@ -39,7 +39,7 @@ See [Deployment (GitOps)](../../docs/deployment/README.md#argo-cd-gitops-optiona
 
 | Source | Purpose |
 | ------ | ------- |
-| `hotel-assistant-api-secret.yaml` (from `*.example.yaml`, **gitignored**) | Shared secrets only: Azure OpenAI **API key**, Redis URL, `HOTEL_OPS_DSN` (+ optional `_DIRECT`), admin/feedback keys, `SECRET_ENCRYPTION_KEY`, `JWT_SECRET`, `STAYLEDGER_WEBHOOK_SIGNING_SECRET`, temporary global `API_KEY` fallback. Azure endpoint/deployment/version and `STAYLEDGER_PMS_INTERNAL_BASE_URL` belong in the ConfigMap. |
+| `stayledger-ai-assistant-api-secret.yaml` (from `*.example.yaml`, **gitignored**) | Shared secrets only: Azure OpenAI **API key**, Redis URL, `HOTEL_OPS_DSN` (+ optional `_DIRECT`), admin/feedback keys, `SECRET_ENCRYPTION_KEY`, `JWT_SECRET`, `STAYLEDGER_WEBHOOK_SIGNING_SECRET`, temporary global `API_KEY` fallback. Azure endpoint/deployment/version and `STAYLEDGER_PMS_INTERNAL_BASE_URL` belong in the ConfigMap. |
 | `tenant_runtime_config` table (PostgreSQL) | **Per tenant:** display name, slug, `kb_path` (legacy hint), timezone, prompt profile, ICS/holiday data. Edited via `/admin/tenants/upsert`. |
 | `tenants` table (PostgreSQL) | Page/OA id → `tenant_id` routing for webhooks. Edited via `/admin/tenants/upsert`. |
 | `tenant_channel_secrets` table (PostgreSQL) | **Per tenant:** direct webhook API key, Meta credentials, and Zalo credentials. Sensitive values are encrypted on write, managed from Admin -> Tenant -> Config, and returned to UI as masked status only. |
@@ -50,15 +50,15 @@ Direct chat webhook auth (`POST /webhook*`) resolves keys in this order: tenant 
 
 ## Billing (admin KPI + usage export)
 
-- Server-side: set **`BILLING_USD_PER_1K_TOKENS`** in `hotel-assistant-api-config` (ConfigMap) or your API Secret; see **[docs/reference/README.md](../../docs/reference/README.md#billing-admin-dashboard-cost)**.
+- Server-side: set **`BILLING_USD_PER_1K_TOKENS`** in `stayledger-ai-assistant-api-config` (ConfigMap) or your API Secret; see **[docs/reference/README.md](../../docs/reference/README.md#billing-admin-dashboard-cost)**.
 - Default **`0`** keeps cost at zero until you choose a blended rate from your Azure OpenAI pricing.
 
 ## Performance tuning (§7 speed review)
 
 | Item | Manifest / code | Notes |
 |------|-----------------|-------|
-| API workers | `hotel-assistant-api-config` `UVICORN_WORKERS=2` | ~2 workers per 1 CPU request; raise CPU before workers |
-| Frontend image | `hotel-assistant-frontend.yaml` + `kustomization.yaml` | Base tag is a placeholder; **always** `kubectl apply -k k8s/onprem/` |
+| API workers | `stayledger-ai-assistant-api-config` `UVICORN_WORKERS=2` | ~2 workers per 1 CPU request; raise CPU before workers |
+| Frontend image | `stayledger-ai-assistant-admin-web.yaml` + `kustomization.yaml` | Base tag is a placeholder; **always** `kubectl apply -k k8s/onprem/` |
 | Worker readiness | webhook + channel worker `readinessProbe` | `check_worker_readiness()` — Redis + Postgres `SELECT 1` |
 | HPA custom metrics | `hpa-external-metrics.example.yaml` | Optional; needs prometheus-adapter + `hotel_assistant_queue_depth` |
 | Postgres connections | `postgres-tuning` `max_connections=100` | Budget: API replicas × `PG_POOL_MAX_SIZE` + workers + admin; use PgBouncer |
@@ -66,7 +66,7 @@ Direct chat webhook auth (`POST /webhook*`) resolves keys in this order: tenant 
 ## Apply order (typical)
 
 1. Namespace and storage classes (from `kustomization.yaml` resources).
-2. `redis-secret.yaml` → then `hotel-assistant-api-secret.yaml` (Redis password must match `REDIS_URL`).
+2. `redis-secret.yaml` → then `stayledger-ai-assistant-api-secret.yaml` (Redis password must match `REDIS_URL`).
 3. `kubectl apply -k k8s/onprem/`
 4. Configure per-tenant webhook keys, channel IDs, and channel credentials in Admin -> Tenant -> Config.
 
@@ -78,8 +78,8 @@ Direct chat webhook auth (`POST /webhook*`) resolves keys in this order: tenant 
 ## Verifying in a running API pod
 
 ```bash
-kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/readyz
-kubectl exec -n stayledger-ai-assistant deploy/hotel-assistant-api -- curl -fsS http://127.0.0.1:8000/livez
+kubectl exec -n stayledger-ai-assistant deploy/stayledger-ai-assistant-api -- curl -fsS http://127.0.0.1:8000/readyz
+kubectl exec -n stayledger-ai-assistant deploy/stayledger-ai-assistant-api -- curl -fsS http://127.0.0.1:8000/livez
 ```
 
 Tenant runtime config is fetched from PostgreSQL (`tenant_runtime_config` table) at startup and refreshed via Redis Pub/Sub. Webhook/channel credentials are fetched from `tenant_channel_secrets` with a short in-process TTL.
@@ -100,7 +100,7 @@ python scripts/generate_tenant_seed_sql.py \
 1. Apply SQL into Postgres operational DB:
 
 ```bash
-kubectl exec -i -n stayledger-ai-assistant deploy/postgres -- \
+kubectl exec -i -n stayledger-ai-assistant deploy/stayledger-ai-assistant-postgres -- \
   psql -U "$POSTGRES_USER" -d hotel_ops < k8s/onprem/generated/my-new-tenant.sql
 ```
 
@@ -136,8 +136,8 @@ website backend.
 KB runtime source of truth is **`kb_documents`** in PostgreSQL. Author markdown under `kb/` and import:
 
 ```bash
-export HOTEL_OPS_DSN="postgresql://user:pass@postgres:5432/hotel_ops"
-python scripts/import_kb_to_postgres.py --tenant-id my_new_tenant --kb-path kb/my_new_tenant_kb.md
+export HOTEL_OPS_DSN="postgresql://user:pass@stayledger-ai-assistant-postgres:5432/hotel_ops"
+python scripts/import_kb_to_stayledger-ai-assistant-postgres.py --tenant-id my_new_tenant --kb-path kb/my_new_tenant_kb.md
 ```
 
 Or edit via Admin UI (`/admin/tenants/<id>` → KB). Legacy `KB_SOURCE` and `config/tenants/*.json` are not read at runtime.

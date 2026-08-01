@@ -10,13 +10,13 @@
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
-  name: hotel-assistant-webhook-worker-queue
+  name: stayledger-ai-assistant-webhook-worker-queue
   namespace: stayledger-ai-assistant
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: hotel-assistant-webhook-worker
+    name: stayledger-ai-assistant-webhook-worker
   minReplicas: 1
   maxReplicas: 10
   metrics:

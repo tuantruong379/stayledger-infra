@@ -3,7 +3,7 @@
 Kubernetes manifests for the StayLedger AI Assistant **admin UI** (Next.js).
 
 - Source code: https://github.com/tuantruong379/stayledger-ai-assistant-admin-web
-- Image: `putin111/ai-hotel-assistant-frontend`
+- Image: `putin111/stayledger-ai-assistant-admin-web`
 - Namespace: `stayledger-ai-assistant` (shared; apply API stack first)
 - API manifests: [`../stayledger-ai-assistant-api/`](../stayledger-ai-assistant-api/)
 

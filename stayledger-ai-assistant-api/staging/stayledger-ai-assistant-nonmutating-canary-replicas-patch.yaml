@@ -1,0 +1,84 @@
+# Full-internal staging feature exercise.
+# Channel outbound remains sink-only; external Facebook/Zalo delivery is not enabled.
+# Catalog sync writes only derived AI Assistant catalog state in staging.
+# PMS outbox and draft booking are enabled for authorized staging tests; this overlay
+# must never be reused for production.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-channel-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-webhook-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-pms-catalog-sync
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-pms-outbox
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-api-config
+  namespace: stayledger-ai-assistant
+data:
+  PMS_CATALOG_SYNC_ENABLED: "1"
+  PMS_CATALOG_SYNC_DRY_RUN: "0"
+  PMS_OUTBOX_WORKER_ENABLED: "1"
+  PMS_DRAFT_BOOKING_ENABLED: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-api
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    metadata:
+      annotations:
+        stayledger.io/staging-feature-profile: full-internal-v5-litellm-thread
+    spec:
+      containers:
+        - name: api
+          env:
+            - name: PMS_DRAFT_BOOKING_ENABLED
+              value: "1"
+            - name: PMS_OUTBOX_WORKER_ENABLED
+              value: "1"
+            - name: PMS_WORKERS_IN_API
+              value: "0"

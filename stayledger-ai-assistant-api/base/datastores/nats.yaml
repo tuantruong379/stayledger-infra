@@ -5,21 +5,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nats
+  name: stayledger-ai-assistant-nats
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: nats
+    app.kubernetes.io/name: stayledger-ai-assistant-nats
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: messaging
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: nats
+      app.kubernetes.io/name: stayledger-ai-assistant-nats
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: nats
+        app.kubernetes.io/name: stayledger-ai-assistant-nats
         app.kubernetes.io/part-of: stayledger-ai-assistant
         app.kubernetes.io/component: messaging
     spec:
@@ -31,9 +31,9 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: nats
+        - name: stayledger-ai-assistant-nats
           image: nats:2.10-alpine
-          args: ["--name", "hotel-assistant-nats", "--http_port", "8222"]
+          args: ["--name", "stayledger-ai-assistant-nats", "--http_port", "8222"]
           ports:
             - name: client
               containerPort: 4222
@@ -67,10 +67,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nats
+  name: stayledger-ai-assistant-nats
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: nats
+    app.kubernetes.io/name: stayledger-ai-assistant-nats
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: messaging
 spec:
@@ -83,4 +83,4 @@ spec:
       port: 8222
       targetPort: monitor
   selector:
-    app.kubernetes.io/name: nats
+    app.kubernetes.io/name: stayledger-ai-assistant-nats

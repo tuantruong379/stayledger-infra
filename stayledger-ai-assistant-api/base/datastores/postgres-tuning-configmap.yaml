@@ -1,5 +1,5 @@
 # PostgreSQL performance tuning parameters.
-# These are passed as -c flags to the postgres process in postgres-deployment.yaml.
+# These are passed as -c flags to the stayledger-ai-assistant-postgres process in postgres-deployment.yaml.
 # Sized for a pod with 4Gi memory limit (requests: 1Gi).
 #
 # Baseline: 2Gi RAM allocation assumption (conservative for shared node).
@@ -10,7 +10,7 @@ metadata:
   name: postgres-tuning
   namespace: stayledger-ai-assistant
   labels:
-    app.kubernetes.io/name: postgres
+    app.kubernetes.io/name: stayledger-ai-assistant-postgres
     app.kubernetes.io/part-of: stayledger-ai-assistant
     app.kubernetes.io/component: database
 data:
