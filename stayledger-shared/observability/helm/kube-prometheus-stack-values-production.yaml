@@ -22,6 +22,14 @@ prometheus:
   prometheusSpec:
     retention: 7d
     retentionSize: "12GB"
+    # Pair with stayledger-shared/production/alert-relabel-env.secret.yaml.
+    externalLabels:
+      environment: production
+      env: production
+      cluster: stayledger
+    additionalAlertRelabelConfigs:
+      name: stayledger-alert-relabel
+      key: config.yaml
     resources:
       requests: { cpu: 150m, memory: 768Mi }
       limits:   { cpu: 500m, memory: 1536Mi }

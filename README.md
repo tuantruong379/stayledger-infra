@@ -19,6 +19,10 @@ kubectl config use-context HK-HUB-Cluster      # staging
 
 **Production releases:** use `scripts/deploy-production-stayledger-safe.ps1` (requires explicit image tags and `-ConfirmProd`). Canonical runbooks live in workspace [docs/deployment/](../docs/deployment/README.md).
 
+**Folder layout (Vietnamese guide + resource mapping):** [docs/FOLDER-STRUCTURE.md](docs/FOLDER-STRUCTURE.md)
+
+**Split cluster export by project:** `node scripts/split-infra-export-by-project.mjs <artifacts/infra-export-dir>` (requires `npm install yaml` in `scripts/` or run from CI).
+
 ## Structure
 
 ```text

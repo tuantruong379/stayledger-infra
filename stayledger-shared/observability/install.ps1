@@ -84,7 +84,9 @@ kubectl apply -f (Join-Path $Root 'grafana/dashboards/stayledger-pms')
 kubectl apply -f (Join-Path $Root 'grafana/dashboards/stayledger-ai-assistant')
 kubectl apply -f (Join-Path $Root 'exporters')
 kubectl apply -f (Join-Path $Root 'otel-collector')
+# Apply alerting rules (exclude nothing; alert-relabel-env.secret.yaml is staging-only).
 kubectl apply -f (Join-Path $Root 'alerting')
+kubectl -n observability patch prometheus kps-prometheus --type merge -p '{"spec":{"additionalAlertRelabelConfigs":{"name":"stayledger-alert-relabel","key":"config.yaml"},"externalLabels":{"environment":"staging","env":"staging","cluster":"HK-HUB-Cluster"}}}'
 
 Write-Host "Waiting for core pods..."
 kubectl -n observability rollout status deployment/kps-grafana --timeout=300s 2>$null

@@ -39,7 +39,7 @@ data:
   AI_STREAMING_ENABLED: "true"
   AI_QUOTA_ALERT_EMAIL_ENABLED: "true"
   AI_DAILY_SUMMARY_LLM: "false"
-  AI_REQUEST_TIMEOUT_MS: "30000"
+  # AI_REQUEST_TIMEOUT_MS removed — unused by API (timeout uses AZURE_OPENAI_REQUEST_TIMEOUT_MS / hardcoded).
   # Purge staff Copilot conversations not updated in N days (daily 3AM cron).
   AI_CONVERSATION_RETENTION_DAYS: "90"
   AI_EMBEDDING_PROVIDER: "azure"
@@ -52,7 +52,7 @@ data:
   AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
   AZURE_OPENAI_API_VERSION: "2026-03-17"
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
-  AI_REVENUE_ENABLED: "true"
+  # AI_REVENUE_ENABLED removed — documented gate with no runtime reader in stayledger-api.
   AI_REVENUE_NARRATIVE_LLM: "false"
   AI_AUTOMATION_ENABLED: "true"
   AI_AUTOMATION_EXECUTION_ENABLED: "true"
@@ -68,7 +68,7 @@ data:
   DOCUMENT_MAX_FILE_SIZE_MB: "8"
   DOCUMENT_ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/webp,application/pdf"
   DOCUMENT_RETENTION_DAYS_DEFAULT: "90"
-  DOCUMENT_BACKUP_MODE: "disaster_recovery_only"
+  # DOCUMENT_BACKUP_MODE lives on document-backup CronJob only (not read by API process).
   DOCUMENT_BACKUP_ENABLED: "true"
   DOCUMENT_BACKUP_PROVIDER: "s3"
   DOCUMENT_BACKUP_PREFIX: "production/guest-documents"
@@ -92,7 +92,7 @@ data:
   EXTERNAL_API_SIGNATURE_REQUIRED: "true"
   AI_METERING_MODE: "enforce"
   ENTITLEMENT_FAIL_CLOSED: "true"
-  EXTERNAL_API_CONTRACT_VERSION: "1.0.0"
+  # EXTERNAL_API_CONTRACT_VERSION removed — API hardcodes 1.0.0; env was never read.
   PMS_WEB_CHAT_DURABLE_MAPPING_ENABLED: "false"
   GUEST_CHAT_USAGE_LEDGER_V1_ENABLED: "false"
   GUEST_CHAT_QUOTA_ENFORCEMENT_MODE: "off"

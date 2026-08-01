@@ -27,13 +27,13 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: alembic-upgrade
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: rag-eval
         # Reasoning: embed worker/backfill poll kb_chunks via HOTEL_OPS_DSN → PgBouncer.
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: hotel-assistant-kb-embed-worker
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: hotel-assistant-rag-eval-worker
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: hotel-assistant-kb-embed-backfill

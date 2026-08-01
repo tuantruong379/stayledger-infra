@@ -41,7 +41,7 @@ data:
   OTEL_METRICS_EXPORTER: "none"
   OTEL_LOGS_EXPORTER: "none"
   OTEL_PROPAGATORS: "tracecontext,baggage"
-  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=onprem"
+  # deployment.environment is set via overlay patches when needed (staging|production).
 
 ---
 apiVersion: apps/v1

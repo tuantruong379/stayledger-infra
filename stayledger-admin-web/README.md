@@ -2,16 +2,37 @@
 
 ```text
 stayledger-admin-web/
-├── base/                 # Deployment + Service + HPA + ServiceAccount (kustomize base)
-├── staging/              # Staging overlay (namespace: stayledger-staging, NodePort 30010)
+├── base/                 # Shared manifests (Deployment, HPA, PDB, NetworkPolicy, SA)
+├── staging/              # Overlay for STAGING cluster
 │   ├── kustomization.yaml
 │   ├── configmap.yaml
-│   └── patches/
-└── production/           # Production overlay (namespace: stayledger, ClusterIP + Ingress)
+│   └── patches/          # Env-only diffs vs base (staging)
+└── production/           # Overlay for PRODUCTION cluster
     ├── kustomization.yaml
     ├── configmap.yaml
-    └── patches/
+    ├── ingress.yaml
+    └── patches/          # Env-only diffs vs base (production)
 ```
+
+## Clusters (do not mix)
+
+| Overlay | kubectl context | Namespace | Public edge |
+|---|---|---|---|
+| `staging/` | **`HK-HUB-Cluster`** | `stayledger-staging` | Ingress `stg-app.stayledger.io` + NodePort **30010** |
+| `production/` | **`stayledger`** | `stayledger` | Ingress `app.stayledger.io` (Traefik) — **ClusterIP only**, no NodePort |
+
+Always run `kubectl config current-context` before apply.
+
+## Why two `patches/` folders?
+
+Kustomize keeps **one shared `base/`**, then each environment applies **its own patches**:
+
+| Folder | Wired in `kustomization.yaml` | Purpose |
+|---|---|---|
+| `staging/patches/` | `deployment-staging.yaml` | Staging replicas / labels / revisionHistoryLimit |
+| `production/patches/` | `service-clusterip.yaml`, `deployment-production.yaml` | Force ClusterIP (strip NodePort); production deploy tweaks |
+
+`production/patches/admin-web-nodeport-patch.yaml` is a **legacy leftover** (not listed in `production/kustomization.yaml`). Production intentionally uses `service-clusterip.yaml` instead.
 
 Infra prerequisites (postgres, redis, secrets) live in `stayledger-shared/datastores/`.
 

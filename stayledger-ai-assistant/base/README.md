@@ -39,7 +39,7 @@ See [Deployment (GitOps)](../../docs/deployment/README.md#argo-cd-gitops-optiona
 
 | Source | Purpose |
 | ------ | ------- |
-| `hotel-assistant-api-secret.yaml` (from `*.example.yaml`, **gitignored**) | Shared: Azure OpenAI, Redis URL, `HOTEL_OPS_DSN`, admin/feedback keys, `SECRET_ENCRYPTION_KEY`, and temporary global `API_KEY` fallback. |
+| `hotel-assistant-api-secret.yaml` (from `*.example.yaml`, **gitignored**) | Shared secrets only: Azure OpenAI **API key**, Redis URL, `HOTEL_OPS_DSN` (+ optional `_DIRECT`), admin/feedback keys, `SECRET_ENCRYPTION_KEY`, `JWT_SECRET`, `STAYLEDGER_WEBHOOK_SIGNING_SECRET`, temporary global `API_KEY` fallback. Azure endpoint/deployment/version and `STAYLEDGER_PMS_INTERNAL_BASE_URL` belong in the ConfigMap. |
 | `tenant_runtime_config` table (PostgreSQL) | **Per tenant:** display name, slug, `kb_path` (legacy hint), timezone, prompt profile, ICS/holiday data. Edited via `/admin/tenants/upsert`. |
 | `tenants` table (PostgreSQL) | Page/OA id → `tenant_id` routing for webhooks. Edited via `/admin/tenants/upsert`. |
 | `tenant_channel_secrets` table (PostgreSQL) | **Per tenant:** direct webhook API key, Meta credentials, and Zalo credentials. Sensitive values are encrypted on write, managed from Admin -> Tenant -> Config, and returned to UI as masked status only. |

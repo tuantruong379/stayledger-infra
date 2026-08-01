@@ -13,7 +13,8 @@ spec:
   route:
     # Reasoning: blackhole by default so KubePodNotReady / CPUThrottling do not flood platform@.
     receiver: "null"
-    groupBy: [alertname, severity]
+    # Reasoning: group by env (Prometheus alertRelabelings) so staging/prod never share a group.
+    groupBy: [alertname, severity, env]
     groupWait: 30s
     groupInterval: 5m
     repeatInterval: 4h
@@ -53,9 +54,14 @@ spec:
             name: alertmanager-smtp
             key: smtp-password
           sendResolved: true
+          # Reasoning: Subject shows env so inbox triage does not depend on body open.
+          headers:
+            - key: Subject
+              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }} {{ .CommonLabels.severity }}'
           html: |
+            <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
             {{ range .Alerts }}
-            <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }})</p>
+            <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }}) — env={{ .Labels.env }}</p>
             <p>{{ .Annotations.summary }}</p>
             <p>{{ .Annotations.description }}</p>
             {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
@@ -74,9 +80,13 @@ spec:
             name: alertmanager-smtp
             key: smtp-password
           sendResolved: true
+          headers:
+            - key: Subject
+              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] CRITICAL {{ .CommonLabels.alertname }}'
           html: |
+            <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
             {{ range .Alerts }}
-            <p><b>CRITICAL: {{ .Labels.alertname }}</b></p>
+            <p><b>CRITICAL: {{ .Labels.alertname }}</b> — env={{ .Labels.env }}</p>
             <p>{{ .Annotations.summary }}</p>
             <p>{{ .Annotations.description }}</p>
             {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}

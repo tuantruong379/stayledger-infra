@@ -20,8 +20,8 @@ data:
   PRICING_CACHE_TTL_S: "420"
   # Reasoning: socket timeout for BRPOP (blocking ops); must exceed BRPOP timeout to avoid read timeouts.
   REDIS_SOCKET_TIMEOUT_S: "5"
-  # Reasoning: when enabled (worker env), channel queue must use Redis only and fail fast if unavailable.
-  CHANNEL_QUEUE_FAIL_CLOSED: "0"
+  # Reasoning: channel queue must use Redis only and fail fast if unavailable (startup safety in deployed envs).
+  CHANNEL_QUEUE_FAIL_CLOSED: "1"
 
   # --- Process / logs ---
   PYTHONUNBUFFERED: "1"
@@ -42,7 +42,9 @@ data:
   # (TENANT_CONFIG_SOURCE, TENANT_REGISTRY_SOURCE, USAGE_EVENTS_STORE_BACKEND,
   # FEEDBACK_STORE_BACKEND, TENANTS_REGISTRY_PATH, USAGE_EVENTS_LOG_PATH)
   # are no longer read by the application.
+  # Fail-closed tenant resolution: never rely on a default hotel id in deployed envs.
   DEFAULT_TENANT_ID: ""
+  REQUIRE_RESOLVED_PROPERTY: "1"
   TENANT_DAILY_CHAT_TURN_LIMIT: "0"   # 0=disabled; set per cluster (or later per-tenant)
   # Phase C: /readyz fails closed when Postgres is unreachable.
   READY_REQUIRES_POSTGRES: "1"
@@ -78,16 +80,15 @@ data:
   # empty allow-list and the browser blocks all cross-origin requests to the API.
   ENVIRONMENT: "production"
   APP_ENV: "production"
-  APP_VERSION: "3.0.4"
+  # APP_VERSION is set per overlay from the pinned image tag (do not hardcode here).
   # Overlay patches override these for staging/production stayledger hosts.
   ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
   CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
 
   # --- POST /webhook (webhook_auth.py, rate_limiter.py) ---
   ALLOW_NO_AUTH: "false"
-  # Set to "1" after all tenants have a DB-backed webhook_api_key.
-  # While "0", API_KEY remains a fallback for tenants without a per-tenant key.
-  WEBHOOK_REQUIRE_TENANT_API_KEY: "0"
+  # Per-tenant webhook_api_key in tenant_channel_secrets is required; no shared API_KEY fallback.
+  WEBHOOK_REQUIRE_TENANT_API_KEY: "1"
   WEBHOOK_TRUST_X_FORWARDED_FOR: "1"
   # Reasoning: allow higher throughput during k6/scenario validation; tune back down after load-test baselining.
   WEBHOOK_RATE_LIMIT_PER_MINUTE: "600"
@@ -101,10 +102,12 @@ data:
   # --- Pricing (Postgres-native; n8n/webhook path retired) ---
   PRICING_RESOLVE_TOTAL_BUDGET_S: "15"
   PRICING_REJECT_PAST_DATES: "1"
+  # Legacy pricing-webhook health probe — keep off (path retired).
   PRICING_WEBHOOK_HEALTH_PROBE: "0"
 
   # --- PMS connector gates ---
   # Deployment gates only. Per-property provider/capabilities live in pms_connections.
+  # Overlays enable StayLedger / conversation sync when qualified.
   PMS_CONNECTOR_ENABLED: "1"
   PMS_PROVIDER_DEFAULT: "local"
   PMS_STAYLEDGER_ENABLED: "0"
@@ -113,6 +116,12 @@ data:
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_OUTBOX_WORKER_ENABLED: "0"
   PMS_OUTBOX_WORKER_POLL_SECONDS: "15"
+
+  # --- RAG (pgvector primary; startup safety requires this in deployed envs) ---
+  RAG_RETRIEVAL_BACKEND: "pgvector"
+  RAG_CHUNK_PERSIST: "1"
+  RAG_EMBEDDING_DIMENSIONS: "1536"
+  FEATURE_RAG_PGVECTOR: "1"
 
   # --- LLM in-process cache (llm_cache.py) ---
   LLM_CACHE_TTL_S: "300"
@@ -133,6 +142,12 @@ data:
   LLM_OPERATION_RAG_TRANSLATE_MAX_TOKENS: "96"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "3.5"
   LLM_OPERATION_BOOKING_EXTRACT_MAX_TOKENS: "96"
+  # Azure OpenAI routing (non-secret). API key stays in hotel-assistant-api-secrets.
+  # Overlay patches override endpoint/deployment per environment.
+  AZURE_OPENAI_ENDPOINT: "https://stayledger-resource.openai.azure.com"
+  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
   AZURE_OPENAI_CLIENT_MAX_RETRIES: "0"
   # Reasoning: admin overview polls frequently; short TTL cuts repeated aggregate DB scans without hiding changes for long.
   ADMIN_OVERVIEW_CACHE_TTL_S: "30"
@@ -147,7 +162,9 @@ data:
   FACEBOOK_GRAPH_API_VERSION: "v25.0"
   FACEBOOK_SKIP_SIGNATURE_VERIFY: "0"
   ZALO_WEBHOOK_SKIP_MAC_VERIFY: "0"
-  ZALO_WEBHOOK_REQUIRE_MAC: "0"
+  ZALO_WEBHOOK_REQUIRE_MAC: "1"
+  # Unknown channel bindings must drop, not enqueue.
+  CHANNEL_BINDING_ENFORCEMENT: "enforce"
 
   # --- Optional log truncation (observability/ai_pipeline.py); omit to use code defaults ---
   LOG_AI_PROMPT_MAX_CHARS: "6000"
@@ -155,6 +172,9 @@ data:
 
   # --- Optional router QA (routing/router_shadow.py) — keep off in prod unless you run shadow validation ---
   ROUTER_SHADOW_VALIDATE: "0"
+  # --- Optional keyword-alias regex-migration QA (services/ai/routing/keyword_alias.py) —
+  # observation-only (never changes the actual routing decision); keep off in prod ---
+  KEYWORD_ALIAS_SHADOW_VALIDATE: "0"
 
   # --- OpenTelemetry (app/observability/otel.py — manual SDK init, not opentelemetry-instrument) ---
   OTEL_SERVICE_NAME: "hotel-assistant-api"
@@ -163,4 +183,4 @@ data:
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318/v1/traces"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
   OTEL_EXPORTER_OTLP_TIMEOUT: "5"
-  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=onprem"
+  # deployment.environment is set per overlay (staging|production) — do not hardcode onprem.

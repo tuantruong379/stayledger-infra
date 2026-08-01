@@ -9,8 +9,16 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:4800e2d36dc1c1c2d284b7f01b3e812f0d51cb418847a2312b2abddf5a1af85d"
-  STAYLEDGER_IMAGE_TAG: "release-1.2.58-04d09fc"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:7359d473c5aad9b4fb0a31cf08d39880f7ee5d8a131b83702e783475a0fd677f"
+  STAYLEDGER_IMAGE_TAG: "staging-wave2-20260731-6a3cc94"
+  APP_VERSION: "staging-wave2-20260731-6a3cc94"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
+  # Non-secret Azure + PMS routing (moved out of hotel-assistant-api-secrets).
+  AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
+  AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
+  STAYLEDGER_PMS_INTERNAL_BASE_URL: "https://stg-api.stayledger.io"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "4"
   # Staging rollout safety: one Uvicorn worker per API replica. The node is
@@ -19,22 +27,21 @@ data:
   UVICORN_WORKERS: "1"
   ADMIN_WEB_PUBLIC_URL: "https://stg-assistant.stayledger.io"
   CORS_ORIGINS: "https://stg-assistant.stayledger.io,http://10.89.1.40:30081,http://localhost:3000,http://127.0.0.1:3000,http://localhost:3003"
-  # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
-  # ConfigMap `data` key-by-key, so this override is enough to blank it here without editing
-  # base (base still serves other overlays/tests). Fail-closed tenant resolution must not rely
-  # on a default tenant in staging/production — see app/tenancy/context.py.
+  # Keep blank (base already ""); fail-closed tenant resolution must not rely on a default hotel.
   DEFAULT_TENANT_ID: ""
-  # P0: API pods must not run side-effect writers under Uvicorn. Dedicated Deployments own them.
-  API_NOTIFICATION_OUTBOX_ENABLED: "0"
+  # Temporary: re-enable API-embedded notification outbox until a dedicated
+  # Deployment exists — 11 cupid_hotel emails stuck pending since 2026-07-27
+  # (attempts=0) because no worker was polling booking_notifications_outbox.
+  API_NOTIFICATION_OUTBOX_ENABLED: "1"
   API_ALERT_EVALUATOR_ENABLED: "0"
-  # P0 (F-P0-09/PR-J): channel outbound queue must fail closed, not silently drop on backpressure.
+  # Explicit pins (also base defaults): fail-closed channel queue + resolved property.
   CHANNEL_QUEUE_FAIL_CLOSED: "1"
-  # P0 (F-P0-01/PR-B,C): reject turns without a resolved property/tenant instead of guessing.
   REQUIRE_RESOLVED_PROPERTY: "1"
   # P0 (F-P0-03,04/PR-E): route guest FAQ/RAG hot path to scope-aware hybrid retrieval
   # (kb_chunks 0037 schema); canary at 100% now that fail-closed guards are in place.
   RAG_SCOPED_HYBRID_HOTPATH_ENABLED: "1"
   RAG_SCOPED_HYBRID_CANARY_PERCENT: "100"
+  RAG_LEGACY_WARMUP_ENABLED: "0"
   PMS_STAYLEDGER_ENABLED: "1"
   # Recovery freeze / dedicated-worker cutover: keep mutating writers OFF in the overlay.
   # Re-enable only via Phase 9 controlled sequence after digest deploy + gates.
@@ -93,8 +100,7 @@ data:
   # Sink: ack channel jobs without Facebook/Zalo HTTP. Live provider delivery remains DEFERRED_BY_SCOPE.
   # Apply with final candidate image that includes sink mode; workers stay at replicas=0 until fixture.
   CHANNEL_OUTBOUND_MODE: "sink"
-  # KB upsert allowlist — canary tenant only while writers partially thawed.
-  RAG_KB_UPSERT_TENANT_ALLOWLIST: "stg_ai_rag_validation_property_2"
+  # KB upsert allowlist — staging canary plus Cupid KB revision workflow.
   # Guest-facing RAG citation footer (section titles only; no paths/UUIDs).
   RAG_GUEST_CITATIONS: "1"
   # Phase 8 full staging cutover: pgvector primary for all tenants.

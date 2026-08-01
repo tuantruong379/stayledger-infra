@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hotel-assistant-metrics-aggregator-config
+  namespace: stayledger-ai-assistant
+data:
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production"

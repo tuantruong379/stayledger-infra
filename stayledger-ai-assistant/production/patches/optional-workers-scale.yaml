@@ -1,12 +1,12 @@
-# Single-node: pause non-critical workers under CPU pressure.
-# Re-enable (replicas: 1) after embed backlog drains / metrics needed.
+# Keep embedding continuously enabled while the production backlog is non-zero.
+# Revisit on-demand scheduling only after backlog=0 and a tested schedule/alert exists.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hotel-assistant-kb-embed-worker
   namespace: stayledger-ai-assistant
 spec:
-  replicas: 0
+  replicas: 1
 
 ---
 apiVersion: apps/v1

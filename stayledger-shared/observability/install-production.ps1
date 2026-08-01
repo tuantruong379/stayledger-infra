@@ -202,6 +202,11 @@ $apiSm = Join-Path $Root '../production/servicemonitor.yaml'
 if (Test-Path $apiSm) { kubectl --context=$ctx apply -f $apiSm }
 $apiRules = Join-Path $Root '../production/prometheusrule.yaml'
 if (Test-Path $apiRules) { kubectl --context=$ctx apply -f $apiRules }
+$alertRelabel = Join-Path $Root '../production/alert-relabel-env.secret.yaml'
+if (Test-Path $alertRelabel) {
+  kubectl --context=$ctx apply -f $alertRelabel
+  kubectl --context=$ctx -n observability patch prometheus kps-prometheus --type merge -p '{"spec":{"additionalAlertRelabelConfigs":{"name":"stayledger-alert-relabel","key":"config.yaml"},"externalLabels":{"environment":"production","env":"production","cluster":"stayledger"}}}'
+}
 $aiSm = Join-Path $Root '../../stayledger-api/base/ai-worker-servicemonitor.yaml'
 if (Test-Path $aiSm) { kubectl --context=$ctx apply -n stayledger -f $aiSm }
 

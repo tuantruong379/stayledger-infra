@@ -1,0 +1,73 @@
+# Alerts for the KB embedding backlog, scraped from kb_chunks_pending_embedding* gauges
+# exposed by app/observability/prom_client.py at /metrics/prom.
+#
+# Why this exists (assessment finding F-ING-001 / F-INV-006): retrieval requires
+# `status='embedded' AND embedding IS NOT NULL`, and `process_embedding_batch` — invoked only by
+# `app/workers/kb_embedding_worker.py` — is the sole writer of that state. Production ran
+# hotel-assistant-kb-embed-worker at replicas:0. Ingestion kept reporting success, the admin UI
+# kept showing the chunks, and nothing became retrievable. There was no metric and no alert, which
+# is precisely why it went unnoticed.
+#
+# The same worker is also the only producer of RAG-eval jobs (enqueue_ready_eval_jobs), so a
+# stalled backlog additionally means no generation can ever reach `qualified` and be published.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: kb-embedding-backlog-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: kb-embedding.backlog
+      rules:
+        # Primary signal: work is arriving but nothing is draining it.
+        - alert: KbEmbeddingBacklogStalled
+          expr: max by (tenant_id) (kb_chunks_pending_embedding_oldest_age_seconds) > 900
+          for: 5m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: rag_freshness
+          annotations:
+            summary: "P1: KB chunks have been awaiting embedding for over 15 minutes"
+            description: >-
+              tenant={{ $labels.tenant_id }}: the oldest un-embedded chunk is {{ $value | humanizeDuration }} old.
+              Un-embedded chunks are NOT retrievable, so newly ingested knowledge is invisible to guests,
+              and no generation can reach `qualified` because the RAG-eval controller is fed by the same worker.
+              First check that hotel-assistant-kb-embed-worker has a running replica.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+            dashboard_url: "/d/hotel-golden/hotel-assistant-golden-signals?from=now-6h&to=now"
+
+        # Catches the exact production condition: worker scaled to zero, backlog frozen.
+        - alert: KbEmbeddingWorkerNotDraining
+          expr: |
+            sum by (tenant_id) (kb_chunks_pending_embedding) > 0
+            and
+            delta(sum by (tenant_id) (kb_chunks_pending_embedding)[30m:]) >= 0
+          for: 30m
+          labels:
+            severity: p1
+            service: hotel-ai-assistant
+            slo: rag_freshness
+          annotations:
+            summary: "P1: embedding backlog is not draining — worker may be scaled to 0"
+            description: >-
+              tenant={{ $labels.tenant_id }}: {{ $value }} chunks pending and the backlog has not
+              decreased in 30 minutes. Verify replicas on hotel-assistant-kb-embed-worker; the
+              production overlay has previously pinned it to 0 in
+              production/patches/optional-workers-scale.yaml.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"
+
+        # Slow-burn signal for a backlog that drains but never keeps up.
+        - alert: KbEmbeddingBacklogGrowing
+          expr: sum by (tenant_id) (kb_chunks_pending_embedding) > 500
+          for: 2h
+          labels:
+            severity: p2
+            service: hotel-ai-assistant
+            slo: rag_freshness
+          annotations:
+            summary: "Embedding backlog above 500 chunks for 2h"
+            description: >-
+              tenant={{ $labels.tenant_id }}: {{ $value }} chunks pending embedding. The worker is
+              running but not keeping up — consider batch size (RAG_EMBEDDING_BATCH_SIZE) or replicas.
+            runbook_url: "https://github.com/tuantruong379/ai-hotel-assistant/blob/main/docs/runbooks/kb-embedding-backlog.md"

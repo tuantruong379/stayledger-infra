@@ -23,6 +23,7 @@ patches:
   - path: api-configmap-patch.yaml
   - path: frontend-configmap-patch.yaml
   - path: frontend-deployment-patch.yaml
+  - path: metrics-aggregator-configmap-patch.yaml
   - path: patches/scaling-production.yaml
   - path: patches/api-resources.yaml
   - path: patches/postgres-resources.yaml
@@ -44,13 +45,12 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
-# Pin to CI-published Docker Hub tags (putin111/ai-hotel-assistant*).
+# Pin to clean-tree wave2 release digest (backend commit f05db1023eb114e5ae56041d4055844608e6b8cf).
 # Match post-base-transform image names, then remap to published repos.
-# 2026-07-21: fb-book-c — deterministic branch-count FAQ for "mấy chi nhánh" (FB/webhook parity).
 images:
   - name: putin111/stayledger-ai-assistant
     newName: putin111/ai-hotel-assistant
-    newTag: "fb-book-20260721c"
+    digest: sha256:098318c7eca630b25885e006fe6fbb880d546c74b51d7d5025e2b2707d2d4dcf
   - name: putin111/stayledger-ai-assistant-frontend
     newName: putin111/ai-hotel-assistant-frontend
     newTag: "b7f47aa"

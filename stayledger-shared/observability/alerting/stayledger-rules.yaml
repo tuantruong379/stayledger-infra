@@ -282,29 +282,10 @@ spec:
             runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
             dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
 
-        - alert: AiTokenQuotaWarning
-          expr: max(ai_quota_usage_percent{job="stayledger-api"}) > 80
-          for: 15m
-          labels:
-            severity: warning
-            team: platform
-          annotations:
-            summary: "AI token quota above 80%"
-            description: "Max quota across properties: {{ $value }}%. Notify account team."
-            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
-            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
-
-        - alert: AiTokenQuotaCritical
-          expr: max(ai_quota_usage_percent{job="stayledger-api"}) > 95
-          for: 5m
-          labels:
-            severity: critical
-            team: platform
-          annotations:
-            summary: "AI token quota above 95% — approaching limit"
-            description: "Max quota: {{ $value }}%. Throttle heavy users and notify stakeholders immediately."
-            runbook_url: "https://wiki.internal/runbooks/stayledger/AiTokenQuota"
-            dashboard_url: "http://10.89.1.40:30030/d/stayledger-ai"
+        # AiTokenQuotaWarning / AiTokenQuotaCritical removed: max(ai_quota_usage_percent)
+        # permanently false-fired on seeded capability_over_limit_* fixtures (~168%).
+        # Prefer AiQuotaBlocksHigh (real 429 impact) and per-property StayLedgerAIQuotaNearExhaustion
+        # (with capability_* excluded) when emailing quota risk.
 
     - name: stayledger.channel-manager
       interval: 30s

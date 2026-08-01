@@ -1,23 +1,22 @@
 # stayledger-admin-web — Production Deployment
 
-Namespace: `stayledger` | Domain: `app.stayledger.io` | NodePort: `30000`
+| | |
+|---|---|
+| **kubectl context** | `stayledger` (production cluster — not `HK-HUB-Cluster`) |
+| **Namespace** | `stayledger` |
+| **Domain** | `app.stayledger.io` |
+| **Service** | ClusterIP only (see `patches/service-clusterip.yaml`) — no NodePort |
 
-## Apply order
+## Apply order (preferred)
 
 ```powershell
-# Assumes datastores and API are already deployed (namespace + secrets exist).
-export IMAGE_TAG=a1b2c3d   # 7-char short commit from CI (match API release; no sha- prefix)
-
-sed "s|COMMIT_SHA|${IMAGE_TAG}|g" stayledger-admin-web/production/deployment.yaml | kubectl apply -f -
-kubectl apply -f stayledger-admin-web/production/configmap.yaml
-kubectl apply -f stayledger-admin-web/production/serviceaccount.yaml
-kubectl apply -f stayledger-admin-web/production/networkpolicy.yaml
-kubectl apply -f stayledger-admin-web/production/pdb.yaml
+kubectl config use-context stayledger
+# Bump images[].newTag (or digest) in production/kustomization.yaml, then:
+kubectl apply -k stayledger-admin-web/production/
 kubectl rollout status deployment/stayledger-admin-web -n stayledger
-
-# Apply ingress after DNS propagates
-kubectl apply -f stayledger-admin-web/production/ingress.yaml
 ```
+
+Legacy file-by-file apply under `production/*.yaml` is discouraged — use `-k` so `images:` + `patches/` stay in sync.
 
 ## Rolling update
 

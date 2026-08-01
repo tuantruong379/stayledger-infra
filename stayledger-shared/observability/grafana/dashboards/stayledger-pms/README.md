@@ -9,21 +9,38 @@ This phase scopes the **PMS production-readiness** set to six dashboards, number
 Overview**, then drill into API, booking/payment, database, Kubernetes, or k6 depending
 on the failing signal (Executive Overview has dashboard links to each).
 
+Each dashboard has an on-screen panel titled **Purpose / When No data is OK** so operators
+can tell expected empty panels from real scrape failures without leaving Grafana.
+
+**Why keep six (not consolidate further):** UIDs (`stayledger-executive` ... `stayledger-k6`)
+are linked from Executive, gate5 evidence, and alert-to-dashboard maps. Merging would break
+bookmarks and mix drill-down responsibilities. `06` stays in this folder but is load-window
+only (expected empty day-to-day).
+
 AI dashboards (PMS AI Observability + the five AI Assistant dashboards) are **deferred**
 in this phase and live in the `StayLedger Internal` Grafana folder (tags
 `internal`, `deferred`). They are not part of the PMS go-live readiness path. They were
 not deleted - only re-foldered/tagged.
 
+## Go-live glance checklist
+
+1. Open **01 Executive** - uptime green, RPS present, latency acceptable, unhealthy pods = 0.
+2. If latency/errors - drill **02 API** (slow routes / 5xx).
+3. If booking/payment volume wrong - drill **03** PMS booking/payment section (not only BE funnel).
+4. If write latency / connection alerts - **04 Database**.
+5. If restarts / node pressure - **05 Kubernetes** (confirm `$namespace`).
+6. Open **06 k6** only during or right after a remote-write load test.
+
 ## Production dashboards (folder: StayLedger PMS)
 
-| Dashboard (file) | Grafana title | Purpose | Primary metrics |
-|-----------|------|---------|-----------------|
-| `executive-overview.yaml` | `01 - PMS Executive Overview` | First screen for go-live and incidents. Curated roll-up: uptime, traffic, errors, latency, booking/payment, DB connections, Redis memory, bad pod phases. Links out to 02-06. | `up`, `http_requests_total`, `http_request_duration_ms_bucket`, `booking_operations_total`, `payment_operations_total`, `pg_stat_activity_count`, `redis_memory_*`, `kube_pod_status_phase` |
-| `api-performance.yaml` | `02 - PMS API Performance` | Route-level API triage. Find slow routes, 5xx routes, rate limits, and auth latency. | `http_requests_total`, `http_request_duration_ms_bucket` |
-| `booking-lifecycle.yaml` | `03 - PMS Booking Lifecycle` | Business workflow health: booking creation/confirm rate, payment success, booking duration, booking-engine funnel, failure breakdown. | `booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms_bucket`, `payment_operations_total`, `payment_errors_total`, `booking_engine_*` |
-| `database.yaml` | `04 - PMS Database & PgBouncer` | PostgreSQL/PgBouncer health: connection pressure, cache hit ratio, deadlocks, transaction/row rates, table sizes, pool wait. | `pg_stat_*`, `pg_settings_max_connections`, `pg_relation_size`, `pgbouncer_pools_*` |
-| `kubernetes.yaml` | `05 - PMS Kubernetes` | Runtime infra health: bad pod phases, restarts, CPU/memory saturation, throttling, PVC usage, node pressure. | `kube_*`, `container_*`, `kubelet_volume_stats_*`, `node_filesystem_*` |
-| `k6-load-test.yaml` | `06 - PMS k6 Load Test` | Staging/go-live load-test results. Empty unless k6 runs with `--out experimental-prometheus-rw`. Core `k6_*` metric names validated against Prometheus. | `k6_*` |
+| Dashboard (file) | Grafana title | Purpose | Expected empty / No data | Primary metrics |
+|-----------|------|---------|--------------------------|-----------------|
+| `executive-overview.yaml` | `01 - PMS Executive Overview` | First screen for go-live and incidents. Roll-up + links to 02-06. | Error-rate No data with healthy RPS usually means zero 5xx (good). | `up`, `http_requests_total`, `http_request_duration_ms_bucket`, `booking_operations_total`, `payment_operations_total`, `pg_stat_activity_count`, `redis_memory_*`, `kube_pod_status_phase` |
+| `api-performance.yaml` | `02 - PMS API Performance` | Route-level triage: slow routes, 5xx, 429, auth latency. | 5xx / 429 No data with traffic = healthy. | `http_requests_total`, `http_request_duration_ms_bucket` |
+| `booking-lifecycle.yaml` | `03 - PMS Booking Lifecycle` | PMS booking/payment ops + public Booking Engine funnel + money-compare note. | BE funnel 0/No data without public BE traffic is OK (canary uses PMS ops). Money-compare chart empty until counter ships. | `booking_operations_*`, `payment_operations_*`, `booking_engine_*` |
+| `database.yaml` | `04 - PMS Database & PgBouncer` | Postgres pressure: connections, cache, tx/row rates, seq scans. | Table size / PgBouncer empty = exporter/scrape gap, not proof API is down. | `pg_stat_*`, `pg_settings_max_connections`, `pg_relation_size`, `pgbouncer_pools_*` |
+| `kubernetes.yaml` | `05 - PMS Kubernetes` | Pods, restarts, resources, PVC, node pressure, HPA. | CPU throttle / PVC / HPA empty if labels/`$namespace`/HPA missing. | `kube_*`, `container_*`, `kubelet_volume_stats_*`, `node_filesystem_*` |
+| `k6-load-test.yaml` | `06 - PMS k6 Load Test` | Load-test window only (remote write). | **Expected empty** outside k6 runs with `--out experimental-prometheus-rw`. | `k6_*` |
 
 ## Deferred dashboards (folder: StayLedger Internal)
 
@@ -62,7 +79,8 @@ Current PMS alerts live in `stayledger-shared/observability/alerting/stayledger-
 | `BookingEngineInventoryConflictHigh` | Booking Lifecycle | Booking engine inventory conflicts exceed 10% of create traffic. |
 | `AiErrorRateHigh` | AI Observability | AI error ratio is above 3% while AI traffic is present. |
 | `AiP95LatencyHigh` | AI Observability | AI p95 latency is above 5 seconds. |
-| `AiTokenQuotaWarning` / `AiTokenQuotaCritical` | AI Observability | A property is above 80% / 95% of token quota. |
+| `AiQuotaBlocksHigh` | AI Observability | AI chat 429 quota blocks elevated (replaces removed AiTokenQuota* max-across-properties alerts). |
+| `StayLedgerAIQuotaNearExhaustion` | AI Observability | Per-property quota above 90% (excludes capability_* fixtures). |
 | `PostgresConnectionHigh` | Database & PgBouncer | PostgreSQL connection utilization is above 80%. |
 | `PgBouncerClientsWaiting` | Database & PgBouncer | PgBouncer has waiting clients. |
 | `RedisMemoryHigh` | Executive / Kubernetes | Redis maxmemory utilization is above 85%. |

@@ -13,245 +13,625 @@ data:
       "uid": "stayledger-booking",
       "title": "03 - PMS Booking Lifecycle",
       "description": "Booking funnel, payment success, lifecycle duration, failure breakdown by step/property, booking-engine availability→quote→create funnel, and money-compare coverage",
-      "tags": ["stayledger", "pms", "production-readiness", "booking"],
+      "tags": [
+        "stayledger",
+        "pms",
+        "production-readiness",
+        "booking"
+      ],
       "schemaVersion": 38,
       "refresh": "30s",
-      "time": { "from": "now-3h", "to": "now" },
+      "time": {
+        "from": "now-3h",
+        "to": "now"
+      },
       "templating": {
         "list": [
-          { "name": "api_job", "type": "constant", "label": "API scrape job", "query": "stayledger-api", "current": { "text": "stayledger-api", "value": "stayledger-api" } },
-          { "name": "property", "type": "constant", "label": "Property regex", "query": ".*", "current": { "text": ".*", "value": ".*" } }
+          {
+            "name": "api_job",
+            "type": "constant",
+            "label": "API scrape job",
+            "query": "stayledger-api",
+            "current": {
+              "text": "stayledger-api",
+              "value": "stayledger-api"
+            }
+          },
+          {
+            "name": "property",
+            "type": "constant",
+            "label": "Property regex",
+            "query": ".*",
+            "current": {
+              "text": ".*",
+              "value": ".*"
+            }
+          }
         ]
       },
       "panels": [
         {
           "id": 100,
-          "title": "Metric Sources",
+          "title": "Purpose / When No data is OK",
           "type": "text",
-          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 3 },
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 6
+          },
           "options": {
             "mode": "markdown",
-            "content": "`booking_operations_total`, `booking_errors_total`, `booking_lifecycle_duration_ms`, `payment_operations_total`, `payment_errors_total`, and `booking_engine_*` are emitted by `stayledger-api`. The booking-engine funnel uses `booking_engine_requests_total{operation,status=\"success\"}` (availability→quote→create). The money-compare drift panel expects a `money_compare_drift_total{field}` counter (see its note - not yet emitted). Empty charts mean no matching activity or metrics are disabled."
+            "content": "**Purpose:** Business workflow health for PMS bookings/payments, plus the public Booking Engine funnel and money-compare coverage notes.\n\n**Three sections (do not confuse them):**\n1. **PMS booking/payment** - `booking_operations_*`, `payment_operations_*` (admin/canary/E2E create-confirm-cancel). This is what drives Executive \"Bookings/Payments Today\".\n2. **Booking Engine funnel** - `booking_engine_*` availability → quote → create (public/engine path). Canary and most E2E do **not** exercise this path, so funnel can stay 0% / No data while PMS bookings still increase.\n3. **Money-compare drift** - expects `money_compare_drift_total` (not emitted yet); treat as documentation until the counter ships.\n\n**No data is OK when:** Booking Engine funnel / rate is empty with no public BE traffic; money-compare chart is empty (counter not shipped). PMS create/confirm panels may be flat outside traffic windows.\n\n**Not OK:** High booking/payment error rates on PMS ops while create volume is present. **Drill next:** 02 API for failing routes; 01 for volume impact."
           }
         },
         {
           "id": 1,
           "title": "Booking Creation Rate (per min)",
           "type": "stat",
-          "gridPos": { "x": 0, "y": 3, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "short" } },
-          "targets": [{ "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])) * 60) or vector(0)", "legendFormat": "bookings/min" }]
+          "gridPos": {
+            "x": 0,
+            "y": 6,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])) * 60) or vector(0)",
+              "legendFormat": "bookings/min"
+            }
+          ]
         },
         {
           "id": 2,
           "title": "Confirm Rate",
           "type": "stat",
-          "gridPos": { "x": 4, "y": 3, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit" } },
-          "targets": [{
-            "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"confirmed\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
-            "legendFormat": "Confirm %"
-          }]
+          "gridPos": {
+            "x": 4,
+            "y": 6,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"confirmed\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(booking_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
+              "legendFormat": "Confirm %"
+            }
+          ]
         },
         {
           "id": 3,
           "title": "Payment Success Rate",
           "type": "stat",
-          "gridPos": { "x": 8, "y": 3, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit" } },
-          "targets": [{
-            "expr": "(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",status=\"success\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
-            "legendFormat": "Payment %"
-          }]
+          "gridPos": {
+            "x": 8,
+            "y": 6,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",status=\"success\",property_id=~\"$property\"}[5m])) / clamp_min(sum(rate(payment_operations_total{job=\"$api_job\",operation=\"created\",property_id=~\"$property\"}[5m])), 0.001)) or vector(0)",
+              "legendFormat": "Payment %"
+            }
+          ]
         },
         {
           "id": 4,
           "title": "Booking Lifecycle p95 (ms)",
           "type": "stat",
-          "gridPos": { "x": 12, "y": 3, "w": 4, "h": 4 },
+          "gridPos": {
+            "x": 12,
+            "y": 6,
+            "w": 4,
+            "h": 4
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "ms",
-              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 3000, "color": "yellow" }, { "value": 8000, "color": "red" }] }
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 3000,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 8000,
+                    "color": "red"
+                  }
+                ]
+              }
             }
           },
-          "targets": [{
-            "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
-            "legendFormat": "p95 ms"
-          }]
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
+              "legendFormat": "p95 ms"
+            }
+          ]
         },
         {
           "id": 5,
           "title": "Booking Lifecycle Duration p50/p95/p99 (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 7, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "gridPos": {
+            "x": 0,
+            "y": 10,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
           "targets": [
-            { "expr": "histogram_quantile(0.50, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p50" },
-            { "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p95" },
-            { "expr": "histogram_quantile(0.99, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))", "legendFormat": "p99" }
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(booking_lifecycle_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[10m])) by (le))",
+              "legendFormat": "p99"
+            }
           ]
         },
         {
           "id": 6,
           "title": "Booking Operations by Status",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 7, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ops" } },
-          "targets": [{ "expr": "sum(rate(booking_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, source)", "legendFormat": "{{operation}} / {{source}}" }]
+          "gridPos": {
+            "x": 12,
+            "y": 10,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ops"
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, source)",
+              "legendFormat": "{{operation}} / {{source}}"
+            }
+          ]
         },
         {
           "id": 7,
           "title": "Booking Errors by Step",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (step, error_type)", "legendFormat": "{{step}} / {{error_type}}" }]
+          "gridPos": {
+            "x": 0,
+            "y": 18,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (step, error_type)",
+              "legendFormat": "{{step}} / {{error_type}}"
+            }
+          ]
         },
         {
           "id": 8,
           "title": "Booking Errors by Property",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (property_id)", "legendFormat": "{{property_id}}" }]
+          "gridPos": {
+            "x": 12,
+            "y": 18,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (property_id)",
+              "legendFormat": "{{property_id}}"
+            }
+          ]
         },
         {
           "id": 9,
           "title": "Payment Operations",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 23, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(payment_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status, method)", "legendFormat": "{{operation}} {{status}} {{method}}" }]
+          "gridPos": {
+            "x": 0,
+            "y": 26,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(payment_operations_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status, method)",
+              "legendFormat": "{{operation}} {{status}} {{method}}"
+            }
+          ]
         },
         {
           "id": 10,
           "title": "Payment Errors by Type",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(payment_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (error_type, property_id)", "legendFormat": "{{error_type}} / {{property_id}}" }]
+          "gridPos": {
+            "x": 12,
+            "y": 26,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(payment_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (error_type, property_id)",
+              "legendFormat": "{{error_type}} / {{property_id}}"
+            }
+          ]
         },
         {
           "id": 11,
           "title": "Booking Engine Requests (per min)",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 31, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "reqpm" } },
-          "targets": [{ "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status) * 60", "legendFormat": "{{operation}} / {{status}}" }]
+          "gridPos": {
+            "x": 0,
+            "y": 34,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqpm"
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, status) * 60",
+              "legendFormat": "{{operation}} / {{status}}"
+            }
+          ]
         },
         {
           "id": 12,
           "title": "Booking Engine p95 Latency (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 31, "w": 12, "h": 8 },
+          "gridPos": {
+            "x": 12,
+            "y": 34,
+            "w": 12,
+            "h": 8
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "ms",
-              "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 800, "color": "yellow" }, { "value": 2500, "color": "red" }] }
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 800,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 2500,
+                    "color": "red"
+                  }
+                ]
+              }
             }
           },
-          "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(booking_engine_request_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, le))", "legendFormat": "{{operation}} p95" }]
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(booking_engine_request_duration_ms_bucket{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, le))",
+              "legendFormat": "{{operation}} p95"
+            }
+          ]
         },
         {
           "id": 13,
           "title": "Booking Engine Errors",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 39, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(booking_engine_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, error_code)", "legendFormat": "{{operation}} / {{error_code}}" }]
+          "gridPos": {
+            "x": 0,
+            "y": 42,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_engine_errors_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, error_code)",
+              "legendFormat": "{{operation}} / {{error_code}}"
+            }
+          ]
         },
         {
           "id": 14,
           "title": "Booking Engine Inventory Conflicts",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 39, "w": 12, "h": 8 },
-          "targets": [{ "expr": "sum(rate(booking_engine_inventory_conflicts_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, property_id)", "legendFormat": "{{operation}} / {{property_id}}" }]
+          "gridPos": {
+            "x": 12,
+            "y": 42,
+            "w": 12,
+            "h": 8
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_engine_inventory_conflicts_total{job=\"$api_job\",property_id=~\"$property\"}[5m])) by (operation, property_id)",
+              "legendFormat": "{{operation}} / {{property_id}}"
+            }
+          ]
         },
         {
           "id": 20,
           "title": "Booking Engine Funnel & Money Compare",
           "type": "text",
-          "gridPos": { "x": 0, "y": 47, "w": 24, "h": 3 },
+          "gridPos": {
+            "x": 0,
+            "y": 50,
+            "w": 24,
+            "h": 3
+          },
           "options": {
             "mode": "markdown",
-            "content": "Public booking-engine conversion funnel **availability → quote → create** from `booking_engine_requests_total{operation,status=\"success\"}` (failures live in `booking_engine_errors_total`). Conversions use `increase(...[$__range])` over the dashboard time range. Money-compare coverage reflects `PMS_MONEY_READ_MODE=compare` - see the coverage note panel."
+            "content": "**Public Booking Engine only** (not PMS admin/canary booking ops). Funnel is availability → quote → create from `booking_engine_requests_total{operation,status=\"success\"}` (failures in `booking_engine_errors_total`). **Expected empty** when there is no public BE traffic - PMS create/confirm above can still be non-zero. Money-compare coverage: see the note panel (counter not emitted yet)."
           }
         },
         {
           "id": 21,
           "title": "Conversion: Availability → Quote",
           "type": "stat",
-          "gridPos": { "x": 0, "y": 50, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.3, "color": "yellow" }, { "value": 0.6, "color": "green" }] } } },
-          "targets": [{
-            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
-            "legendFormat": "avail→quote"
-          }]
+          "gridPos": {
+            "x": 0,
+            "y": 53,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 0.3,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 0.6,
+                    "color": "green"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+              "legendFormat": "avail→quote"
+            }
+          ]
         },
         {
           "id": 22,
           "title": "Conversion: Quote → Create",
           "type": "stat",
-          "gridPos": { "x": 4, "y": 50, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.2, "color": "yellow" }, { "value": 0.5, "color": "green" }] } } },
-          "targets": [{
-            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
-            "legendFormat": "quote→create"
-          }]
+          "gridPos": {
+            "x": 4,
+            "y": 53,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 0.2,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 0.5,
+                    "color": "green"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+              "legendFormat": "quote→create"
+            }
+          ]
         },
         {
           "id": 23,
           "title": "Conversion: Availability → Create",
           "type": "stat",
-          "gridPos": { "x": 8, "y": 50, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit" } },
-          "targets": [{
-            "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
-            "legendFormat": "avail→create"
-          }]
+          "gridPos": {
+            "x": 8,
+            "y": 53,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            }
+          },
+          "targets": [
+            {
+              "expr": "(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) / clamp_min(sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])), 1)) or vector(0)",
+              "legendFormat": "avail→create"
+            }
+          ]
         },
         {
           "id": 24,
           "title": "Bookings Created (range)",
           "type": "stat",
-          "gridPos": { "x": 12, "y": 50, "w": 4, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "short" } },
-          "targets": [{
-            "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
-            "legendFormat": "created"
-          }]
+          "gridPos": {
+            "x": 12,
+            "y": 53,
+            "w": 4,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
+              "legendFormat": "created"
+            }
+          ]
         },
         {
           "id": 25,
           "title": "Booking Engine Funnel - Successful Ops (range)",
           "type": "bargauge",
-          "gridPos": { "x": 0, "y": 54, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "short" } },
-          "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false } },
+          "gridPos": {
+            "x": 0,
+            "y": 57,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "options": {
+            "orientation": "horizontal",
+            "displayMode": "gradient",
+            "reduceOptions": {
+              "calcs": [
+                "lastNotNull"
+              ],
+              "fields": "",
+              "values": false
+            }
+          },
           "targets": [
-            { "refId": "A", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "1 · availability" },
-            { "refId": "B", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "2 · quote" },
-            { "refId": "C", "instant": true, "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)", "legendFormat": "3 · create" }
+            {
+              "refId": "A",
+              "instant": true,
+              "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"availability\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
+              "legendFormat": "1 · availability"
+            },
+            {
+              "refId": "B",
+              "instant": true,
+              "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"quote\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
+              "legendFormat": "2 · quote"
+            },
+            {
+              "refId": "C",
+              "instant": true,
+              "expr": "sum(increase(booking_engine_requests_total{job=\"$api_job\",operation=\"create\",status=\"success\",property_id=~\"$property\"}[$__range])) or vector(0)",
+              "legendFormat": "3 · create"
+            }
           ]
         },
         {
           "id": 26,
           "title": "Booking Engine Funnel Rate (per min)",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 54, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "reqpm" } },
-          "targets": [{ "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",operation=~\"availability|quote|create\",status=\"success\",property_id=~\"$property\"}[5m])) by (operation) * 60", "legendFormat": "{{operation}}" }]
+          "gridPos": {
+            "x": 12,
+            "y": 57,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqpm"
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(rate(booking_engine_requests_total{job=\"$api_job\",operation=~\"availability|quote|create\",status=\"success\",property_id=~\"$property\"}[5m])) by (operation) * 60",
+              "legendFormat": "{{operation}}"
+            }
+          ]
         },
         {
           "id": 27,
           "title": "Money-Compare Drift Events - Booking Engine (range)",
           "description": "Backed by money_compare_drift_total{field}, which stayledger-api does not yet export (money-read.util recordCompareDrift only logs). Reads 0 / No data until that counter ships; coverage is asserted via the adjacent note until then.",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 1, "color": "red" }] } } },
-          "targets": [{ "expr": "sum(increase(money_compare_drift_total{job=\"$api_job\"}[$__range])) by (field) or vector(0)", "legendFormat": "{{field}}" }]
+          "gridPos": {
+            "x": 0,
+            "y": 65,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 1,
+                    "color": "red"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "sum(increase(money_compare_drift_total{job=\"$api_job\"}[$__range])) by (field) or vector(0)",
+              "legendFormat": "{{field}}"
+            }
+          ]
         },
         {
           "id": 28,
           "title": "Money-Compare Coverage",
           "type": "text",
-          "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 },
+          "gridPos": {
+            "x": 12,
+            "y": 65,
+            "w": 12,
+            "h": 8
+          },
           "options": {
             "mode": "markdown",
             "content": "**Mode:** `PMS_MONEY_READ_MODE=compare` + `PMS_MONEY_PROD_READ_ENABLED=true` on staging - every money read compares the Float column against its Decimal shadow (tolerance 1e-4).\n\n**Drift signal:** mismatches emit `[compare] money drift` WARN logs in `stayledger-api`. Booking-engine bookings verified **zero drift** (DB Float-vs-Decimal across booking / booking_rooms / booking_stays; `money drift` log count = 0).\n\n**To light up the left panel:** export a `money_compare_drift_total{field}` counter from `money-read.util` `recordCompareDrift` (counterpart to the existing `compareDriftCount`). Until then this is a documentation panel; coverage is asserted via the DB/log checks above and the golden test suite."

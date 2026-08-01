@@ -7,16 +7,15 @@ metadata:
 data:
   ENVIRONMENT: "production"
   APP_ENV: "production"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production"
+  # Keep in sync with production/kustomization.yaml images.digest for the API.
+  APP_VERSION: "prod-wave2-f05db10"
   ADMIN_WEB_PUBLIC_URL: "https://assistant.stayledger.io"
   CORS_ORIGINS: "https://assistant.stayledger.io,https://app.stayledger.io,http://localhost:3000,http://127.0.0.1:3000"
-  # P0 (F-P0-07): base ConfigMap hardcodes a single-tenant DEFAULT_TENANT_ID; kustomize merges
-  # ConfigMap `data` key-by-key, so this override is enough to blank it here without editing
-  # base (base still serves other overlays/tests). Fail-closed tenant resolution must not rely
-  # on a default tenant in staging/production — see app/tenancy/context.py.
+  # Keep blank (base already ""); fail-closed tenant resolution must not rely on a default hotel.
   DEFAULT_TENANT_ID: ""
-  # P0 (F-P0-09/PR-J): channel outbound queue must fail closed, not silently drop on backpressure.
+  # Explicit pins (also base defaults): fail-closed channel queue + resolved property.
   CHANNEL_QUEUE_FAIL_CLOSED: "1"
-  # P0 (F-P0-01/PR-B,C): reject turns without a resolved property/tenant instead of guessing.
   REQUIRE_RESOLVED_PROPERTY: "1"
   # P0 (F-P0-03,04/PR-E): route guest FAQ/RAG hot path to scope-aware hybrid retrieval
   # (kb_chunks 0037 schema); canary at 100% now that fail-closed guards are in place.

@@ -162,14 +162,16 @@ spec:
             summary: "Guest documents PVC above 80% capacity"
             description: "Production guest documents PVC is {{ $value | humanizePercentage }} full. Expand volume or migrate to object storage."
 
-        # P2 — AI quota near exhaustion
+        # P2 — AI quota near exhaustion (exclude capability_* seed fixtures that
+        # intentionally sit over limit and previously noise-fired platform alerts).
         - alert: StayLedgerAIQuotaNearExhaustion
           expr: |
-            ai_quota_usage_percent{namespace="stayledger"} > 90
+            ai_quota_usage_percent{namespace="stayledger",property_id!~"capability_.*"} > 90
           for: 5m
           labels:
             severity: warning
             environment: production
+            env: production
           annotations:
             summary: "AI token quota above 90%"
             description: "Property {{ $labels.property_id }} AI token quota is {{ $value }}% used. Quota exhaustion will block AI features (ENTITLEMENT_FAIL_CLOSED=true)."

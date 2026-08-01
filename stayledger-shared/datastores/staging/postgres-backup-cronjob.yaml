@@ -150,6 +150,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
       template:
         metadata:
           # Pod labels so the datastore ingress NetworkPolicy admits the backup

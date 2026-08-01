@@ -107,6 +107,18 @@ prometheus:
   prometheusSpec:
     retention: 30d
     retentionSize: "40GB"
+    # Pair with alerting/alert-relabel-env.secret.yaml (staging) /
+    # ../production/alert-relabel-env.secret.yaml (production).
+    # This CRD revision has no inline alertRelabelings — use Secret via
+    # additionalAlertRelabelConfigs. externalLabels alone were not reliably
+    # reaching Alertmanager here.
+    externalLabels:
+      environment: staging
+      env: staging
+      cluster: HK-HUB-Cluster
+    additionalAlertRelabelConfigs:
+      name: stayledger-alert-relabel
+      key: config.yaml
     # Pick up ServiceMonitors/PrometheusRules regardless of helm release label.
     ruleSelectorNilUsesHelmValues: false
     serviceMonitorSelectorNilUsesHelmValues: false

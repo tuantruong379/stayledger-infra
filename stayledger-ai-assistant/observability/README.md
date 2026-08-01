@@ -19,7 +19,7 @@ Step-by-step: [SETUP.md](SETUP.md). Operator guide: [docs/operations/observabili
 - [otel-collector.yaml](otel-collector.yaml)
 - [servicemonitor-api.yaml](servicemonitor-api.yaml) — scrape `/metrics/prom`
 - [servicemonitor-datastores.yaml](servicemonitor-datastores.yaml)
-- PrometheusRules: [prometheus-rules.yaml](prometheus-rules.yaml), [prometheus-recording-rules.yaml](prometheus-recording-rules.yaml), [prometheus-infrastructure-alerts.yaml](prometheus-infrastructure-alerts.yaml), [hotel-ai-alerts.yaml](hotel-ai-alerts.yaml), [metrics-pipeline-alerts.yaml](metrics-pipeline-alerts.yaml), [datastore-exporter-alerts.yaml](datastore-exporter-alerts.yaml)
+- PrometheusRules: [prometheus-rules.yaml](prometheus-rules.yaml), [prometheus-recording-rules.yaml](prometheus-recording-rules.yaml), [prometheus-infrastructure-alerts.yaml](prometheus-infrastructure-alerts.yaml), [hotel-ai-alerts.yaml](hotel-ai-alerts.yaml), [metrics-pipeline-alerts.yaml](metrics-pipeline-alerts.yaml), [datastore-exporter-alerts.yaml](datastore-exporter-alerts.yaml), [rag-eval-alerts.yaml](alerts/rag-eval-alerts.yaml), [kb-embedding-backlog-alerts.yaml](alerts/kb-embedding-backlog-alerts.yaml)
 - Grafana dashboards (ConfigMaps, label `grafana_dashboard: "1"`, folder `StayLedger AI`): golden-signals, llm-cost, slo, pricing-booking, kpi-cost-errors-logs
 - [rbac.yaml](rbac.yaml), [resource-quotas.yaml](resource-quotas.yaml), [pod-disruption-budgets.yaml](pod-disruption-budgets.yaml)
 

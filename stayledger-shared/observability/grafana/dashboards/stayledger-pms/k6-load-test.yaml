@@ -12,172 +12,451 @@ data:
     {
       "uid": "stayledger-k6",
       "title": "06 - PMS k6 Load Test",
-      "description": "k6 test results via Prometheus remote write. Run: k6 run --out experimental-prometheus-rw. Verify metric names first with {__name__=~\"k6_.*\"}",
-      "tags": ["stayledger", "pms", "production-readiness", "k6"],
+      "description": "Load-test window only. Expected empty unless k6 ran with --out experimental-prometheus-rw in the selected time range.",
+      "tags": [
+        "stayledger",
+        "pms",
+        "production-readiness",
+        "k6"
+      ],
       "schemaVersion": 38,
       "refresh": "10s",
-      "time": { "from": "now-30m", "to": "now" },
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
       "panels": [
+        {
+          "id": 100,
+          "title": "Purpose / When No data is OK",
+          "type": "text",
+          "gridPos": {
+            "x": 0,
+            "y": 0,
+            "w": 24,
+            "h": 5
+          },
+          "options": {
+            "mode": "markdown",
+            "content": "**Purpose:** Load-test window only. Shows k6 VUs, RPS, errors, check pass rate, and scenario durations written to Prometheus via remote write.\n\n**EXPECTED EMPTY** outside an active (or recent) k6 run with `--out experimental-prometheus-rw`. An all-No-data screen here is normal day-to-day and does **not** mean production is down.\n\n**Primary signals (during a run):** VUs, HTTP RPS, HTTP error rate, check pass rate, request/iteration p95, booking lifecycle p95.\n\n**How to populate:** from `stayledger-shared/k6`, run e.g. `k6 run smoke.js -e BASE_URL=... -e TEST_EMAIL=... -e TEST_PASSWORD=... --out experimental-prometheus-rw` (or `verify-money.mjs --k6`). Extend the Grafana time range to cover the run.\n\n**Drill next:** 01/02 for live API impact during the test; keep this dashboard out of the daily go-live glance path."
+          }
+        },
         {
           "id": 1,
           "title": "Virtual Users",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 0, "w": 6, "h": 6 },
-          "fieldConfig": { "defaults": { "unit": "short" } },
-          "targets": [{ "expr": "k6_vus", "legendFormat": "VUs" }]
+          "gridPos": {
+            "x": 0,
+            "y": 5,
+            "w": 6,
+            "h": 6
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "expr": "k6_vus",
+              "legendFormat": "VUs"
+            }
+          ]
         },
         {
           "id": 2,
           "title": "HTTP Requests per Second",
           "type": "timeseries",
-          "gridPos": { "x": 6, "y": 0, "w": 6, "h": 6 },
-          "fieldConfig": { "defaults": { "unit": "reqps" } },
-          "targets": [{ "expr": "rate(k6_http_reqs_total[30s])", "legendFormat": "RPS" }]
+          "gridPos": {
+            "x": 6,
+            "y": 5,
+            "w": 6,
+            "h": 6
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "reqps"
+            }
+          },
+          "targets": [
+            {
+              "expr": "rate(k6_http_reqs_total[30s])",
+              "legendFormat": "RPS"
+            }
+          ]
         },
         {
           "id": 3,
           "title": "HTTP Error Rate",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 0, "w": 6, "h": 6 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.01, "color": "red" }] } } },
-          "targets": [{
-            "expr": "avg(k6_http_req_failed_rate)",
-            "legendFormat": "Error Rate"
-          }]
+          "gridPos": {
+            "x": 12,
+            "y": 5,
+            "w": 6,
+            "h": 6
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 0.01,
+                    "color": "red"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "avg(k6_http_req_failed_rate)",
+              "legendFormat": "Error Rate"
+            }
+          ]
         },
         {
           "id": 4,
           "title": "Check Pass Rate",
           "type": "stat",
-          "gridPos": { "x": 18, "y": 0, "w": 6, "h": 6 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] } } },
-          "targets": [{
-            "expr": "avg(k6_checks_rate)",
-            "legendFormat": "Pass Rate"
-          }]
+          "gridPos": {
+            "x": 18,
+            "y": 5,
+            "w": 6,
+            "h": 6
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 0.99,
+                    "color": "green"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "avg(k6_checks_rate)",
+              "legendFormat": "Pass Rate"
+            }
+          ]
         },
         {
           "id": 5,
           "title": "HTTP Request Duration p50/p95/p99 (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "gridPos": {
+            "x": 0,
+            "y": 11,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
           "targets": [
-            { "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p50" },
-            { "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p95" },
-            { "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p99" }
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p95"
+            },
+            {
+              "expr": "histogram_quantile(0.99, sum(rate(k6_http_req_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p99"
+            }
           ]
         },
         {
           "id": 6,
           "title": "Iteration Duration p50/p95/p99 (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "gridPos": {
+            "x": 12,
+            "y": 11,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
           "targets": [
-            { "expr": "histogram_quantile(0.50, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000", "legendFormat": "p50" },
-            { "expr": "histogram_quantile(0.95, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000", "legendFormat": "p95" }
+            {
+              "expr": "histogram_quantile(0.50, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p50"
+            },
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(k6_iteration_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p95"
+            }
           ]
         },
         {
           "id": 7,
           "title": "Booking Lifecycle Duration p95 (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
-          "targets": [{
-            "expr": "histogram_quantile(0.95, sum(rate(k6_booking_lifecycle_ms[30s])))",
-            "legendFormat": "p95 lifecycle ms"
-          }]
+          "gridPos": {
+            "x": 0,
+            "y": 19,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(k6_booking_lifecycle_ms[30s])))",
+              "legendFormat": "p95 lifecycle ms"
+            }
+          ]
         },
         {
           "id": 8,
           "title": "Bookings Created",
           "type": "stat",
-          "gridPos": { "x": 12, "y": 14, "w": 6, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "short" } },
-          "targets": [{ "expr": "increase(k6_bookings_created_total[1h])", "legendFormat": "Bookings" }]
+          "gridPos": {
+            "x": 12,
+            "y": 19,
+            "w": 6,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short"
+            }
+          },
+          "targets": [
+            {
+              "expr": "increase(k6_bookings_created_total[1h])",
+              "legendFormat": "Bookings"
+            }
+          ]
         },
         {
           "id": 9,
           "title": "Write Error Rate",
           "type": "stat",
-          "gridPos": { "x": 18, "y": 14, "w": 6, "h": 4 },
-          "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "steps": [{ "value": 0, "color": "green" }, { "value": 0.05, "color": "red" }] } } },
-          "targets": [{ "expr": "k6_write_error_rate", "legendFormat": "Write Error Rate" }]
+          "gridPos": {
+            "x": 18,
+            "y": 19,
+            "w": 6,
+            "h": 4
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 0.05,
+                    "color": "red"
+                  }
+                ]
+              }
+            }
+          },
+          "targets": [
+            {
+              "expr": "k6_write_error_rate",
+              "legendFormat": "Write Error Rate"
+            }
+          ]
         },
         {
           "id": 10,
           "title": "AI Chat Duration p95 (ms) - from ai-load.js",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 22, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
-          "targets": [{
-            "expr": "histogram_quantile(0.95, sum(rate(k6_ai_chat_duration_ms[30s])))",
-            "legendFormat": "AI p95 ms"
-          }]
+          "gridPos": {
+            "x": 0,
+            "y": 27,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(k6_ai_chat_duration_ms[30s])))",
+              "legendFormat": "AI p95 ms"
+            }
+          ]
         },
         {
           "id": 11,
           "title": "k6 Duration by Scenario (tag: type) (ms)",
           "type": "timeseries",
-          "gridPos": { "x": 12, "y": 22, "w": 12, "h": 8 },
-          "fieldConfig": { "defaults": { "unit": "ms" } },
+          "gridPos": {
+            "x": 12,
+            "y": 27,
+            "w": 12,
+            "h": 8
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "ms"
+            }
+          },
           "targets": [
-            { "expr": "histogram_quantile(0.95, sum by (type) (rate(k6_http_req_duration_seconds[30s]))) * 1000", "legendFormat": "p95 {{type}}" }
+            {
+              "expr": "histogram_quantile(0.95, sum by (type) (rate(k6_http_req_duration_seconds[30s]))) * 1000",
+              "legendFormat": "p95 {{type}}"
+            }
           ]
         },
         {
           "id": 13,
           "title": "Business Success Rate",
           "type": "timeseries",
-          "gridPos": { "x": 0, "y": 30, "w": 8, "h": 7 },
+          "gridPos": {
+            "x": 0,
+            "y": 35,
+            "w": 8,
+            "h": 7
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "percentunit",
-              "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] }
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 0.99,
+                    "color": "green"
+                  }
+                ]
+              }
             }
           },
-          "targets": [{ "expr": "avg(k6_business_success_rate)", "legendFormat": "business_success" }]
+          "targets": [
+            {
+              "expr": "avg(k6_business_success_rate)",
+              "legendFormat": "business_success"
+            }
+          ]
         },
         {
           "id": 14,
           "title": "Lifecycle Step Success Rates",
           "type": "timeseries",
-          "gridPos": { "x": 8, "y": 30, "w": 8, "h": 7 },
+          "gridPos": {
+            "x": 8,
+            "y": 35,
+            "w": 8,
+            "h": 7
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "percentunit",
-              "thresholds": { "steps": [{ "value": 0, "color": "red" }, { "value": 0.99, "color": "green" }] }
+              "thresholds": {
+                "steps": [
+                  {
+                    "value": 0,
+                    "color": "red"
+                  },
+                  {
+                    "value": 0.99,
+                    "color": "green"
+                  }
+                ]
+              }
             }
           },
           "targets": [
-            { "expr": "avg(k6_booking_create_success_rate)", "legendFormat": "booking_create" },
-            { "expr": "avg(k6_booking_confirm_success_rate)", "legendFormat": "booking_confirm" },
-            { "expr": "avg(k6_payment_success_rate)", "legendFormat": "payment" },
-            { "expr": "avg(k6_checkin_success_rate)", "legendFormat": "checkin" },
-            { "expr": "avg(k6_checkout_success_rate)", "legendFormat": "checkout" }
+            {
+              "expr": "avg(k6_booking_create_success_rate)",
+              "legendFormat": "booking_create"
+            },
+            {
+              "expr": "avg(k6_booking_confirm_success_rate)",
+              "legendFormat": "booking_confirm"
+            },
+            {
+              "expr": "avg(k6_payment_success_rate)",
+              "legendFormat": "payment"
+            },
+            {
+              "expr": "avg(k6_checkin_success_rate)",
+              "legendFormat": "checkin"
+            },
+            {
+              "expr": "avg(k6_checkout_success_rate)",
+              "legendFormat": "checkout"
+            }
           ]
         },
         {
           "id": 15,
           "title": "Stress Failure Classification",
           "type": "timeseries",
-          "gridPos": { "x": 16, "y": 30, "w": 8, "h": 7 },
-          "fieldConfig": { "defaults": { "unit": "percentunit" } },
+          "gridPos": {
+            "x": 16,
+            "y": 35,
+            "w": 8,
+            "h": 7
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit"
+            }
+          },
           "targets": [
-            { "expr": "k6_system_5xx_rate", "legendFormat": "system_5xx_rate" },
-            { "expr": "k6_inventory_conflict_rate", "legendFormat": "inventory_conflict_rate" },
-            { "expr": "k6_error_rate", "legendFormat": "stress_error_rate" }
+            {
+              "expr": "k6_system_5xx_rate",
+              "legendFormat": "system_5xx_rate"
+            },
+            {
+              "expr": "k6_inventory_conflict_rate",
+              "legendFormat": "inventory_conflict_rate"
+            },
+            {
+              "expr": "k6_error_rate",
+              "legendFormat": "stress_error_rate"
+            }
           ]
         },
         {
           "id": 12,
-          "title": "Metric source (validated 2026-06-23)",
+          "title": "Metric source (validated)",
           "type": "text",
-          "gridPos": { "x": 0, "y": 37, "w": 24, "h": 3 },
+          "gridPos": {
+            "x": 0,
+            "y": 42,
+            "w": 24,
+            "h": 3
+          },
           "options": {
-            "content": "Metric names **validated** against Prometheus: core k6 series (`k6_http_req_duration_seconds`, `k6_http_reqs_total`, `k6_http_req_failed_rate`, `k6_iteration_duration_seconds`, `k6_checks_rate`, `k6_vus`, `k6_*_success_rate`, `k6_booking_lifecycle_ms`) are present - the remote-write pipeline is wired. Run k6 with `--out experimental-prometheus-rw` to feed this dashboard. Write/AI panels (`k6_bookings_created_total`, `k6_write_error_rate`, `k6_inventory_conflict_rate`, `k6_system_5xx_rate`, `k6_ai_chat_duration_ms`) populate only when the write/ai scenarios run.",
+            "content": "Metric names validated against Prometheus core k6 series (`k6_http_req_duration_seconds`, `k6_http_reqs_total`, `k6_http_req_failed_rate`, `k6_iteration_duration_seconds`, `k6_checks_rate`, `k6_vus`, `k6_*_success_rate`, `k6_booking_lifecycle_ms`). Remote-write pipeline is wired. Write/AI panels populate only when those scenarios run.",
             "mode": "markdown"
           }
         }

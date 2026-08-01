@@ -113,12 +113,13 @@ spec:
   timeZone: Asia/Ho_Chi_Minh
   suspend: false
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
   startingDeadlineSeconds: 3600
   jobTemplate:
     spec:
       backoffLimit: 2
+      ttlSecondsAfterFinished: 86400
       template:
         metadata:
           labels:
