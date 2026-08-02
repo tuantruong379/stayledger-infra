@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-839d440 (i18n + typed approve conflicts)
+# Tag: staging-ec80cd5 (operator guidance for non-patchable eval failures)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:fd7e12111a5a3d357ea27855c131df92e0d12cb2f653f201199fc4473681013a
+    digest: sha256:68610b6f96b8baaab53dd09028b34a13b30e793bc6c7ee5b8927b4d2c431ab98
