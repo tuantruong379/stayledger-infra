@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-1b5db59 (revision no_effect UX sync)
+# Tag: staging-d5f6c4e (KB UI realtime sync + control plane)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:99a36d4cf4c4ff3309d6d66cffe1dfbb906205225d1712db37e7387daf746f83
+    digest: sha256:f320efd1589f492c2fdde3e9018fe1966ea51bb608b3a40e36695ca8474cba06
