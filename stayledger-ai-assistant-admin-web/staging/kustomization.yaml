@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-41334bb (guest MD output pane + source-only ingest)
+# Tag: staging-31a559f (guard double-approve)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:97448d792cbb9530c982d79a47aaca687c06791f85bb8a1164d69e85d159e995
+    digest: sha256:a918502e2a2a3526a6b0aba45f0e2a65f3f39a0065d24deed1fda4d0d68a7c2d
