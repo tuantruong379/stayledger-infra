@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.1 @ fbb55cb (fix canonical chunk document_id).
-# Tag: staging-fbb55cb
+# Immutable staging image from release/1.1.2 @ 2b41771 (parse string classification_report).
+# Tag: staging-2b41771
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:f20db3ef7ae9f009a1571e4d546fe53675006e735ac2a6e2d69dd65e886efb69
+    digest: sha256:881021a7da4ac681a1793cf5be15f0bf3a9abc4ccb0b5952d842226835079a2d
 
 
 
