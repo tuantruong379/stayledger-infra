@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.16 @ b802e4b (booking fills from pricing hour_block).
-# Tag: b802e4b
+# Immutable staging image from release/1.1.17 @ 6c4acec (force pricing hour_block onto booking).
+# Tag: 6c4acec
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:0fde33f83ea9428dcf3f7e5e9a31e8bec8994192f4662c17410ef810af14df0c
+    digest: sha256:f9a46076aa1a288c8cb91dd0bda93b614d221e4b2f31470ceff434a96d590eba
 
 
 
