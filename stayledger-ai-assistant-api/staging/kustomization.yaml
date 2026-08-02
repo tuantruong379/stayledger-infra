@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.0 @ 5ae784e (guest MD output + PUT disabled).
-# Tag: staging-5ae784e
+# Immutable staging image from release/1.1.1 @ fbb55cb (fix canonical chunk document_id).
+# Tag: staging-fbb55cb
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:9dcc54322e1f9fce37348b969a50035851a4b1e6547e343965f8e1c2269fdf26
+    digest: sha256:f20db3ef7ae9f009a1571e4d546fe53675006e735ac2a6e2d69dd65e886efb69
 
 
 
