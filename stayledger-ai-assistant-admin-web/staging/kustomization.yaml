@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-3eab037-r2 (rebuild pin after staging approve+eval cycle)
+# Tag: 538c3a0 (KB UI sync — complete pipeline status + hide stale run-eval)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:d3a56b009a32b3665169723f2a2de5249f5888d2608ea506431a5a4eeacec2a9
+    digest: sha256:109fb677e8304ab6b841cfb4b66b3405dd48060fb47d641246d76795d14fb64f
