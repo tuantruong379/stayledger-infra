@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-476d91b (fix KB crash on string retrieved_chunk_titles)
+# Tag: staging-839d440 (i18n + typed approve conflicts)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:59431c4099dba6e7f7b3d1c95dfc8b59c417e5fe9061d9ea5aa41ba8d6390b90
+    digest: sha256:fd7e12111a5a3d357ea27855c131df92e0d12cb2f653f201199fc4473681013a

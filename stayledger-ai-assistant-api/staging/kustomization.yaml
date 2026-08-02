@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.8 @ 7778a3d (AI remediation approve loop).
-# Tag: staging-7778a3d
+# Immutable staging image from release/1.1.9 @ 34957e7 (best-effort revision approve).
+# Tag: staging-34957e7
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:c95acb757bf36d3eb2097b1ae36dca66ac6e914027a90a9a0e3067b083cfb954
+    digest: sha256:fc1e3a46f570b612b6ef94c0e472347ee328d643bd44abad4743951a6a4eb8aa
 
 
 
