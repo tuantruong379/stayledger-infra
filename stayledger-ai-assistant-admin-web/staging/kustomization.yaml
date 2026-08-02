@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-31a559f (guard double-approve)
+# Tag: staging-b97b8e5 (AI Step-2 status + live pipeline activity)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:a918502e2a2a3526a6b0aba45f0e2a65f3f39a0065d24deed1fda4d0d68a7c2d
+    digest: sha256:3d85325d6efd01e836812673b319d0dc12bb4b719c682fb457d8dd957da9578f
