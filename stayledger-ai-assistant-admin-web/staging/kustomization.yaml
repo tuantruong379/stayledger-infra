@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-b97b8e5 (AI Step-2 status + live pipeline activity)
+# Tag: staging-1b5db59 (revision no_effect UX sync)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:3d85325d6efd01e836812673b319d0dc12bb4b719c682fb457d8dd957da9578f
+    digest: sha256:99a36d4cf4c4ff3309d6d66cffe1dfbb906205225d1712db37e7387daf746f83
