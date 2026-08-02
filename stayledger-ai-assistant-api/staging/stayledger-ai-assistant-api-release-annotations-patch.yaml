@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7778a3d"
-    stayledger.io/git-sha-short: "7778a3d"
-    stayledger.io/image-tag: "staging-34957e7"
-    stayledger.io/image-digest: "sha256:fc1e3a46f570b612b6ef94c0e472347ee328d643bd44abad4743951a6a4eb8aa"
+    stayledger.io/git-sha: "b802e4b"
+    stayledger.io/git-sha-short: "b802e4b"
+    stayledger.io/image-tag: "staging-b802e4b"
+    stayledger.io/image-digest: "sha256:0fde33f83ea9428dcf3f7e5e9a31e8bec8994192f4662c17410ef810af14df0c"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:c95acb757bf36d3eb2097b1ae36dca66ac6e914027a90a9a0e3067b083cfb954"
-    kubernetes.io/change-cause: "release/1.1.8 AI remediation approve loop"
-    stayledger.io/build-provenance: "release-1.1.8-7778a3d"
-    stayledger.io/configmap-revision: "release-metadata-20260802-7778a3d"
+    stayledger.io/rollback-digest: "sha256:a977e9a376954d02b765cbeaf929ed9d45c0572aff7c5624cea8f8a4e00d5220"
+    kubernetes.io/change-cause: "release/1.1.16 booking fills from pricing hour_block"
+    stayledger.io/build-provenance: "release-1.1.16-b802e4b"
+    stayledger.io/configmap-revision: "release-metadata-20260802-b802e4b"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260802-7778a3d"
+        stayledger.io/configmap-revision: "release-metadata-20260802-b802e4b"
