@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-3242e75 (KB eval CTA + canonical revision status hooks)
+# Tag: staging-d9ebf01 (canonical extract stepper + remediation cleanup)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:05d03a12cd42049b2d9628e17538fb243662ef01de53c55e8d0ddcc6911db5db
+    digest: sha256:723bf8e438e6c69f8803aac3594d21432df2e24dc4de6cc2502693196e1edf15
