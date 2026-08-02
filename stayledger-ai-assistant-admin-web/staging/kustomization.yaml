@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-d9ebf01 (canonical extract stepper + remediation cleanup)
+# Tag: staging-41334bb (guest MD output pane + source-only ingest)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:723bf8e438e6c69f8803aac3594d21432df2e24dc4de6cc2502693196e1edf15
+    digest: sha256:97448d792cbb9530c982d79a47aaca687c06791f85bb8a1164d69e85d159e995

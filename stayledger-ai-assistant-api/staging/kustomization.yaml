@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.0.9 @ ec7a157 (AC soak + PDF/DOCX text + §18 metrics).
-# Tag: staging-ec7a157
+# Immutable staging image from release/1.1.0 @ 5ae784e (guest MD output + PUT disabled).
+# Tag: staging-5ae784e
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:dd6dc5ab40f58669a91717d427b4d7841e7242e554a06f6d1f70f787f85ed208
+    digest: sha256:9dcc54322e1f9fce37348b969a50035851a4b1e6547e343965f8e1c2269fdf26
 
 
 
