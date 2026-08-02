@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: staging-3eab037 (clearer not-actionable revision guidance)
+# Tag: staging-3eab037-r2 (rebuild pin after staging approve+eval cycle)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:5cd390ca5dc72f86065e72a7ea3175eed69fa7b23e1af68985f98268bb38f709
+    digest: sha256:d3a56b009a32b3665169723f2a2de5249f5888d2608ea506431a5a4eeacec2a9
