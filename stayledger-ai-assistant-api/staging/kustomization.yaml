@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.13 @ 5258d78 (guided funnel + pricing continue).
-# Tag: 5258d78
+# Immutable staging image from release/1.1.14 @ 0695769 (PMS branch resolve + check-in UX).
+# Tag: 0695769
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:09b1509a1404f2a26255282307cd5d601f5d3eeef1cdcd71bb5f541cec466d85
+    digest: sha256:bb9d73cba1f7040d5cd556305512826b948a8a2301a0dbb31a22f13536b0db46
 
 
 
