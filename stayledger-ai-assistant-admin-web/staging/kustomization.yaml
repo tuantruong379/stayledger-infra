@@ -16,8 +16,8 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: 538c3a0 (KB UI sync — complete pipeline status + hide stale run-eval)
+# Tag: 6e0fbf1 (admin UI full polish - RBAC/split/badges/e2e)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:109fb677e8304ab6b841cfb4b66b3405dd48060fb47d641246d76795d14fb64f
+    digest: sha256:dca356a49b095090daebf0aeaad2e1d90638837eec1764afacf62be10497a688
