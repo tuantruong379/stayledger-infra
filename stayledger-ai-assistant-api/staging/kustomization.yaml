@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.4 @ e839fc5 (AI Step-2 hotel MD normalize).
-# Tag: staging-e839fc5
+# Immutable staging image from release/1.1.5 @ 7e75ef2 (sync eval app.branch_id RLS fix).
+# Tag: staging-7e75ef2
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:f483c545bace077333275a8ea2e6fa5be02bbf5ab93723656c631aa4273ff4a3
+    digest: sha256:ff139968d770183af03d002156080eee7c9e1c4b6b7fc222c1963151a97e9c81
 
 
 
