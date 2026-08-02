@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "8064ebe"
-    stayledger.io/git-sha-short: "8064ebe"
-    stayledger.io/image-tag: "staging-8064ebe"
-    stayledger.io/image-digest: "sha256:fcdd0014e8e75e8783fab56f3df9b9df27da4b3223517d0223329ee055eced52"
+    stayledger.io/git-sha: "ba8ad26"
+    stayledger.io/git-sha-short: "ba8ad26"
+    stayledger.io/image-tag: "staging-ba8ad26"
+    stayledger.io/image-digest: "sha256:2c3718830b6d40db58138dd138238ae0b9b884524a67e2d1fbdfbfe8814a5be9"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:d6056911fd3f3f71b2fd440a563aeffd350a2fc62b625eea807e9db5df3d78fb"
-    kubernetes.io/change-cause: "release/1.0.6 canonical KB Slice 0-1 + RAG eval reconcile"
-    stayledger.io/build-provenance: "release-1.0.6-8064ebe"
-    stayledger.io/configmap-revision: "release-metadata-20260801-8064ebe"
+    stayledger.io/rollback-digest: "sha256:fcdd0014e8e75e8783fab56f3df9b9df27da4b3223517d0223329ee055eced52"
+    kubernetes.io/change-cause: "release/1.0.8 audience fail-closed + property-wins composition"
+    stayledger.io/build-provenance: "release-1.0.8-ba8ad26"
+    stayledger.io/configmap-revision: "release-metadata-20260802-ba8ad26"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260801-8064ebe"
+        stayledger.io/configmap-revision: "release-metadata-20260802-ba8ad26"
