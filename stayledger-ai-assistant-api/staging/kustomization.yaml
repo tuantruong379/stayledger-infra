@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.5 @ 7e75ef2 (sync eval app.branch_id RLS fix).
-# Tag: staging-7e75ef2
+# Immutable staging image from release/1.1.6 @ fdce27e (eval branch resolve + RLS GUC).
+# Tag: staging-fdce27e
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ff139968d770183af03d002156080eee7c9e1c4b6b7fc222c1963151a97e9c81
+    digest: sha256:04764c741378991a472c291053f374523560c1186659f5fa9d702c3d4d7fdbcb
 
 
 
