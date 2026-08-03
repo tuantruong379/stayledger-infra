@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.2.1 @ 78f53e4 (matrix AI-MX-002…006 fixes).
-# Tag: 78f53e4
+# Immutable staging image from release/1.2.2 @ 7623f17 (matrix residual fixes, no tenant hardcode).
+# Tag: 7623f17
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:06d2c0736765ebdd31abaee2aed65192f94192a033de4f0058302991ebadff25
+    digest: sha256:1cdf552f68770fe6cb42473ab7f800154ec5aaa8b32086189eb26d6a901ec141
 
 
 

@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "78f53e4"
-    stayledger.io/git-sha-short: "78f53e4"
-    stayledger.io/image-tag: "78f53e4"
-    stayledger.io/image-digest: "sha256:06d2c0736765ebdd31abaee2aed65192f94192a033de4f0058302991ebadff25"
+    stayledger.io/git-sha: "7623f17"
+    stayledger.io/git-sha-short: "7623f17"
+    stayledger.io/image-tag: "7623f17"
+    stayledger.io/image-digest: "sha256:1cdf552f68770fe6cb42473ab7f800154ec5aaa8b32086189eb26d6a901ec141"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:9abb226025346b71c6509f68b03167f5211ea229d7fb7d7ab7b7a7f204486e67"
-    kubernetes.io/change-cause: "release/1.2.1 matrix AI-MX-002..006 branch seed validation handoff KB"
-    stayledger.io/build-provenance: "release-1.2.1-78f53e4"
-    stayledger.io/configmap-revision: "release-metadata-20260803-78f53e4"
+    stayledger.io/rollback-digest: "sha256:06d2c0736765ebdd31abaee2aed65192f94192a033de4f0058302991ebadff25"
+    kubernetes.io/change-cause: "release/1.2.2 matrix residuals ops-before-faq mid-booking validation catalog tier compare"
+    stayledger.io/build-provenance: "release-1.2.2-7623f17"
+    stayledger.io/configmap-revision: "release-metadata-20260803-7623f17"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260803-78f53e4"
+        stayledger.io/configmap-revision: "release-metadata-20260803-7623f17"
