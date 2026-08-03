@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "3b02ef6"
-    stayledger.io/git-sha-short: "3b02ef6"
-    stayledger.io/image-tag: "3b02ef6"
-    stayledger.io/image-digest: "sha256:9abb226025346b71c6509f68b03167f5211ea229d7fb7d7ab7b7a7f204486e67"
+    stayledger.io/git-sha: "78f53e4"
+    stayledger.io/git-sha-short: "78f53e4"
+    stayledger.io/image-tag: "78f53e4"
+    stayledger.io/image-digest: "sha256:06d2c0736765ebdd31abaee2aed65192f94192a033de4f0058302991ebadff25"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:01c9ba8b855bbee800c012718e00eae14073056a67446da031fc8621eb114823"
-    kubernetes.io/change-cause: "release/1.2.0 CONVERSATION_MEMORY grounding leak fix + expanded matrix"
-    stayledger.io/build-provenance: "release-1.2.0-3b02ef6"
-    stayledger.io/configmap-revision: "release-metadata-20260803-3b02ef6"
+    stayledger.io/rollback-digest: "sha256:9abb226025346b71c6509f68b03167f5211ea229d7fb7d7ab7b7a7f204486e67"
+    kubernetes.io/change-cause: "release/1.2.1 matrix AI-MX-002..006 branch seed validation handoff KB"
+    stayledger.io/build-provenance: "release-1.2.1-78f53e4"
+    stayledger.io/configmap-revision: "release-metadata-20260803-78f53e4"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260803-3b02ef6"
+        stayledger.io/configmap-revision: "release-metadata-20260803-78f53e4"
