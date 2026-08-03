@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.2.9 @ efe42e9 (multi-tenant matrix Fail fixes).
-# Tag: efe42e9
+# Immutable staging image from release/1.3.0 @ e57dc17 (widen soft service-request patterns).
+# Tag: e57dc17
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d0832290ecee2befbf986544c8bcef94235f8c6552b690337fed7b890a10b9f2
+    digest: sha256:c71e059b01ebf4b35bf5f8379846e7d7b0bd8d50cf9ac5f22d720252a2240140

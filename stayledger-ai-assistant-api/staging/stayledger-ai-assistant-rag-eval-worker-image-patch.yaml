@@ -7,4 +7,4 @@ spec:
     spec:
       containers:
         - name: rag-eval-worker
-          image: putin111/stayledger-ai-assistant-api@sha256:d0832290ecee2befbf986544c8bcef94235f8c6552b690337fed7b890a10b9f2
+          image: putin111/stayledger-ai-assistant-api@sha256:c71e059b01ebf4b35bf5f8379846e7d7b0bd8d50cf9ac5f22d720252a2240140
