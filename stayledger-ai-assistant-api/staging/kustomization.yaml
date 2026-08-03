@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.19 @ b43ebd1 (channel outbound chips parity).
-# Tag: b43ebd1
+# Immutable staging image from release/1.2.0 @ 3b02ef6 (CONVERSATION_MEMORY leak fix + expanded matrix).
+# Tag: 3b02ef6
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:01c9ba8b855bbee800c012718e00eae14073056a67446da031fc8621eb114823
+    digest: sha256:9abb226025346b71c6509f68b03167f5211ea229d7fb7d7ab7b7a7f204486e67
 
 
 
