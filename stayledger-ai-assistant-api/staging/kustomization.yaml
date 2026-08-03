@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.2.6 @ 8c2a57d (KB verbatim golden-span preserve).
-# Tag: 8c2a57d
+# Immutable staging image from release/1.2.7 @ 738f617 (Cupid Wi-Fi GT + orphan draft retire).
+# Tag: 738f617
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ac2218eb70a4c4b647c8a65659c691fb4c4ecbbff034e62484e1940e27ce7d09
+    digest: sha256:5da5dc22214f0a13be0ef207f1bd7af928e851396c84b1d54944e3c051f3a0b2
