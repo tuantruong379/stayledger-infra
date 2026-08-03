@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "f80c790"
-    stayledger.io/git-sha-short: "f80c790"
-    stayledger.io/image-tag: "f80c790"
-    stayledger.io/image-digest: "sha256:08a318bd30864b3eba83281a5a5bf4a6e43c9c14cb894d4f673db54717614636"
+    stayledger.io/git-sha: "a6fb17b"
+    stayledger.io/git-sha-short: "a6fb17b"
+    stayledger.io/image-tag: "a6fb17b"
+    stayledger.io/image-digest: "sha256:2a4b6920039cd873c3e685a869c5c6a7b97c99f1234b6cdb268bba6cd1e51d2a"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:bd6e4f1c77046ef7523ef28240ef1bd4932a74500cb4bdd9edc329f2b7b25c03"
-    kubernetes.io/change-cause: "release/1.3.4 unknown-promo before catalog LLM"
-    stayledger.io/build-provenance: "release-1.3.4-f80c790"
-    stayledger.io/configmap-revision: "release-metadata-20260803-f80c790"
+    stayledger.io/rollback-digest: "sha256:08a318bd30864b3eba83281a5a5bf4a6e43c9c14cb894d4f673db54717614636"
+    kubernetes.io/change-cause: "release/1.3.5 hold-room + bring-own décor detectors"
+    stayledger.io/build-provenance: "release-1.3.5-a6fb17b"
+    stayledger.io/configmap-revision: "release-metadata-20260803-a6fb17b"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260803-f80c790"
+        stayledger.io/configmap-revision: "release-metadata-20260803-a6fb17b"
