@@ -22,7 +22,7 @@ patches:
   - path: stayledger-ai-assistant-scaling-production-patch.yaml
   - path: stayledger-ai-assistant-api-release-annotations-patch.yaml
   - path: stayledger-ai-assistant-api-legacy-annotations-cleanup.yaml
-  - path: stayledger-ai-assistant-canonical-turn-canary-patch.yaml
+  # Canonical turn is enabled for all tenants in the main ConfigMap patch (no tenant allowlist).
   - path: stayledger-ai-assistant-worker-freeze-replicas-patch.yaml
   - path: stayledger-ai-assistant-nonmutating-canary-replicas-patch.yaml
   - path: stayledger-ai-assistant-rag-eval-worker-image-patch.yaml
@@ -38,12 +38,12 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.1.17 @ 6c4acec (force pricing hour_block onto booking).
-# Tag: 6c4acec
+# Immutable staging image from release/1.1.19 @ b43ebd1 (channel outbound chips parity).
+# Tag: b43ebd1
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:f9a46076aa1a288c8cb91dd0bda93b614d221e4b2f31470ceff434a96d590eba
+    digest: sha256:01c9ba8b855bbee800c012718e00eae14073056a67446da031fc8621eb114823
 
 
 

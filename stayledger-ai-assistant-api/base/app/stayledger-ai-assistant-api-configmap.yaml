@@ -122,6 +122,16 @@ data:
   RAG_CHUNK_PERSIST: "1"
   RAG_EMBEDDING_DIMENSIONS: "1536"
   FEATURE_RAG_PGVECTOR: "1"
+  # Graduated product defaults: all tenants (empty/absent *_TENANT_ALLOWLIST = everyone).
+  RAG_SCOPED_HYBRID_HOTPATH_ENABLED: "1"
+  RAG_GUEST_CITATIONS: "1"
+  FEATURE_RERANKER_ENABLED: "1"
+  AI_CANONICAL_TURN_ENABLED: "1"
+  AI_DURABLE_MEMORY_ENABLED: "1"
+  AI_MULTITURN_MEMORY_ENABLED: "1"
+  # Delivery switch only — do not require a PSID/UID destination allowlist by default.
+  CHANNEL_OUTBOUND_MODE: "sink"
+  CHANNEL_OUTBOUND_ALLOWLIST_REQUIRED: "0"
 
   # --- LLM in-process cache (llm_cache.py) ---
   LLM_CACHE_TTL_S: "300"
