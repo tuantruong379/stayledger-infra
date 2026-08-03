@@ -12,9 +12,9 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:5da5dc22214f0a13be0ef207f1bd7af928e851396c84b1d54944e3c051f3a0b2"
-  STAYLEDGER_IMAGE_TAG: "738f617"
-  APP_VERSION: "1.2.7"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:a240b6a6b6fec537273d3d57a5c3cec56d235b1933d1c692e5c48f0269d7695d"
+  STAYLEDGER_IMAGE_TAG: "3d0bdb8"
+  APP_VERSION: "1.2.8"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
   AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
