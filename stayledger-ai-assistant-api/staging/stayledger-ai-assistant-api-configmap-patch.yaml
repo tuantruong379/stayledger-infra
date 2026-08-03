@@ -12,9 +12,9 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:01c9ba8b855bbee800c012718e00eae14073056a67446da031fc8621eb114823"
-  STAYLEDGER_IMAGE_TAG: "b43ebd1"
-  APP_VERSION: "1.1.19"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:ac2218eb70a4c4b647c8a65659c691fb4c4ecbbff034e62484e1940e27ce7d09"
+  STAYLEDGER_IMAGE_TAG: "8c2a57d"
+  APP_VERSION: "1.2.6"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
   AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
@@ -25,7 +25,7 @@ data:
   # Fail-closed when enabled; set false only as ops break-glass.
   RAG_AI_CLEAN_ENABLED: "true"
   RAG_AI_CLEAN_DEPLOYMENT: "gpt-4o-mini"
-  RAG_AI_CLEAN_PROMPT_VERSION: "hotel-kb-normalize-v1"
+  RAG_AI_CLEAN_PROMPT_VERSION: "hotel-kb-normalize-v2"
   STAYLEDGER_PMS_INTERNAL_BASE_URL: "https://stg-api.stayledger.io"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "4"
