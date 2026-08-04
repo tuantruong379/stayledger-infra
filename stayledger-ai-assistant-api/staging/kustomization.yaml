@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.3.9 @ f68fa98 (emoji VI seal + judge EN needles).
-# Tag: f68fa98
+# Immutable staging image from release/1.4.0 @ a4ebb12 (soft-ops FAQ + multi-topic 10.9).
+# Tag: a4ebb12
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ef1ba98445ff263e73cd3e0c4d3403787dc73503911a2f3e86fbcbae1188c607
+    digest: sha256:064a5ded803139a85254d199e9b2704e1681a34f13cb148b420803952c796df4
