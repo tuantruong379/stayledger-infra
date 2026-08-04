@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.2 @ edd31bb (matrix 1.1/2.7/2.4 booking+landmark).
-# Tag: edd31bb
+# Immutable staging image from release/1.5.3 @ 516af40 (landmark proximity 2.2/2.8).
+# Tag: 516af40
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:7b09cc71ef313d4911e4d7b4465d0faaf7c0aa3bbbff250c7b16eb3dd6382e72
+    digest: sha256:22e5d57718956f09b27bfe719b0208a9b8d40941bc70b6abec46b71dc43dcb10
