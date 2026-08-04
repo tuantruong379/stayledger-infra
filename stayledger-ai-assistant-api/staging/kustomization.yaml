@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.0 @ 11c76c6 (matrix 6.3 mang≠mạng + 9.7/9.10 honesty).
-# Tag: 11c76c6
+# Immutable staging image from release/1.5.1 @ bb44628 (Cupid matrix 9.5 pet soft-confirm).
+# Tag: bb44628
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:139ae7df91d74ec4fca8a9c6abd002bd923dbeeaac6a345f60f0cc9699748d40
+    digest: sha256:0eef41b8d7dd18c437b43390de7f773712c084c929ff8d60dc7dec8bd988af82
