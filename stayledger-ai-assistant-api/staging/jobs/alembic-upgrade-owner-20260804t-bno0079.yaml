@@ -1,0 +1,88 @@
+# Owner-identity Alembic upgrade Job — migration 0079 (bno.booking_id nullable).
+#
+# Apply:
+#   kubectl config use-context HK-HUB-Cluster
+#   kubectl apply -f stayledger-ai-assistant-api/staging/jobs/alembic-upgrade-owner-20260804t-bno0079.yaml
+#   kubectl -n stayledger-ai-assistant wait --for=condition=complete job/alembic-upgrade-owner-20260804t-bno0079 --timeout=300s
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-owner-20260804t-bno0079
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database
+  annotations:
+    stayledger.io/migration-identity: "table-owner"
+    stayledger.io/do-not-use-app-dsn: "true"
+    stayledger.io/target-revision: "0079"
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 7200
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:786eebd4c31f5fdbca5636b8453f20810f166faac17f631bc1d15c2ec95d8b61
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              set -euo pipefail
+              if [ -z "${HOTEL_OPS_DSN_OWNER:-}" ]; then
+                echo "BLOCKED: HOTEL_OPS_DSN_OWNER unset — refusing app-DSN DDL" >&2
+                exit 2
+              fi
+              export HOTEL_OPS_DSN="$HOTEL_OPS_DSN_OWNER"
+              export STAYLEDGER_AI_DSN="$HOTEL_OPS_DSN_OWNER"
+              export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"
+              PYTHONPATH=/app alembic upgrade head
+              PYTHONPATH=/app alembic current
+          env:
+            - name: HOTEL_OPS_DSN_OWNER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-ai-assistant-migration-secrets
+                  key: HOTEL_OPS_DSN_OWNER
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "500m"
+              memory: 256Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi

@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.4.1 @ fedc3e1 (soft-ops vape/9.4 false-positive fix).
-# Tag: fedc3e1
+# Immutable staging image from release/1.4.2 @ 41a0abf (standard KB + PMS-draft ops email + matrix 1.1S/3.2A/3.2B).
+# Tag: 41a0abf
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b9c2e7b85dc54b4a57b016944ce76a69d654f7d5c86d3455a1f0086e3129ee4f
+    digest: sha256:786eebd4c31f5fdbca5636b8453f20810f166faac17f631bc1d15c2ec95d8b61
