@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.4 @ 9759a9d (narrow proximity soft-match; keep 2.4 address).
-# Tag: 9759a9d
+# Immutable staging image from release/1.5.5 @ f7a5fd0 (12.1 EN judge + 8.6/8.7/9.10 soft FAQ).
+# Tag: f7a5fd0
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:493148d07482767fb9d9c9512412203aee676135c2c3e3d47e375ff9ebf10380
+    digest: sha256:2a863ed07e5a8ada1e2a6d5ad57dfede1aacfe4752844683de293c32dc598649
