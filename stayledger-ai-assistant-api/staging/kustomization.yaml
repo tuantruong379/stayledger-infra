@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.5 @ f7a5fd0 (12.1 EN judge + 8.6/8.7/9.10 soft FAQ).
-# Tag: f7a5fd0
+# Immutable staging image from release/1.5.6 @ c8dfa42 (matrix v2 FAIL/REVIEW funnel + soft FAQ).
+# Tag: c8dfa42
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:2a863ed07e5a8ada1e2a6d5ad57dfede1aacfe4752844683de293c32dc598649
+    digest: sha256:9b45f1adcde77d78c31be475c6c066cd72ef75443cb5cd775058660ecd09776f
