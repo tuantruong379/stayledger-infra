@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.3.6 @ b1703e4 (matrix 130 FAIL/REVIEW routing fixes).
-# Tag: b1703e4
+# Immutable staging image from release/1.3.7 @ 20f158e (ancillary realtime + EN/emoji focus fixes).
+# Tag: 20f158e
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:a6e90479c32fd3614a43532a184fb0f4a13e0b608b7bde194627dd91b315ddee
+    digest: sha256:520fd6551c5b05c084516a8162894b684fce771890a48cfa0b700257444e0b04
