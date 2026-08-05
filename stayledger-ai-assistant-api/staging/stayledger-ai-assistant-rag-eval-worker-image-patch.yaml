@@ -8,4 +8,4 @@ spec:
       containers:
         - name: rag-eval-worker
           # Keep rag-eval worker on the same staging API digest as kustomization images pin.
-          image: putin111/stayledger-ai-assistant-api@sha256:949290cb6fd0af2ab3c443671d7a1028a4db5bd05482edb99288e4a4107c4aa0
+          image: putin111/stayledger-ai-assistant-api@sha256:38311ca7fe5db35bcd1d5bb8914b574ff7d6dcdcc79fd50ee48024390269576a
