@@ -7,4 +7,5 @@ spec:
     spec:
       containers:
         - name: rag-eval-worker
-          image: putin111/stayledger-ai-assistant-api@sha256:2a4b6920039cd873c3e685a869c5c6a7b97c99f1234b6cdb268bba6cd1e51d2a
+          # Keep rag-eval worker on the same staging API digest (room_service schema + residual fixes).
+          image: putin111/stayledger-ai-assistant-api@sha256:ede3d55b5093fc641742145287eac4ece52570e1032cfc0801ce7d3c7e32095e
