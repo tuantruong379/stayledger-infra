@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.10 @ 72bb0b4 (G1_023 judge widen + residual product fixes).
-# Tag: 72bb0b4
+# Immutable staging image from release/1.5.11 @ 18d06fd (G5_198 budget soft + G6_218 weapons refuse).
+# Tag: 18d06fd
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:f39a90321c679d87a217feb7f340011c022d6441176660e1d748ab65a1d67e40
+    digest: sha256:4e5f091d32ae914873619a03d5f547393e6f208290487ca8001fb0d7ea80759c
