@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.13 @ c33f325 (G1_041 guest revise after pricing).
-# Tag: c33f325
+# Immutable staging image from release/1.5.14 @ 41e93d0 (FAIL/REVIEW My Khe + laundry + late checkout).
+# Tag: 41e93d0
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:38311ca7fe5db35bcd1d5bb8914b574ff7d6dcdcc79fd50ee48024390269576a
+    digest: sha256:6c35e8970a0ba708e144a7cda2f9b20e416f18a1a222dffd94848c69d98650cb
