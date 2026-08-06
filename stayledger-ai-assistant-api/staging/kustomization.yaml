@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.24 @ e0809db (routing FP: pricing/payment/soft-ops).
-# Tag: e0809db
+# Immutable staging image from release/1.5.25 @ 7479d87 (G2_064 Mỹ Khê có abbrev fix).
+# Tag: 7479d87
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3fdfdb7a619407542ac34bbc7fcec61422e042669c40268179d45f4957681380
+    digest: sha256:af04373a013b88dd1b9f2a96c8426243f895fa4afe34d307eff16827096430fe

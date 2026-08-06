@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "e0809db"
-    stayledger.io/git-sha-short: "e0809db"
-    stayledger.io/image-tag: "e0809db"
-    stayledger.io/image-digest: "sha256:3fdfdb7a619407542ac34bbc7fcec61422e042669c40268179d45f4957681380"
+    stayledger.io/git-sha: "7479d87"
+    stayledger.io/git-sha-short: "7479d87"
+    stayledger.io/image-tag: "7479d87"
+    stayledger.io/image-digest: "sha256:af04373a013b88dd1b9f2a96c8426243f895fa4afe34d307eff16827096430fe"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:7e26cd5db299fd7edaccd1de71147b4ffe35935703b1ca8ac83d2c884f9345e0"
-    kubernetes.io/change-cause: "release/1.5.24 routing FP pricing Hoàn Kiếm + payment lookup + rag-first address"
-    stayledger.io/build-provenance: "release-1.5.24-e0809db"
-    stayledger.io/configmap-revision: "release-metadata-20260806-e0809db"
+    stayledger.io/rollback-digest: "sha256:3fdfdb7a619407542ac34bbc7fcec61422e042669c40268179d45f4957681380"
+    kubernetes.io/change-cause: "release/1.5.25 G2_064 stop unknown-branch capture after Mỹ Khê có"
+    stayledger.io/build-provenance: "release-1.5.25-7479d87"
+    stayledger.io/configmap-revision: "release-metadata-20260806-7479d87"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260806-e0809db"
+        stayledger.io/configmap-revision: "release-metadata-20260806-7479d87"
