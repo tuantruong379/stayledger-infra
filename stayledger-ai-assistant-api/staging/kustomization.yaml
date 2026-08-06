@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.22 @ 7c8ac07 (Router _bs SessionAuthority fix).
+# Immutable staging image from release/1.5.22 @ 7c8ac07 rebuild (full matrix gate).
 # Tag: 7c8ac07
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:de9c726983be81233aa24cc6f2189018b52a3936ed25a12a34418cd4a8195da3
+    digest: sha256:21c1c94f698edb575fd3d84f77113361826f751ace7dd715498b2e8a47bb0755
