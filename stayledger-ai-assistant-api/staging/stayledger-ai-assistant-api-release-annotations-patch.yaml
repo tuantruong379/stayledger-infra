@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "7479d87"
-    stayledger.io/git-sha-short: "7479d87"
-    stayledger.io/image-tag: "7479d87"
-    stayledger.io/image-digest: "sha256:af04373a013b88dd1b9f2a96c8426243f895fa4afe34d307eff16827096430fe"
+    stayledger.io/git-sha: "faa1024"
+    stayledger.io/git-sha-short: "faa1024"
+    stayledger.io/image-tag: "faa1024"
+    stayledger.io/image-digest: "sha256:99b5e3e57fac85a607489e9c3f342e3da8d44802e8f9d1bc744bdadb6aa18486"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:3fdfdb7a619407542ac34bbc7fcec61422e042669c40268179d45f4957681380"
-    kubernetes.io/change-cause: "release/1.5.25 G2_064 stop unknown-branch capture after Mỹ Khê có"
-    stayledger.io/build-provenance: "release-1.5.25-7479d87"
-    stayledger.io/configmap-revision: "release-metadata-20260806-7479d87"
+    stayledger.io/rollback-digest: "sha256:af04373a013b88dd1b9f2a96c8426243f895fa4afe34d307eff16827096430fe"
+    kubernetes.io/change-cause: "release/1.5.26 G2_064 treat branch aliases as known CN labels"
+    stayledger.io/build-provenance: "release-1.5.26-faa1024"
+    stayledger.io/configmap-revision: "release-metadata-20260806-faa1024"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260806-7479d87"
+        stayledger.io/configmap-revision: "release-metadata-20260806-faa1024"
