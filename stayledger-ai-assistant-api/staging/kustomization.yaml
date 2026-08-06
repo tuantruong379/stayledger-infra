@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.18 @ 4d8f6d7 (check-in time chips follow hotel clock).
-# Tag: 4d8f6d7
+# Immutable staging image from release/1.5.19 @ 21bb0d2 (funnel memory harden + REVIEW soft-ops).
+# Tag: 21bb0d2
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:87662e7e884ca6321eedcd66eb2c54b354848044d001f5d457de8b41a7fdfd6b
+    digest: sha256:5169f7528a46c4c5cce78c40c0702dd32a7749872eeb0f32f0bd3e484657c5d3
