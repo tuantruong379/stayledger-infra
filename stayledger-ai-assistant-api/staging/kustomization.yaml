@@ -38,9 +38,9 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.27 @ ff0000c (BUG-01 booking sticky special notes).
-# Tag: ff0000c
+# Immutable staging image from release/1.5.28 @ 9bd1f50 (BUG-01 note ack on booking slots).
+# Tag: 9bd1f50
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:fcd95701638210a38f8bfc31ebd8dd32dc62f0726cb2c38c16325481a7eb1e1e
+    digest: sha256:73db4ff18e816bcb611826653a024928af83332b27f4fb6f345192626344081c
