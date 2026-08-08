@@ -38,9 +38,10 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Immutable staging image from release/1.5.28 @ 9bd1f50 (BUG-01 note ack on booking slots).
-# Tag: 9bd1f50
+# Immutable staging image from dirty working tree on release/1.5.28 @ 9bd1f50
+# (+ booking UX: phone reject / hourly copy / confirm chips + matrix v2 FreeText 500).
+# Tag: ftfix-202608081130 (FreeText fail root-cause patches round 2)
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:73db4ff18e816bcb611826653a024928af83332b27f4fb6f345192626344081c
+    digest: sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484

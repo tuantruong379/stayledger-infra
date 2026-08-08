@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "9bd1f50"
-    stayledger.io/git-sha-short: "9bd1f50"
-    stayledger.io/image-tag: "9bd1f50"
-    stayledger.io/image-digest: "sha256:73db4ff18e816bcb611826653a024928af83332b27f4fb6f345192626344081c"
+    stayledger.io/git-sha: "ftfix-202608081130"
+    stayledger.io/git-sha-short: "ftfix-202608081130"
+    stayledger.io/image-tag: "ftfix-202608081130"
+    stayledger.io/image-digest: "sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:fcd95701638210a38f8bfc31ebd8dd32dc62f0726cb2c38c16325481a7eb1e1e"
-    kubernetes.io/change-cause: "release/1.5.28 BUG-01 ack special notes on booking slots"
-    stayledger.io/build-provenance: "release-1.5.28-9bd1f50"
-    stayledger.io/configmap-revision: "release-metadata-20260806-9bd1f50"
-    stayledger.io/source-dirty: "clean"
+    stayledger.io/rollback-digest: "sha256:81d50ae6c7256257e2bef7090ac45c27c8a45ee8e4eeb929beddc08e52b08c4f"
+    kubernetes.io/change-cause: "staging: FreeText matrix fail fixes round 2"
+    stayledger.io/build-provenance: "release-1.5.28-ftfix-202608081130-dirty"
+    stayledger.io/configmap-revision: "release-metadata-20260808-ftfix2"
+    stayledger.io/source-dirty: "dirty"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260806-9bd1f50"
+        stayledger.io/configmap-revision: "release-metadata-20260808-ftfix2"
