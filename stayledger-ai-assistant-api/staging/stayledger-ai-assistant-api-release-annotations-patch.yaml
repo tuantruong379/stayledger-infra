@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ftfix-202608081305"
-    stayledger.io/git-sha-short: "ftfix-202608081305"
-    stayledger.io/image-tag: "ftfix-202608081305"
-    stayledger.io/image-digest: "sha256:4824f8b280cc10ba1112939c2e84be152717e9381b2b160842525c5b1ccfc0d3"
+    stayledger.io/git-sha: "ftfix-202608081416"
+    stayledger.io/git-sha-short: "ftfix-202608081416"
+    stayledger.io/image-tag: "ftfix-202608081416"
+    stayledger.io/image-digest: "sha256:659ce46c84eeceed4cc1be45337bc7e61777cdbc3b7fef6f829c02bde81ab9c8"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484"
-    kubernetes.io/change-cause: "staging: residual matrix500 fail fixes (SĐT/cancel/roleplay/multi-policy)"
-    stayledger.io/build-provenance: "release-1.6.0-ftfix-202608081305-dirty"
-    stayledger.io/configmap-revision: "release-metadata-20260808-ftfix5"
+    stayledger.io/rollback-digest: "sha256:4824f8b280cc10ba1112939c2e84be152717e9381b2b160842525c5b1ccfc0d3"
+    kubernetes.io/change-cause: "staging: same-day walk-in/midnight + vague booking FAQ fix"
+    stayledger.io/build-provenance: "release-1.6.2-ftfix-202608081416"
+    stayledger.io/configmap-revision: "release-metadata-20260808-ftfix6"
     stayledger.io/source-dirty: "dirty"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260808-ftfix5"
+        stayledger.io/configmap-revision: "release-metadata-20260808-ftfix6"
