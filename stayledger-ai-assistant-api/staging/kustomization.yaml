@@ -40,8 +40,8 @@ patches:
 
 # Immutable staging image from dirty working tree on release/1.5.28 @ 9bd1f50
 # (+ booking UX: phone reject / hourly copy / confirm chips + matrix v2 FreeText 500).
-# Tag: ftfix-202608081130 (FreeText fail root-cause patches round 2)
+# Tag: ftfix-202608081305 (FreeText fail root-cause patches round 2)
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484
+    digest: sha256:4824f8b280cc10ba1112939c2e84be152717e9381b2b160842525c5b1ccfc0d3

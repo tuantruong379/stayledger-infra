@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ftfix-202608081130"
-    stayledger.io/git-sha-short: "ftfix-202608081130"
-    stayledger.io/image-tag: "ftfix-202608081130"
-    stayledger.io/image-digest: "sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484"
+    stayledger.io/git-sha: "ftfix-202608081305"
+    stayledger.io/git-sha-short: "ftfix-202608081305"
+    stayledger.io/image-tag: "ftfix-202608081305"
+    stayledger.io/image-digest: "sha256:4824f8b280cc10ba1112939c2e84be152717e9381b2b160842525c5b1ccfc0d3"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:81d50ae6c7256257e2bef7090ac45c27c8a45ee8e4eeb929beddc08e52b08c4f"
-    kubernetes.io/change-cause: "staging: FreeText matrix fail fixes round 2"
-    stayledger.io/build-provenance: "release-1.5.28-ftfix-202608081130-dirty"
-    stayledger.io/configmap-revision: "release-metadata-20260808-ftfix2"
+    stayledger.io/rollback-digest: "sha256:75e3d8e19e9947782c5865bfe635dcb4e0b1434c66eaabbd85818d01631ee484"
+    kubernetes.io/change-cause: "staging: residual matrix500 fail fixes (SĐT/cancel/roleplay/multi-policy)"
+    stayledger.io/build-provenance: "release-1.6.0-ftfix-202608081305-dirty"
+    stayledger.io/configmap-revision: "release-metadata-20260808-ftfix5"
     stayledger.io/source-dirty: "dirty"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260808-ftfix2"
+        stayledger.io/configmap-revision: "release-metadata-20260808-ftfix5"
