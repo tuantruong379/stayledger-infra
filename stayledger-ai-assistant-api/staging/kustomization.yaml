@@ -40,8 +40,8 @@ patches:
 
 # Immutable staging image from dirty working tree on release/1.5.28 @ 9bd1f50
 # (+ booking UX: phone reject / hourly copy / confirm chips + matrix v2 FreeText 500).
-# Tag: ftfix-202608081416 (same-day walk-in/midnight + vague booking FAQ (release/1.6.2))
+# Tag: ftfix-202608121324 (matrix v2 1000 CAT pack (release/1.6.3))
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:659ce46c84eeceed4cc1be45337bc7e61777cdbc3b7fef6f829c02bde81ab9c8
+    digest: sha256:f4d0e8f4fd23bf5acfde42429e2ebf0d211f059d50e80cfdc2c9d9644aff1b9f
