@@ -15,14 +15,13 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Billing catalog sync — 2026-08-13
-# API commit 8034600 (release/1.3.0)
-# Tag: staging-80346002
-# Digest: sha256:0297681f2aab85d5478ad7fc9fb4210fb9010f938b313daa821c323f663e9ea0
-# Includes: Guest Chat 490K/990K/1.89M + AI Ops 390K list prices.
+# Guest chat Assistant bootstrap + chip ids — 2026-08-13
+# API commit 74a6664 (release/1.3.1)
+# Tag: staging-74a6664
+# Digest: sha256:ab1543feff1b39b09db976444a5194dc0b110804ea1f3854e42ba05fc8d91d57
 images:
   - name: putin111/stayledger-api
-    digest: sha256:0297681f2aab85d5478ad7fc9fb4210fb9010f938b313daa821c323f663e9ea0
+    digest: sha256:ab1543feff1b39b09db976444a5194dc0b110804ea1f3854e42ba05fc8d91d57
 
 patches:
   - path: patches/deployment-staging.yaml

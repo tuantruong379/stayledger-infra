@@ -1,3 +1,6 @@
+# Keep rag-eval worker on the same staging API digest as kustomization images pin.
+# Restate SA + resources so this strategic-merge patch is a complete Deployment
+# for Kubernetes IaC scanners (S6865, S6892, S6864, S6873, S6897).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,7 +8,17 @@ metadata:
 spec:
   template:
     spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
       containers:
         - name: rag-eval-worker
-          # Keep rag-eval worker on the same staging API digest as kustomization images pin.
-          image: putin111/stayledger-ai-assistant-api@sha256:06d75fced4330f06b9709348ae15cfec25ef0bd753f93f65836b0ec915d5d0e5
+          image: putin111/stayledger-ai-assistant-api@sha256:919530f63edb9c95f887ebdcbb7974e21e12ce7655979b70455ce2e09944d89e
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+              ephemeral-storage: 64Mi

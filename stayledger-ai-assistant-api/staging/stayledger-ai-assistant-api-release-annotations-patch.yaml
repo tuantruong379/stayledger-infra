@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ftfix-202608131920"
-    stayledger.io/git-sha-short: "ftfix-202608131920"
-    stayledger.io/image-tag: "ftfix-202608131920"
-    stayledger.io/image-digest: "sha256:06d75fced4330f06b9709348ae15cfec25ef0bd753f93f65836b0ec915d5d0e5"
+    stayledger.io/git-sha: "0ce9a23"
+    stayledger.io/git-sha-short: "0ce9a23"
+    stayledger.io/image-tag: "0ce9a23"
+    stayledger.io/image-digest: "sha256:919530f63edb9c95f887ebdcbb7974e21e12ce7655979b70455ce2e09944d89e"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:7e0105c0abbe3caffa00bd19ab071e62d83f573c9443b028c3f8b3c707ff30a5"
-    kubernetes.io/change-cause: "staging: CAT1000 residual promo/VAT/FAQ fixes"
-    stayledger.io/build-provenance: "release-1.6.5-ftfix-202608131920"
-    stayledger.io/configmap-revision: "release-metadata-20260813-ftfix9"
+    stayledger.io/rollback-digest: "sha256:06d75fced4330f06b9709348ae15cfec25ef0bd753f93f65836b0ec915d5d0e5"
+    kubernetes.io/change-cause: "staging: guest-chat mapping identifier + welcome chips"
+    stayledger.io/build-provenance: "release-1.6.6-0ce9a23"
+    stayledger.io/configmap-revision: "release-metadata-20260813-guestchat"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260813-ftfix9"
+        stayledger.io/configmap-revision: "release-metadata-20260813-guestchat"

@@ -10,7 +10,7 @@ spec:
     metadata:
       labels:
         # Cycle 10 a11y + residual + cachebust candidate 4066ee7
-        version: "staging-36da8930-next"
+        version: "staging-709172d"
 
 
 
