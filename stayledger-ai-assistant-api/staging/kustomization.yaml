@@ -40,8 +40,8 @@ patches:
 
 # Immutable staging image from dirty working tree on release/1.5.28 @ 9bd1f50
 # (+ booking UX: phone reject / hourly copy / confirm chips + matrix v2 FreeText 500).
-# Tag: ftfix-202608130945 (CAT1000 routing/safety fixes (release/1.6.4))
+# Tag: ftfix-202608131920 (CAT1000 residual fixes (release/1.6.5))
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:7e0105c0abbe3caffa00bd19ab071e62d83f573c9443b028c3f8b3c707ff30a5
+    digest: sha256:06d75fced4330f06b9709348ae15cfec25ef0bd753f93f65836b0ec915d5d0e5
