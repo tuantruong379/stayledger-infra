@@ -15,14 +15,14 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Staging closure remediations — 2026-07-25
-# Commit-addressable SHA 828067d617c421e810496994971aa11a640f0879
-# Tag: staging-828067d
-# Digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
-# Includes: notification delivery lifecycle, AI quota reserve, SES email (default).
+# Billing catalog sync — 2026-08-13
+# API commit 8034600 (release/1.3.0)
+# Tag: staging-80346002
+# Digest: sha256:0297681f2aab85d5478ad7fc9fb4210fb9010f938b313daa821c323f663e9ea0
+# Includes: Guest Chat 490K/990K/1.89M + AI Ops 390K list prices.
 images:
   - name: putin111/stayledger-api
-    digest: sha256:e296467390a41dedab6793b5d0c18f57c005cb053da63552abcde3a5586bf303
+    digest: sha256:0297681f2aab85d5478ad7fc9fb4210fb9010f938b313daa821c323f663e9ea0
 
 patches:
   - path: patches/deployment-staging.yaml
