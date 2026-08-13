@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ftfix-202608121324"
-    stayledger.io/git-sha-short: "ftfix-202608121324"
-    stayledger.io/image-tag: "ftfix-202608121324"
-    stayledger.io/image-digest: "sha256:f4d0e8f4fd23bf5acfde42429e2ebf0d211f059d50e80cfdc2c9d9644aff1b9f"
+    stayledger.io/git-sha: "ftfix-202608130945"
+    stayledger.io/git-sha-short: "ftfix-202608130945"
+    stayledger.io/image-tag: "ftfix-202608130945"
+    stayledger.io/image-digest: "sha256:7e0105c0abbe3caffa00bd19ab071e62d83f573c9443b028c3f8b3c707ff30a5"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:659ce46c84eeceed4cc1be45337bc7e61777cdbc3b7fef6f829c02bde81ab9c8"
-    kubernetes.io/change-cause: "staging: matrix v2 expand to 1000 CAT cases"
-    stayledger.io/build-provenance: "release-1.6.3-ftfix-202608121324"
-    stayledger.io/configmap-revision: "release-metadata-20260812-ftfix7"
-    stayledger.io/source-dirty: "dirty"
+    stayledger.io/rollback-digest: "sha256:f4d0e8f4fd23bf5acfde42429e2ebf0d211f059d50e80cfdc2c9d9644aff1b9f"
+    kubernetes.io/change-cause: "staging: CAT1000 routing/safety fail fixes"
+    stayledger.io/build-provenance: "release-1.6.4-ftfix-202608130945"
+    stayledger.io/configmap-revision: "release-metadata-20260813-ftfix8"
+    stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260812-ftfix7"
+        stayledger.io/configmap-revision: "release-metadata-20260813-ftfix8"
