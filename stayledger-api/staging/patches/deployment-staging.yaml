@@ -17,6 +17,12 @@ spec:
           env:
             - name: ALLOWED_ORIGINS
               value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
+            # Live secret leftover must not win over overlay SoT (non-secret cluster DNS).
+            - name: AI_ASSISTANT_INTERNAL_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-api-config
+                  key: AI_ASSISTANT_INTERNAL_BASE_URL
           resources:
             requests:
               cpu: "500m"

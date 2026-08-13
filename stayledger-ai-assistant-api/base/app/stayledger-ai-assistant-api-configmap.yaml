@@ -109,6 +109,10 @@ data:
   # Deployment gates only. Per-property provider/capabilities live in pms_connections.
   # Overlays enable StayLedger / conversation sync when qualified.
   PMS_CONNECTOR_ENABLED: "1"
+  # PMS Web Chat JWT verify (overlays set PMS_CONTEXT_JWKS_URL to the env ClusterIP).
+  PMS_CONTEXT_ISS: "stayledger-pms"
+  PMS_CONTEXT_AUD: "stayledger-ai-assistant"
+  PMS_CONTEXT_CLOCK_SKEW_S: "10"
   PMS_PROVIDER_DEFAULT: "local"
   PMS_STAYLEDGER_ENABLED: "0"
   PMS_DRAFT_BOOKING_ENABLED: "0"

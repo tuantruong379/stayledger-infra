@@ -131,7 +131,9 @@ data:
   # Reasoning: G07 — enable payload-hash idempotency v2 via committed overlay (not live patch).
   EXTERNAL_BOOKING_IDEMPOTENCY_V2_ENABLED: "true"
   # Reasoning: previously live-only; must be in overlay SoT (non-secret).
-  AI_ASSISTANT_INTERNAL_BASE_URL: "http://hotel-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
+  # Service was renamed from hotel-assistant-api → stayledger-ai-assistant-api.
+  # Staging deploy patch pins this key from the ConfigMap so stayledger-staging-secrets cannot override it.
+  AI_ASSISTANT_INTERNAL_BASE_URL: "http://stayledger-ai-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
   PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260722"
   BACKUP_ENABLED: "true"
   BACKUP_SCHEDULE: "0 22 * * *"

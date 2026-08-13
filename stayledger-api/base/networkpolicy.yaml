@@ -35,13 +35,14 @@ spec:
         - protocol: TCP
           port: 3001
     # StayLedger AI Assistant — JWKS fetch, External API quote/draft, aggregate callbacks
+    # Label matches live deploy/svc stayledger-ai-assistant-api (not legacy hotel-assistant-api).
     - from:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: stayledger-ai-assistant
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-api
+              app.kubernetes.io/name: stayledger-ai-assistant-api
       ports:
         - protocol: TCP
           port: 3001
@@ -109,7 +110,7 @@ spec:
       ports:
         - protocol: TCP
           port: 6379
-    # StayLedger AI Assistant — PMS booking.confirmed / booking.cancelled webhook delivery
+    # StayLedger AI Assistant — PMS Web Chat BFF + booking webhook delivery
     # (public hosts strip /internal; subscriptions use cluster DNS :8000)
     - to:
         - namespaceSelector:
@@ -117,7 +118,7 @@ spec:
               kubernetes.io/metadata.name: stayledger-ai-assistant
           podSelector:
             matchLabels:
-              app.kubernetes.io/name: hotel-assistant-api
+              app.kubernetes.io/name: stayledger-ai-assistant-api
       ports:
         - protocol: TCP
           port: 8000
