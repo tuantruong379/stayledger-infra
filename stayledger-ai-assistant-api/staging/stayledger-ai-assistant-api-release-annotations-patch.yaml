@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "ftfix-202608141038"
-    stayledger.io/git-sha-short: "ftfix-202608141038"
-    stayledger.io/image-tag: "ftfix-202608141038"
-    stayledger.io/image-digest: "sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e"
+    stayledger.io/git-sha: "ftfix-202608141217"
+    stayledger.io/git-sha-short: "ftfix-202608141217"
+    stayledger.io/image-tag: "ftfix-202608141217"
+    stayledger.io/image-digest: "sha256:9c77793ee94b5be6803cc1139f3f6293a117c83b0473d2ca940c89e50d8204df"
     stayledger.io/schema-head: "0078"
-    stayledger.io/rollback-digest: "sha256:78200f6877189eea13c9fad53a25df9b2ea94ad8ddd69ce5f673ca527db796ec"
-    kubernetes.io/change-cause: "staging: reject explicit past calendar dates (no silent snap)"
-    stayledger.io/build-provenance: "release-1.6.9-ftfix-202608141038"
-    stayledger.io/configmap-revision: "release-metadata-20260814-ftfix11"
+    stayledger.io/rollback-digest: "sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e"
+    kubernetes.io/change-cause: "staging: gate past-calendar reject away from holiday surcharge FAQ"
+    stayledger.io/build-provenance: "release-1.6.10-ftfix-202608141217"
+    stayledger.io/configmap-revision: "release-metadata-20260814-ftfix12"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260814-ftfix11"
+        stayledger.io/configmap-revision: "release-metadata-20260814-ftfix12"

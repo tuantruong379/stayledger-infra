@@ -12,7 +12,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: rag-eval-worker
-          image: putin111/stayledger-ai-assistant-api@sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+          image: putin111/stayledger-ai-assistant-api@sha256:9c77793ee94b5be6803cc1139f3f6293a117c83b0473d2ca940c89e50d8204df
           resources:
             requests:
               cpu: "100m"

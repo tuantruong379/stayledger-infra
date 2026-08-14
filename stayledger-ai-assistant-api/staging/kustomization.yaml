@@ -38,11 +38,11 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Past-date reject (no silent snap) — 2026-08-14
-# API commit 5d31b55 (release/1.6.9)
-# Tag: ftfix-202608141038
-# Digest: sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+# Past-date reject gated to stay context — 2026-08-14
+# API commit 171dc11 (release/1.6.10)
+# Tag: ftfix-202608141217
+# Digest: sha256:9c77793ee94b5be6803cc1139f3f6293a117c83b0473d2ca940c89e50d8204df
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+    digest: sha256:9c77793ee94b5be6803cc1139f3f6293a117c83b0473d2ca940c89e50d8204df
