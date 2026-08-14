@@ -38,11 +38,11 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Guest chat mapping identifier + welcome chips — 2026-08-13
-# API commit 0ce9a23 (release/1.6.6)
-# Tag: 0ce9a23
-# Digest: sha256:919530f63edb9c95f887ebdcbb7974e21e12ce7655979b70455ce2e09944d89e
+# CAT1000 residual fixes — 2026-08-14
+# API commit 7881fad (release/1.6.7)
+# Tag: ftfix-202608140807
+# Digest: sha256:78200f6877189eea13c9fad53a25df9b2ea94ad8ddd69ce5f673ca527db796ec
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:919530f63edb9c95f887ebdcbb7974e21e12ce7655979b70455ce2e09944d89e
+    digest: sha256:78200f6877189eea13c9fad53a25df9b2ea94ad8ddd69ce5f673ca527db796ec
