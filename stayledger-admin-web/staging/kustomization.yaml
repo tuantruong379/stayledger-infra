@@ -14,13 +14,13 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Guest chat Assistant title/greeting/chips — 2026-08-13
-# Admin source SHA 709172d (release/1.2.37)
-# Tag: staging-709172d
-# Digest: sha256:9a953ad622fe07444e4f6e66ed129ae9771805c035728e7830aeb34e01717d49
+# Guest chat hub cleanup + property-locked header — 2026-08-14
+# Admin source SHA 0c3383c (release/1.3.0)
+# Tag: staging-0c3383c2
+# Digest: sha256:155dc7a87f021bc63ab30df16a1c1557d0d985d04da3e8d31add43534b8c7125
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:9a953ad622fe07444e4f6e66ed129ae9771805c035728e7830aeb34e01717d49
+    digest: sha256:155dc7a87f021bc63ab30df16a1c1557d0d985d04da3e8d31add43534b8c7125
 
 patches:
   - path: patches/deployment-staging.yaml
