@@ -1,6 +1,6 @@
-# Shared StayLedger API manifests — apply via staging/ or production/ overlay.
-# Migration job is applied separately (Jobs are immutable after completion):
-#   kubectl apply -f migration-job.yaml -n <namespace>
+# Shared StayLedger API manifests ΓÇö apply via staging/ or production/ overlay.
+# Staging includes migration-job.yaml in the overlay kustomization so `images:`
+# keeps migrate + API + worker in lockstep. Always: delete job, then apply -k.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

@@ -1,17 +1,19 @@
 ---
-# DB Migration PreSync Hook — ArgoCD runs this before each sync of app-api.
+# DB Migration PreSync Hook ΓÇö ArgoCD runs this before each sync of app-api.
 #
 # ArgoCD hook behaviour:
-#   PreSync            — runs before any other resource is applied
-#   BeforeHookCreation — deletes this Job if it already exists (handles retries)
-#   HookSucceeded      — deletes the Job after it succeeds (keeps cluster tidy)
+#   PreSync            ΓÇö runs before any other resource is applied
+#   BeforeHookCreation ΓÇö deletes this Job if it already exists (handles retries)
+#   HookSucceeded      ΓÇö deletes the Job after it succeeds (keeps cluster tidy)
 #
-# Image tag is kept in sync with deployment.yaml by the CI deploy-staging step.
+# Image is rewritten by staging/kustomization.yaml `images:` ΓÇö never pin a
+# digest here or migrate will drift from API/worker. Deploy only via:
+#   kubectl delete job stayledger-db-migrate -n stayledger-staging --ignore-not-found
+#   kubectl apply -k stayledger-api/staging/
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: stayledger-db-migrate
-  namespace: stayledger-staging
   labels:
     app: stayledger-api
     component: migration
@@ -49,8 +51,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: migrate
-          # Reasoning: keep migration Job image pin identical to staging API/worker digest.
-          image: putin111/stayledger-api@sha256:0297681f2aab85d5478ad7fc9fb4210fb9010f938b313daa821c323f663e9ea0
+          # Placeholder; staging/kustomization.yaml `images:` sets the real digest/tag.
+          image: putin111/stayledger-api:staging-7fe3b527
           imagePullPolicy: Always
           command:
             - /app/node_modules/.bin/prisma

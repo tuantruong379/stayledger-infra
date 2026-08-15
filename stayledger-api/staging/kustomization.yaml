@@ -1,6 +1,14 @@
 # Staging overlay - NodePort + Cloudflare TLS edge.
-# Deploy: kubectl apply -k stayledger-api/staging/
-# Migration (one-shot): kubectl apply -f stayledger-api/staging/migration-job.yaml
+#
+# ALWAYS deploy via kustomize so API + ai-worker + migrate share one `images:` pin:
+#   kubectl config use-context HK-HUB-Cluster
+#   kubectl delete job stayledger-db-migrate -n stayledger-staging --ignore-not-found
+#   kubectl apply -k stayledger-api/staging/
+#   kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger-staging --timeout=300s
+#   kubectl rollout status deployment/stayledger-api -n stayledger-staging
+#
+# Do NOT `kubectl set image` / apply migration-job.yaml alone ΓÇö that drifts migrate
+# from API (billingPeriodKey 500, Aug 2026).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
@@ -9,19 +17,20 @@ namespace: stayledger-staging
 resources:
   - ../base
   - configmap.yaml
+  # Included so `images:` rewrites migrate + API + worker together. Job is
+  # immutable: delete it before each apply -k (see header).
+  - migration-job.yaml
 
 labels:
   - pairs:
       environment: staging
     includeSelectors: false
 
-# Guest chat PMS-first Assistant engine + handoff ledger — 2026-08-14
-# API commit 8532c63 (release/1.3.2)
-# Tag: staging-8532c63f
-# Digest: sha256:a13752892a3874e2f6063fc6d8d02caa9cc27daceff638d0472a0e2f4f0a89e1
+# Live staging tip ΓÇö tag staging-921acf9f (includes platform_invoice billingPeriodKey)
+# Digest from running pods 2026-08-14
 images:
   - name: putin111/stayledger-api
-    digest: sha256:a13752892a3874e2f6063fc6d8d02caa9cc27daceff638d0472a0e2f4f0a89e1
+    digest: sha256:8667c68a27b33107a267560b81331d72047d3f4c5f585798d0df5271be898c89
 
 patches:
   - path: patches/deployment-staging.yaml
