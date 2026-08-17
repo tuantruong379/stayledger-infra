@@ -16,10 +16,18 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote staging-verified API tip (digest sha256:e8212886… live on HK-HUB staging 2026-07-26)
+# Promote staging-verified API tip — staging-f50fc18, verified healthy on
+# HK-HUB staging 2026-08-17 (release/1.3.4 @ f50fc18):
+#   1) AiDraftsController @PropertyAccess() fix — closes a live property-access
+#      bypass on AI drafts (PropertyAccessGuard was a silent no-op without it).
+#      Confirmed present via `grep PropertyAccess` on the staging pod before
+#      promoting here.
+#   2) CacheService.withSingleFlight() on the GM dashboard's query fan-out.
+# No new Prisma migrations in this commit — schema unchanged, no migrate-job
+# run needed for this promotion.
 images:
   - name: putin111/stayledger-api
-    newTag: staging-105eeb8
+    digest: sha256:2cb7eee638b1563d7fda0bd7db0a2e56817dd19e8870567c9603a3fee4237687
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
@@ -30,3 +38,19 @@ patches:
   - path: patches/secret-refs-production.yaml
   - path: patches/ai-worker-secret-refs-production.yaml
   - path: patches/guest-documents-pvc-production.yaml
+  # Wired in 2026-08-17 — these two files already existed correctly-authored
+  # in this directory but were never referenced by kustomization.yaml, so
+  # `kubectl apply -k` silently ignored them and live drifted from repo:
+  #   - document-backup-offnode-cronjob.yaml: adds the notify-email sidecar +
+  #     correct `production/guest-documents` S3 prefix (base has neither —
+  #     base's CronJob/ConfigMap are staging-oriented defaults).
+  #   - networkpolicy.yaml: overrides base's NetworkPolicies, which were
+  #     updated for staging's ai-assistant rename (hotel-assistant-api ->
+  #     stayledger-ai-assistant-api, confirmed via live pod labels on
+  #     HK-HUB-Cluster). Production's ai-assistant has NOT been renamed yet
+  #     (context `stayledger`, still `hotel-assistant-api`) — applying base's
+  #     version here would silently cut stayledger-api's connectivity to it.
+  #     Re-evaluate removing this override once production's ai-assistant is
+  #     actually renamed to match staging.
+  - path: document-backup-offnode-cronjob.yaml
+  - path: networkpolicy.yaml

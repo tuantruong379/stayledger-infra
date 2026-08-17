@@ -7,7 +7,7 @@
 #   kubectl wait --for=condition=complete job/stayledger-db-migrate -n stayledger-staging --timeout=300s
 #   kubectl rollout status deployment/stayledger-api -n stayledger-staging
 #
-# Do NOT `kubectl set image` / apply migration-job.yaml alone ΓÇö that drifts migrate
+# Do NOT `kubectl set image` / apply migration-job.yaml alone — that drifts migrate
 # from API (billingPeriodKey 500, Aug 2026).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -26,11 +26,23 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Live staging tip ΓÇö tag staging-921acf9f (includes platform_invoice billingPeriodKey)
-# Digest from running pods 2026-08-14
+# Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
+# Built from release/1.3.4 @ f50fc18 (properly committed + pushed to origin,
+# not an ad-hoc worktree patch like the prior staging-dashboard-singleflight-fix
+# build was):
+#   1) AiDraftsController @PropertyAccess() fix — PropertyAccessGuard was a
+#      no-op on that controller (missing decorator meant getAllAndOverride
+#      returned undefined and the guard short-circuited to `return true`),
+#      letting any ai:drafts:read holder read/create/approve/reject AI drafts
+#      for ANY property, not just their own. CONFIRMED still missing on
+#      production (context `stayledger`) as of 2026-08-17 — this staging
+#      deploy is step 2 of a staging-verify-then-promote-to-prod plan.
+#   2) CacheService.withSingleFlight() + GM dashboard using it (unchanged
+#      from the prior build — see git history for detail).
+# Tag: staging-f50fc18
 images:
   - name: putin111/stayledger-api
-    digest: sha256:8667c68a27b33107a267560b81331d72047d3f4c5f585798d0df5271be898c89
+    digest: sha256:2cb7eee638b1563d7fda0bd7db0a2e56817dd19e8870567c9603a3fee4237687
 
 patches:
   - path: patches/deployment-staging.yaml
