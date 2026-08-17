@@ -38,9 +38,20 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
-# Pin to clean-tree wave2 release digest (backend commit f05db1023eb114e5ae56041d4055844608e6b8cf).
-# Match post-base-transform image names, then remap to published repos.
+# Pin to release/1.7.15 @ b73e4f2 + the retention_repository.py composite-key
+# fix (commit 2f2667e, 2026-08-17): psycopg can't adapt a Python list[tuple]
+# for `(tenant_id, version) = ANY(%s)` — server rejects it as an anonymous
+# composite type. Broke kb-retention's CronJob for 5+ days in production
+# (confirmed via live logs) until this build. Also carries the
+# ensure_kb_schema() fix from commit 5a50f70 (2026-08-15, already on this
+# branch) that removed a runtime CREATE TABLE the least-privilege app DB
+# role can't execute (production was still running a pre-5a50f70 image).
+#
+# The PREVIOUS digest pinned here (sha256:098318c7...) does not exist on the
+# registry (`ErrImagePull` / `NotFound`, confirmed 2026-08-17) — stale/never
+# actually published. Match post-base-transform image names, then remap to
+# published repos.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:098318c7eca630b25885e006fe6fbb880d546c74b51d7d5025e2b2707d2d4dcf
+    digest: sha256:687fba3afa626e0840135c760f3c383caa10a866087c4aee445891c0fd6838e1
