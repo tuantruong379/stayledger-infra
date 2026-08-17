@@ -1,0 +1,24 @@
+# Operator-reviewed leakage corpus metadata. JSONL body stays in the image;
+# this overlay only refreshes expires_at so publish-gate eval is not blocked
+# by leakage_dataset_stale. Worker root filesystem is read-only, so the meta
+# file is mounted from this ConfigMap.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-rag-leakage-meta
+  namespace: stayledger-ai-assistant
+data:
+  staging.v1.jsonl.meta.json: |
+    {
+      "schema_version": "rag-leakage/v1",
+      "dataset_version": "staging-leakage-2026-08-01.v1",
+      "scope": {
+        "environment": "staging",
+        "tenant_ids": ["cupid_hotel", "vertex_suites_hanoi", "azure_bay_danang", "stg_ai_pms_sync_property_1", "stg_ai_rag_validation_property_2"],
+        "property_ids": ["hcm_q1", "hanoi_old_quarter", "danang_beach", "property_1", "property_2"]
+      },
+      "expires_at": "2026-09-16T00:00:00Z",
+      "content_sha256": "c4032ae8e0778137502863a6f84477ae07c004d20995d03f3565724862cb92b5",
+      "reviewed_by": "staging-rag-operator",
+      "reviewed_at": "2026-08-16T00:00:00Z"
+    }

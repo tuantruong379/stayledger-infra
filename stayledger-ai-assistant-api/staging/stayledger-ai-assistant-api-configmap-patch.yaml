@@ -12,9 +12,9 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:a240b6a6b6fec537273d3d57a5c3cec56d235b1933d1c692e5c48f0269d7695d"
-  STAYLEDGER_IMAGE_TAG: "3d0bdb8"
-  APP_VERSION: "1.2.8"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9"
+  STAYLEDGER_IMAGE_TAG: "staging-8b5dcef"
+  APP_VERSION: "1.7.10"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
   AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
@@ -111,4 +111,5 @@ data:
   RAG_SCOPED_RETRIEVAL_MAX_CONCURRENCY: "0"
   LLM_ASYNC_MAX_CONCURRENCY: "8"
   AI_ASYNC_RETRY_RAG_TRANSLATE_MAX_RETRIES: "0"
-  AI_ASYNC_RETRY_RAG_ANSWER_MAX_RETRIES: "0"
+  # Staging matrix only: emit x-matrix-slots JSON on webhook responses (never guest body).
+  MATRIX_DEBUG_SLOTS: "1"

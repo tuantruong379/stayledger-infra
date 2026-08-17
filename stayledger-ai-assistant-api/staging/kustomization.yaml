@@ -13,6 +13,7 @@ namespace: stayledger-ai-assistant
 resources:
   - ../base
   - stayledger-ai-assistant-pms-outbox-network-patch.yaml
+  - stayledger-ai-assistant-rag-leakage-meta.yaml
 
 patches:
   - path: stayledger-ai-assistant-api-configmap-patch.yaml
@@ -38,11 +39,11 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Past-date reject (no silent snap) — 2026-08-14
-# API commit 5d31b55 (release/1.6.9)
-# Tag: ftfix-202608141038
-# Digest: sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+# Rebuild 2026-08-17 — matrix FAIL/REVIEW remediation (release/1.7.10 @ 8b5dcef).
+# MATRIX_DEBUG_SLOTS=1 on staging ConfigMap so webhook emits x-matrix-slots.
+# Tag: staging-8b5dcef
+# Digest: sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+    digest: sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9

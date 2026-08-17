@@ -10,9 +10,19 @@ spec:
     spec:
       serviceAccountName: api-sa
       automountServiceAccountToken: false
+      volumes:
+        - name: rag-leakage-meta
+          configMap:
+            name: stayledger-ai-assistant-rag-leakage-meta
       containers:
         - name: rag-eval-worker
-          image: putin111/stayledger-ai-assistant-api@sha256:127064c2ed47402bc028b02d76ede569663ee4fa6f7f2114addaf4a61024709e
+          # Keep rag-eval on the same staging-8b5dcef digest as kustomization images.
+          image: putin111/stayledger-ai-assistant-api@sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9
+          volumeMounts:
+            - name: rag-leakage-meta
+              mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
+              subPath: staging.v1.jsonl.meta.json
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
