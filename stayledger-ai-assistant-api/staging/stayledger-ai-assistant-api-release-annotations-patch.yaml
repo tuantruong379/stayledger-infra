@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "55c5c360537a0d0c3acbf706292a0354f9adf138"
-    stayledger.io/git-sha-short: "55c5c36"
-    stayledger.io/image-tag: "staging-55c5c36"
-    stayledger.io/image-digest: "sha256:d937c042463149941e6fa7e5e5016fa0180d48026520c0fde904d740396f4b0d"
+    stayledger.io/git-sha: "61f939c3ea1d5fd824c698f84263a3145fa93ab2"
+    stayledger.io/git-sha-short: "61f939c"
+    stayledger.io/image-tag: "staging-61f939c"
+    stayledger.io/image-digest: "sha256:39d4b07f31715c84ad6600c17183579e5db8fafff96c445d11ef019dfca2839f"
     stayledger.io/schema-head: "0079"
-    stayledger.io/rollback-digest: "sha256:562f8fbc47f42f450951a0b61d88ed23b4e475cde398dc6555745cd48815f417"
-    kubernetes.io/change-cause: "staging: preserve mapped hourly duration across merge turns release/1.7.13 staging-55c5c36"
-    stayledger.io/build-provenance: "release-1.7.13-staging-55c5c36"
-    stayledger.io/configmap-revision: "release-metadata-20260817-55c5c36"
+    stayledger.io/rollback-digest: "sha256:d937c042463149941e6fa7e5e5016fa0180d48026520c0fde904d740396f4b0d"
+    kubernetes.io/change-cause: "staging: honor explicit English address requests release/1.7.14 staging-61f939c"
+    stayledger.io/build-provenance: "release-1.7.14-staging-61f939c"
+    stayledger.io/configmap-revision: "release-metadata-20260817-61f939c"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260817-55c5c36"
+        stayledger.io/configmap-revision: "release-metadata-20260817-61f939c"
