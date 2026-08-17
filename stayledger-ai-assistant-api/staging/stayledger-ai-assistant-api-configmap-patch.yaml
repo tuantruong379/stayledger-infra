@@ -12,9 +12,9 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:43986c09109c7ac7a7f9445b97c49cd6a9bda7f1d941cde3177b3df4d6e5ecb6"
-  STAYLEDGER_IMAGE_TAG: "staging-b221927"
-  APP_VERSION: "1.7.10"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:9ac3586a8b59db65832110675c9c3c2869a3d1e4d23cb0896740d3a4f26f77d3"
+  STAYLEDGER_IMAGE_TAG: "staging-b73e4f2"
+  APP_VERSION: "1.7.15"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
   AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
@@ -77,6 +77,7 @@ data:
   PMS_CONTEXT_CLOCK_SKEW_S: "10"
   PMS_READ_FALLBACK_MODE: "fail_closed"
   PMS_HTTP_MAX_RETRIES: "1"
+  PMS_HTTP_TIMEOUT_S: "12"
   # Staging exercises draft booking (also pinned on API container by nonmutating canary).
   PMS_DRAFT_BOOKING_ENABLED: "1"
   PMS_CONVERSATION_SYNC_ENABLED: "0"
