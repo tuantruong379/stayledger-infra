@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "b221927ae78826a9f90c6c5fa21be5717644f617"
-    stayledger.io/git-sha-short: "b221927"
-    stayledger.io/image-tag: "staging-b221927"
-    stayledger.io/image-digest: "sha256:43986c09109c7ac7a7f9445b97c49cd6a9bda7f1d941cde3177b3df4d6e5ecb6"
+    stayledger.io/git-sha: "c9cf55103f54565e6568877e602e610b509effe1"
+    stayledger.io/git-sha-short: "c9cf551"
+    stayledger.io/image-tag: "staging-c9cf551"
+    stayledger.io/image-digest: "sha256:69fb510f6876522bd389d41aec54dc1d4cfc1d2a0f7cde3d3a2a9512764a947e"
     stayledger.io/schema-head: "0079"
     stayledger.io/rollback-digest: "sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9"
-    kubernetes.io/change-cause: "staging: matrix FAIL/REVIEW + G1_003 pet-join fix release/1.7.10 staging-b221927"
-    stayledger.io/build-provenance: "release-1.7.10-staging-b221927"
-    stayledger.io/configmap-revision: "release-metadata-20260817-b221927"
+    kubernetes.io/change-cause: "staging: residual matrix policy, address, and typo remediation release/1.7.11 staging-c9cf551"
+    stayledger.io/build-provenance: "release-1.7.11-staging-c9cf551"
+    stayledger.io/configmap-revision: "release-metadata-20260817-c9cf551"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260817-b221927"
+        stayledger.io/configmap-revision: "release-metadata-20260817-c9cf551"
