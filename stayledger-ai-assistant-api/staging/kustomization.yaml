@@ -39,11 +39,11 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-17 — residual matrix policy, address, and typo remediation (release/1.7.11 @ c9cf551).
+# Rebuild 2026-08-17 — residual matrix follow-up: preserve mapped hourly + EN address (release/1.7.12 @ 9bfaf24).
 # MATRIX_DEBUG_SLOTS=1 on staging ConfigMap so webhook emits x-matrix-slots.
-# Tag: staging-c9cf551
-# Digest: sha256:69fb510f6876522bd389d41aec54dc1d4cfc1d2a0f7cde3d3a2a9512764a947e
+# Tag: staging-9bfaf24
+# Digest: sha256:562f8fbc47f42f450951a0b61d88ed23b4e475cde398dc6555745cd48815f417
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:69fb510f6876522bd389d41aec54dc1d4cfc1d2a0f7cde3d3a2a9512764a947e
+    digest: sha256:562f8fbc47f42f450951a0b61d88ed23b4e475cde398dc6555745cd48815f417

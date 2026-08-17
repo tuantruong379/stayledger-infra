@@ -4,18 +4,18 @@ metadata:
   name: stayledger-ai-assistant-api
   namespace: stayledger-ai-assistant
   annotations:
-    stayledger.io/git-sha: "c9cf55103f54565e6568877e602e610b509effe1"
-    stayledger.io/git-sha-short: "c9cf551"
-    stayledger.io/image-tag: "staging-c9cf551"
-    stayledger.io/image-digest: "sha256:69fb510f6876522bd389d41aec54dc1d4cfc1d2a0f7cde3d3a2a9512764a947e"
+    stayledger.io/git-sha: "9bfaf24726b30beea69e777e9796d1adc55ad97e"
+    stayledger.io/git-sha-short: "9bfaf24"
+    stayledger.io/image-tag: "staging-9bfaf24"
+    stayledger.io/image-digest: "sha256:562f8fbc47f42f450951a0b61d88ed23b4e475cde398dc6555745cd48815f417"
     stayledger.io/schema-head: "0079"
-    stayledger.io/rollback-digest: "sha256:97a6035ef67491849cad4be043d580b09fe4b364d9a8bd9eef153ddaf21265d9"
-    kubernetes.io/change-cause: "staging: residual matrix policy, address, and typo remediation release/1.7.11 staging-c9cf551"
-    stayledger.io/build-provenance: "release-1.7.11-staging-c9cf551"
-    stayledger.io/configmap-revision: "release-metadata-20260817-c9cf551"
+    stayledger.io/rollback-digest: "sha256:69fb510f6876522bd389d41aec54dc1d4cfc1d2a0f7cde3d3a2a9512764a947e"
+    kubernetes.io/change-cause: "staging: residual matrix hourly-duration + EN address follow-up release/1.7.12 staging-9bfaf24"
+    stayledger.io/build-provenance: "release-1.7.12-staging-9bfaf24"
+    stayledger.io/configmap-revision: "release-metadata-20260817-9bfaf24"
     stayledger.io/source-dirty: "clean"
 spec:
   template:
     metadata:
       annotations:
-        stayledger.io/configmap-revision: "release-metadata-20260817-c9cf551"
+        stayledger.io/configmap-revision: "release-metadata-20260817-9bfaf24"
