@@ -38,19 +38,21 @@ patches:
   - path: patches/secret-refs-production.yaml
   - path: patches/ai-worker-secret-refs-production.yaml
   - path: patches/guest-documents-pvc-production.yaml
-  # Wired in 2026-08-17 — these two files already existed correctly-authored
-  # in this directory but were never referenced by kustomization.yaml, so
-  # `kubectl apply -k` silently ignored them and live drifted from repo:
+  # Wired in 2026-08-17 — this file already existed correctly-authored in
+  # this directory but was never referenced by kustomization.yaml, so
+  # `kubectl apply -k` silently ignored it and live drifted from repo:
   #   - document-backup-offnode-cronjob.yaml: adds the notify-email sidecar +
   #     correct `production/guest-documents` S3 prefix (base has neither —
   #     base's CronJob/ConfigMap are staging-oriented defaults).
-  #   - networkpolicy.yaml: overrides base's NetworkPolicies, which were
-  #     updated for staging's ai-assistant rename (hotel-assistant-api ->
-  #     stayledger-ai-assistant-api, confirmed via live pod labels on
-  #     HK-HUB-Cluster). Production's ai-assistant has NOT been renamed yet
-  #     (context `stayledger`, still `hotel-assistant-api`) — applying base's
-  #     version here would silently cut stayledger-api's connectivity to it.
-  #     Re-evaluate removing this override once production's ai-assistant is
-  #     actually renamed to match staging.
   - path: document-backup-offnode-cronjob.yaml
+  # networkpolicy.yaml stays wired in — NOT redundant with base even after
+  # completing the ai-assistant rename (Step 2, 2026-08-17): base and this
+  # file diverged independently. base/networkpolicy.yaml has the correct
+  # NEW ai-assistant label (from commit cbbaf08, matching staging's rename)
+  # but is missing this file's OTEL-scoped-egress fix (adds observability:4318,
+  # drops the unused port 587) made the same morning. This file now has BOTH
+  # fixes (label updated to stayledger-ai-assistant-api once production's
+  # ai-assistant was actually renamed; OTEL/587 change kept) — `kubectl diff -k`
+  # verified empty against live after this update. If base ever gets the
+  # OTEL/587 fix too, this override becomes safe to drop.
   - path: networkpolicy.yaml
