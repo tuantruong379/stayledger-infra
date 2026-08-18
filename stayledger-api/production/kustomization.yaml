@@ -16,18 +16,18 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote staging-verified API tip — staging-f50fc18, verified healthy on
-# HK-HUB staging 2026-08-17 (release/1.3.4 @ f50fc18):
-#   1) AiDraftsController @PropertyAccess() fix — closes a live property-access
-#      bypass on AI drafts (PropertyAccessGuard was a silent no-op without it).
-#      Confirmed present via `grep PropertyAccess` on the staging pod before
-#      promoting here.
-#   2) CacheService.withSingleFlight() on the GM dashboard's query fan-out.
+# Promote staging-verified API tip — staging-8e341f1, verified healthy on
+# HK-HUB staging 2026-08-18 (staging-readiness-audit: 27/27 checks, 12/12
+# matrix, 0 unexpected 4xx/5xx, 0 i18n gaps) (release/1.3.4 @ 8e341f1):
+#   1) Localize the AI-generated daily briefing (summary text + recommendations
+#      + money formatting) to vi/en instead of a hardcoded English template.
+#   2) Localize the guest-chat AI handoff summary to vi/en.
+#   Found via production UI/UX/i18n screenshot review 2026-08-18.
 # No new Prisma migrations in this commit — schema unchanged, no migrate-job
 # run needed for this promotion.
 images:
   - name: putin111/stayledger-api
-    digest: sha256:2cb7eee638b1563d7fda0bd7db0a2e56817dd19e8870567c9603a3fee4237687
+    digest: sha256:3f2f4b20c0edff35583df42d947a93d53d846397a401f3d4c526eb16ede901d1
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

@@ -27,22 +27,16 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Built from release/1.3.4 @ f50fc18 (properly committed + pushed to origin,
-# not an ad-hoc worktree patch like the prior staging-dashboard-singleflight-fix
-# build was):
-#   1) AiDraftsController @PropertyAccess() fix — PropertyAccessGuard was a
-#      no-op on that controller (missing decorator meant getAllAndOverride
-#      returned undefined and the guard short-circuited to `return true`),
-#      letting any ai:drafts:read holder read/create/approve/reject AI drafts
-#      for ANY property, not just their own. CONFIRMED still missing on
-#      production (context `stayledger`) as of 2026-08-17 — this staging
-#      deploy is step 2 of a staging-verify-then-promote-to-prod plan.
-#   2) CacheService.withSingleFlight() + GM dashboard using it (unchanged
-#      from the prior build — see git history for detail).
-# Tag: staging-f50fc18
+# Built from release/1.3.4 @ 8e341f1 (properly committed + pushed to origin):
+#   1) Localize the AI-generated daily briefing (summary text + recommendations
+#      + money formatting) to vi/en instead of a hardcoded English template —
+#      found via production UI/UX screenshot review 2026-08-18.
+#   2) Localize the guest-chat AI handoff summary to vi/en (same review).
+#   No new Prisma migrations in this range — no migrate-job run needed.
+# Tag: staging-8e341f1
 images:
   - name: putin111/stayledger-api
-    digest: sha256:2cb7eee638b1563d7fda0bd7db0a2e56817dd19e8870567c9603a3fee4237687
+    digest: sha256:3f2f4b20c0edff35583df42d947a93d53d846397a401f3d4c526eb16ede901d1
 
 patches:
   - path: patches/deployment-staging.yaml
