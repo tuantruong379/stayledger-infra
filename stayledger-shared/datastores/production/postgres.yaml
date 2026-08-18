@@ -152,14 +152,21 @@ spec:
         - name: postgres-config
           mountPath: /etc/postgresql/postgresql.conf
           subPath: postgresql.conf
-        # Live ~24m CPU / ~91Mi; keep modest headroom for backup/vacuum spikes.
+        # Raised 2026-08-18 for ~100 CCU capacity testing: 500m was proven
+        # insufficient at even 20 VUs on staging (750m also insufficient,
+        # pg_isready itself timed out under load — see
+        # k6-load-postgres-cpu-capacity-2026-08-17 memory). Idle usage is
+        # still only ~24m/91Mi (see the prior 2026-07-20 rightsizing note),
+        # so this is pure burst headroom for load-test/peak traffic, not a
+        # steady-state cost increase. Node has 8 CPU total; even at these
+        # limits, cluster-wide CPU requests stay well under 50%.
         resources:
           requests:
             memory: "384Mi"
-            cpu: "150m"
+            cpu: "1000m"
           limits:
             memory: "1536Mi"
-            cpu: "500m"
+            cpu: "4000m"
         livenessProbe:
           exec:
             command: ["/bin/sh", "-c", "pg_isready -U stayledger -d stayledger"]
