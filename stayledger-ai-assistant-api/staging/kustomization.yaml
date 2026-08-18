@@ -39,10 +39,10 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-18 r3 — safety/handoff empty-RAG bounce + no website CTA
-# (release/1.7.16 @ b76dd82). Tag: staging-golive-20260818-r3
-# Digest: sha256:3cc47c13c6e4a2e7b0e6139311a8455f7a3190564ef870026067eb5b4bac4a05
+# Rebuild 2026-08-18 r4 — admit safety/quiet-hours/lost-item before retrieve
+# (release/1.7.18 @ 73620fb). Tag: staging-golive-20260818-r4
+# Digest: sha256:15e77266dc25ee93f643ec4dcc27a1e75d3895bc4af03a27c715f1b1deae2f25
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3cc47c13c6e4a2e7b0e6139311a8455f7a3190564ef870026067eb5b4bac4a05
+    digest: sha256:15e77266dc25ee93f643ec4dcc27a1e75d3895bc4af03a27c715f1b1deae2f25
