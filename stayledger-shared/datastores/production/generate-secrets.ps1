@@ -110,7 +110,6 @@ $DbPassword = [System.Web.HttpUtility]::UrlEncode($PostgresPassword)
 $DatabaseUrl = "postgresql://stayledger:${DbPassword}@stayledger-pgbouncer.stayledger.svc.cluster.local:5432/stayledger?schema=public&pgbouncer=true&connection_limit=20&pool_timeout=10&statement_timeout=30000"
 # Direct URL bypasses PgBouncer — used by Prisma migrations (directUrl in schema.prisma).
 $DirectDatabaseUrl = "postgresql://stayledger:${DbPassword}@stayledger-postgres.stayledger.svc.cluster.local:5432/stayledger?schema=public&connection_limit=2&statement_timeout=60000"
-$AzureBaseUrl = $AzureOpenAiEndpoint.TrimEnd('/') + "/openai/v1"
 
 Write-Host "Applying namespace..." -ForegroundColor Cyan
 kubectl apply -f stayledger-shared/datastores/production/namespace.yaml
@@ -131,7 +130,6 @@ $SecretArgs = @(
     "--from-literal=frontend-url=$FrontendUrl",
     "--from-literal=azure-openai-endpoint=$AzureOpenAiEndpoint",
     "--from-literal=azure-openai-api-key=$AzureOpenAiApiKey",
-    "--from-literal=openai-base-url=$AzureBaseUrl",
     "--from-literal=external-signing-enc-key=$ExternalSigningEncKey",
     "--from-literal=encryption-key=$EncryptionKey",
     "--from-literal=document-backup-password=$DocumentBackupPassword"

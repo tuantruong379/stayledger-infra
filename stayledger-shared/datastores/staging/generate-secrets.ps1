@@ -77,9 +77,6 @@ $DatabaseUrl = "postgresql://stayledger_staging:${DbPassword}@stayledger-pgbounc
 # Direct URL bypasses PgBouncer — used by Prisma migrations (directUrl in schema.prisma).
 $DirectDatabaseUrl = "postgresql://stayledger_staging:${DbPassword}@stayledger-postgres.stayledger-staging.svc.cluster.local:5432/stayledger_staging?schema=public&connection_limit=2&statement_timeout=60000"
 
-# Build OpenAI bridge base URL from Azure endpoint
-$AzureBaseUrl = $AzureOpenAiEndpoint.TrimEnd('/') + "/openai/v1"
-
 Write-Host "Creating stayledger-staging namespace..." -ForegroundColor Cyan
 kubectl apply -f k8s/staging/namespace.yaml
 
@@ -99,8 +96,7 @@ $SecretArgs = @(
     "--from-literal=postgres-password=$PostgresPassword",
     "--from-literal=frontend-url=$FrontendUrl",
     "--from-literal=azure-openai-endpoint=$AzureOpenAiEndpoint",
-    "--from-literal=azure-openai-api-key=$AzureOpenAiApiKey",
-    "--from-literal=openai-base-url=$AzureBaseUrl"
+    "--from-literal=azure-openai-api-key=$AzureOpenAiApiKey"
 )
 
 if ($RedisPassword -ne "") {

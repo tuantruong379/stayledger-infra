@@ -22,9 +22,11 @@ data:
   JWT_REFRESH_EXPIRES_IN: "7d"
   LOG_LEVEL: "info"
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
-  # TEMP (matrix testing): intercept sink — no external SES delivery. Re-enable smtp when done.
+  # Re-enabled 2026-08-16 (was intercept-only during matrix testing). SES is
+  # production-enabled with stayledger.io/flownexa.ai verified (account 307662261974).
+  # Recipient allowlist + @stayledger.test suppress below still gate real delivery.
   EMAIL_ENABLED: "true"
-  EMAIL_TRANSPORT: "intercept"
+  EMAIL_TRANSPORT: "smtp"
   EMAIL_FROM: "no-reply@stayledger.io"
   EMAIL_FROM_NAME: "StayLedger"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
@@ -99,7 +101,13 @@ data:
   AI_OPS_ROUTER_MODEL: "gpt-5.4-nano"
   AI_OPS_FALLBACK_MODEL: "gpt-5.4-mini"
   AI_OPS_AVAILABLE_MODELS: "gpt-5.4-nano,gpt-5.4-mini"
-  AI_SAAS_OPS_E2E_SEED: "false"
+  # Enabled 2026-08-16: without it, POST /admin/ai/ops/e2e-seed silently
+  # no-ops (security-finding.service.ts / ops-incident.service.ts gate on this
+  # flag), so ai-saas-ops-security.spec.ts can never see an OPEN finding —
+  # ordinary smoke traffic never trips the real detection thresholds (15+
+  # PERMISSION_DENIED/20+ RATE_LIMIT_EXCEEDED/etc in ops-rules.config.ts).
+  # Endpoint is already JWT-authed; this only controls whether it writes a row.
+  AI_SAAS_OPS_E2E_SEED: "true"
   # 1B.1: Decimal flip — promoted after zero-drift compare evidence.
   # Rollback: set modes back to "compare" for drift logging, or "float" / unset
   # PMS_MONEY_PROD_READ_ENABLED for legacy Float reads. Do not drop Float columns yet.
@@ -134,7 +142,7 @@ data:
   # Service was renamed from hotel-assistant-api → stayledger-ai-assistant-api.
   # Staging deploy patch pins this key from the ConfigMap so stayledger-staging-secrets cannot override it.
   AI_ASSISTANT_INTERNAL_BASE_URL: "http://stayledger-ai-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
-  PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260722"
+  PMS_WEB_CHAT_JWT_KID: "pms-web-staging-20260818-rotated"
   BACKUP_ENABLED: "true"
   BACKUP_SCHEDULE: "0 22 * * *"
   BACKUP_RETENTION_DAYS: "14"
