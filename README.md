@@ -124,8 +124,12 @@ kubectl apply -f stayledger-shared/observability/grafana/dashboards/
 ### 2. Shared datastores
 
 ```powershell
-# Copy secret templates → fill in real values → apply (gitignored)
-kubectl apply -f stayledger-shared/datastores/prd/
+# Generate stayledger-secrets (see the script header for required params)
+.\stayledger-shared\datastores\production\generate-secrets.ps1 -PostgresPassword ... | kubectl apply -f -
+
+# Copy the satellite secret templates (backup-offnode-s3, document-backup-s3,
+# metrics-auth, pgbouncer) → *.yaml (gitignored) → fill in real values → apply
+kubectl apply -f stayledger-shared/datastores/production/
 ```
 
 ### 3. Per-project workloads
