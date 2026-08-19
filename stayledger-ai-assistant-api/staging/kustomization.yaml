@@ -39,10 +39,10 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-19 r6 — residual FAILED oracles, bill handoff, G7_244S fixture
-# (release/1.7.20 @ 54bb1f7). Tag: staging-golive-20260819-r6
-# Digest: sha256:4b90677938523cea860283b2aa5d33a892c952ef9ddbc18d74f7b5d5c994989c
+# Rebuild 2026-08-19 r7 — oracle_family fallback classifier, inconclusive fixture NOT_TESTED
+# (release/1.7.21 @ f65bd10). Tag: staging-golive-20260819-r7
+# Digest: sha256:dba141f072ff0b295f7eba5998fc034141eb939f8a0fcd391b89b2d6581ea9b1
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:4b90677938523cea860283b2aa5d33a892c952ef9ddbc18d74f7b5d5c994989c
+    digest: sha256:dba141f072ff0b295f7eba5998fc034141eb939f8a0fcd391b89b2d6581ea9b1
