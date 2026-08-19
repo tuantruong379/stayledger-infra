@@ -39,10 +39,10 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-19 r5 — widen admission, handoff, two-room quote copy
-# (release/1.7.19 @ e740696). Tag: staging-golive-20260819-r5
-# Digest: sha256:e66f384d6bc992d8088427419ddadb7e80a0efe47c9a4cb7a461d8a19ba76a4b
+# Rebuild 2026-08-19 r6 — residual FAILED oracles, bill handoff, G7_244S fixture
+# (release/1.7.20 @ 54bb1f7). Tag: staging-golive-20260819-r6
+# Digest: sha256:4b90677938523cea860283b2aa5d33a892c952ef9ddbc18d74f7b5d5c994989c
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e66f384d6bc992d8088427419ddadb7e80a0efe47c9a4cb7a461d8a19ba76a4b
+    digest: sha256:4b90677938523cea860283b2aa5d33a892c952ef9ddbc18d74f7b5d5c994989c
