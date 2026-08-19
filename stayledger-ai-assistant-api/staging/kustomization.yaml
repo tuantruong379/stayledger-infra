@@ -39,10 +39,10 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-18 r4 — admit safety/quiet-hours/lost-item before retrieve
-# (release/1.7.18 @ 73620fb). Tag: staging-golive-20260818-r4
-# Digest: sha256:15e77266dc25ee93f643ec4dcc27a1e75d3895bc4af03a27c715f1b1deae2f25
+# Rebuild 2026-08-19 r5 — widen admission, handoff, two-room quote copy
+# (release/1.7.19 @ e740696). Tag: staging-golive-20260819-r5
+# Digest: sha256:e66f384d6bc992d8088427419ddadb7e80a0efe47c9a4cb7a461d8a19ba76a4b
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:15e77266dc25ee93f643ec4dcc27a1e75d3895bc4af03a27c715f1b1deae2f25
+    digest: sha256:e66f384d6bc992d8088427419ddadb7e80a0efe47c9a4cb7a461d8a19ba76a4b
