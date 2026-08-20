@@ -15,15 +15,14 @@ labels:
     includeSelectors: false
 
 # Pin digest so env-inject init and main container share the same image.
-# Built from release/1.3.5 @ b258cbd (properly committed + pushed to origin):
-# 3 fixes from the production UI/UX/i18n screenshot review 2026-08-18 —
-# property-load stuck-spinner/no-retry, datetime-picker + availability
-# calendar + billing plan-status + settings-config i18n (10+ call sites),
-# AI automation suggestion detail blank-on-404 page.
-# Tag: staging-b258cbd
+# Built from release/1.3.6 @ 73179a0:
+# UI/UX review fixes — localize 403 toasts (VI), reports PermissionLimitedState,
+# AI Ops remove beta + humanize quota source, unify DD-MM-YYYY dates, checked-out
+# contrast, toast vs FAB, guest-name truncate, locale percent separators.
+# Tag: staging-73179a09
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:6eea417e9557d1da4ccfbb7879878f7da0df4b245f0da8355510310b0108f86b
+    digest: sha256:c30dbf0407904d8a23b07888c1d832a3fab65da3bdecb54e0b26cec72ad227e8
 
 patches:
   - path: patches/deployment-staging.yaml
