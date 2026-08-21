@@ -15,14 +15,14 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote staging-verified admin-web tip - staging-634bec2, healthy on
-# HK-HUB staging 2026-08-21 (release/1.3.8 @ 634bec2):
-#   P3 polish - VND chart tick commas, mobile truncation, AI Usage units copy,
-#   hằng ngày spelling, balance-due Paid label, guest-name line-clamp.
+# Promote staging-verified admin-web tip - staging-c1a3d9a, healthy on
+# HK-HUB staging 2026-08-21 (release/1.3.9 @ c1a3d9a):
+#   AI Usage number locale, EN AI units plan copy, mobile hotel-prefix shorten,
+#   dark Checked Out contrast.
 # Pin digest (not floating tag) to match staging's convention.
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:fb5d28c8252ea9f0ba31544a3fb4b06a61814bd2dedf1271ffc43b0dc5a9f1ec
+    digest: sha256:00d629014415938a21c4f35e618f2e1714979d240b671dd47031b19eb9ea42b6
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
