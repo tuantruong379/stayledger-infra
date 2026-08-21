@@ -16,7 +16,8 @@ spec:
         - name: api
           env:
             - name: ALLOWED_ORIGINS
-              value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
+              # Include staging landing so browser POSTs to /api/marketing/demo-requests succeed.
+              value: "https://stg-app.stayledger.io,https://stg.stayledger.io,http://10.89.1.40:30010,http://10.89.1.40:30012"
             # Guest Chat PMS-web BFF (RS256 context JWT signing + aggregate import
             # auth). This wiring existed live-only on staging until 2026-08-18
             # (added imperatively at some point, never committed) — captured here

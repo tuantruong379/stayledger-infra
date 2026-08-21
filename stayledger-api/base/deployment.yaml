@@ -96,7 +96,8 @@ spec:
                 name: stayledger-api-config
           env:
             - name: ALLOWED_ORIGINS
-              value: "https://stg-app.stayledger.io,http://10.89.1.40:30010"
+              # Staging defaults — production overlays replace this list.
+              value: "https://stg-app.stayledger.io,https://stg.stayledger.io,http://10.89.1.40:30010,http://10.89.1.40:30012"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

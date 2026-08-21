@@ -79,7 +79,8 @@ spec:
                 name: stayledger-api-config
           env:
             - name: ALLOWED_ORIGINS
-              value: "https://app.stayledger.io"
+              # PMS admin + public marketing site (demo form → /api/marketing/demo-requests).
+              value: "https://app.stayledger.io,https://stayledger.io,https://www.stayledger.io"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:

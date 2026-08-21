@@ -21,7 +21,8 @@ spec:
         - name: api
           env:
             - name: ALLOWED_ORIGINS
-              value: "https://app.stayledger.io"
+              # PMS admin + public marketing site (demo form → /api/marketing/demo-requests).
+              value: "https://app.stayledger.io,https://stayledger.io,https://www.stayledger.io"
           # Single replica (RWO guest-docs) — give this pod more CPU than landing.
           # Request 350m / limit 1 CPU so API wins scheduling vs marketing site.
           resources:
