@@ -72,6 +72,14 @@ metadata:
     environment: production
 spec:
   replicas: 1
+  # Best practice: cap rollback history in production (was unset -> live drifted to 3 via ad-hoc patch).
+  revisionHistoryLimit: 2
+  # Recreate: default RollingUpdate (25%/25%) tries to surge a 2nd pod before
+  # terminating the old one, but both need the same RWO PVC — the surge pod
+  # would stick Pending and the rollout would hang. Staging already uses
+  # Recreate for the same reason.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: stayledger-redis

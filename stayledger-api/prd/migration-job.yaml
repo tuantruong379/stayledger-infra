@@ -1,1 +1,0 @@
-# DEPRECATED — use `kubectl apply -k ../staging/` or `../production/` instead.

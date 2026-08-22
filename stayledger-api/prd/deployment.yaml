@@ -1,7 +1,0 @@
-# DEPRECATED — use `kubectl apply -k ../staging/` or `../production/` instead.
-# This stub is retained only for migration reference and will be removed in a future release.
-#
-# Canonical paths:
-#   stayledger-api/base/          — shared manifests
-#   stayledger-api/staging/       — staging overlay
-#   stayledger-api/production/    — production overlay

@@ -19,7 +19,7 @@ data:
   REDIS_HOST: "stayledger-redis"
   REDIS_PORT: "6379"
   JWT_EXPIRES_IN: "15m"
-  JWT_REFRESH_EXPIRES_IN: "7d"
+  # JWT_REFRESH_EXPIRES_IN removed — auth.service.ts hardcodes refresh expiry to 7d, no runtime reader.
   LOG_LEVEL: "info"
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-staging-secrets.
   # Re-enabled 2026-08-16 (was intercept-only during matrix testing). SES is
@@ -81,17 +81,14 @@ data:
   FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
   DOCUMENT_CAPTURE_DEFAULT_ENABLED: "true"
   FEATURE_DOCUMENT_OCR: "false"
-  DOCUMENT_STORAGE_PROVIDER: "pvc"
-  DOCUMENT_STORAGE_PUBLIC: "false"
+  # DOCUMENT_STORAGE_PROVIDER / DOCUMENT_STORAGE_PUBLIC removed — provider is hardcoded via DI
+  # (PvcDocumentStorageProvider), no runtime reader in stayledger-api.
   DOCUMENT_STORAGE_ROOT: "/var/lib/stayledger/guest-documents"
   DOCUMENT_MAX_FILE_SIZE_MB: "8"
   DOCUMENT_ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/webp,application/pdf"
   DOCUMENT_RETENTION_DAYS_DEFAULT: "90"
-  # DOCUMENT_BACKUP_MODE lives on document-backup CronJob only (not read by API process).
-  DOCUMENT_BACKUP_ENABLED: "true"
-  DOCUMENT_BACKUP_PROVIDER: "s3"
-  DOCUMENT_BACKUP_PREFIX: "guest-documents"
-  DOCUMENT_BACKUP_ENCRYPTION: "AES256"
+  # DOCUMENT_BACKUP_* removed from API ConfigMap 2026-08-22 — no S3/backup client in the API
+  # process. document-backup-offnode-cronjob.yaml sets PREFIX/ENCRYPTION/MODE inline.
   AI_SAAS_OPS_ENABLED: "true"
   AI_SECURITY_FINDINGS_ENABLED: "true"
   AI_OPS_NARRATIVE_LLM: "false"
@@ -154,3 +151,5 @@ data:
   OVERAGE_BILLING_ENABLED: "true"
   TRIAL_CONVERSION_ENABLED: "true"
   CHANNEL_ARI_SYNC_ENABLED: "false"
+  # Marketing demo leads from stayledger-landing (Turnstile secret in stayledger-staging-secrets).
+  MARKETING_DEMO_LEAD_TO: "support@stayledger.io"

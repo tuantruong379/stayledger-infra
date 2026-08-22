@@ -3,14 +3,17 @@
 **Cluster:** `stayledger` (k3s) @ `103.20.96.122`  
 **Ingress:** Traefik + cert-manager (`letsencrypt-prod`)  
 **Services:** ClusterIP only (no NodePort for public apps)  
-**Release images (staging-verified 2026-07-15):**
+**Release images (staging-verified 2026-08-22):**
 
 | Workload | Image |
 |----------|-------|
-| PMS API + AI worker | `putin111/stayledger-api:f1b2e27` |
-| PMS admin-web | `putin111/stayledger-admin-web:c4fadf3` |
-| AI API + workers | `putin111/stayledger-ai-assistant:<tag>` (default `cvefix-e2a914e`) |
-| AI frontend | `putin111/stayledger-ai-assistant-frontend:<tag>` (default `sha-golive1000712`) |
+| PMS API + AI worker | `putin111/stayledger-api@sha256:109c699e…` (tag `6764d49`, release/1.3.5) |
+| PMS admin-web | `putin111/stayledger-admin-web@sha256:442b5279…` (tag `77cebd3`, release/1.3.10) |
+| PMS landing | `putin111/stayledger-landing@sha256:468a133c…` (tag `de9c838`, release/1.1.6) |
+| AI API + workers | `putin111/ai-hotel-assistant:<tag>` |
+| AI frontend | `putin111/ai-hotel-assistant-frontend:<tag>` |
+
+**Drift audit:** `.\scripts\audit-production-drift.ps1` (compare live cluster vs git manifests).
 
 **Operator:** _______________  **Date:** _______________  **GO / NO-GO:** _______________
 
@@ -91,13 +94,12 @@ sudo chown -R 1001:1001 /mnt/data/stayledger/guest-documents
   -AzureOpenAiEndpoint "https://..." `
   -AzureOpenAiApiKey "..." `
   -ExternalSigningEncKey "$(openssl rand -hex 32)" `
-  -EncryptionKey "$(openssl rand -hex 32)" `
   -DocumentBackupPassword "$(openssl rand -base64 48)" `
   -SmtpUser "..." -SmtpPassword "..."
 ```
 
 - [ ] `kubectl get secret stayledger-secrets -n stayledger`
-- [ ] Keys present: `database-url`, `direct-database-url`, `jwt-secret`, `jwt-refresh-secret`, `encryption-key`, `external-signing-enc-key`, Azure, SMTP
+- [ ] Keys present: `database-url`, `direct-database-url`, `jwt-secret`, `jwt-refresh-secret`, `external-signing-enc-key`, Azure, SMTP
 - [ ] Optional: `stayledger-document-backup-s3` created (bucket + keys + passphrase)
 - [ ] SES production identity/domain verified (`noreply@stayledger.io` or agreed From)
 
@@ -105,9 +107,8 @@ sudo chown -R 1001:1001 /mnt/data/stayledger/guest-documents
 
 - [ ] `NODE_ENV=production`, `APP_ENV=production`
 - [ ] `SWAGGER_ENABLED=false`
-- [ ] `ALLOWED_ORIGINS` / CORS = `https://app.stayledger.io` only
+- [ ] `ALLOWED_ORIGINS` / CORS includes `https://app.stayledger.io` and marketing origins as needed
 - [ ] `DOCUMENT_CAPTURE_DEFAULT_ENABLED=false` (opt-in per property)
-- [ ] `DOCUMENT_STORAGE_PUBLIC=false`
 - [ ] `FEATURE_DOCUMENT_OCR=false` (until OCR go-live)
 - [ ] Admin-web `AI_ASSISTANT_INTERNAL_API_URL=https://api-assistant.stayledger.io`
 

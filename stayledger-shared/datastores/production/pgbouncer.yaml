@@ -63,6 +63,8 @@ metadata:
     environment: production
 spec:
   replicas: 1
+  # Best practice: cap rollback history in production (was unset -> live drifted to 3 via ad-hoc patch).
+  revisionHistoryLimit: 2
   selector:
     matchLabels:
       app: stayledger-pgbouncer

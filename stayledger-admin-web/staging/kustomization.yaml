@@ -15,13 +15,12 @@ labels:
     includeSelectors: false
 
 # Pin digest so env-inject init and main container share the same image.
-# Built from release/1.3.9 @ c1a3d9a:
-# AI Usage number locale, EN AI units plan copy, mobile hotel-prefix shorten,
-# dark Checked Out contrast.
-# Tag: staging-c1a3d9a
+# Built from release/1.3.10 @ 77cebd3:
+# Error/404 UX polish + i18n, Jenkins Docker publish tag on its own line.
+# Tag: 77cebd3
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:00d629014415938a21c4f35e618f2e1714979d240b671dd47031b19eb9ea42b6
+    digest: sha256:442b5279f2d326b50bf9a636024cacb7e05769fd54eb84a484cbded824d15aff
 
 patches:
   - path: patches/deployment-staging.yaml

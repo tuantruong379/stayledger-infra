@@ -12,7 +12,6 @@
 #     -AzureOpenAiEndpoint "https://your-resource.cognitiveservices.azure.com" `
 #     -AzureOpenAiApiKey "your-azure-openai-key" `
 #     -ExternalSigningEncKey "$(openssl rand -hex 32)" `
-#     -EncryptionKey "$(openssl rand -hex 32)" `
 #     -DocumentBackupPassword "$(openssl rand -base64 48)" `
 #     -SmtpUser "AKIAIOSFODNN7EXAMPLE" `
 #     -SmtpPassword "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
@@ -43,10 +42,9 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$ExternalSigningEncKey,
 
-    # AES-256 key for encrypting sensitive data fields at rest.
-    # Generate: openssl rand -hex 32   (must be exactly 64 hex characters = 32 bytes)
-    [Parameter(Mandatory=$true)]
-    [string]$EncryptionKey,
+    # Deprecated — Nest never reads ENCRYPTION_KEY (use ExternalSigningEncKey).
+    # Kept optional so older runbooks that still pass -EncryptionKey do not break.
+    [string]$EncryptionKey = "",
 
     # Passphrase for AES-256-CBC encryption of guest document S3 backup archives.
     # Generate: openssl rand -base64 48
@@ -95,9 +93,8 @@ if ($ExternalSigningEncKey.Length -ne 64 -or $ExternalSigningEncKey -notmatch '^
     Write-Error "EXTERNAL_SIGNING_ENC_KEY must be exactly 64 hex characters (32 bytes). Generate with: openssl rand -hex 32"
     exit 1
 }
-if ($EncryptionKey.Length -ne 64 -or $EncryptionKey -notmatch '^[0-9a-fA-F]+$') {
-    Write-Error "ENCRYPTION_KEY must be exactly 64 hex characters (32 bytes). Generate with: openssl rand -hex 32"
-    exit 1
+if ($EncryptionKey -ne "") {
+    Write-Warning "EncryptionKey is ignored — Nest uses EXTERNAL_SIGNING_ENC_KEY only (encryption-key is not written)."
 }
 if ($DocumentBackupPassword.Length -lt 16) {
     Write-Error "DOCUMENT_BACKUP_PASSWORD is too short (minimum 16 characters). Generate with: openssl rand -base64 48"
@@ -131,7 +128,6 @@ $SecretArgs = @(
     "--from-literal=azure-openai-endpoint=$AzureOpenAiEndpoint",
     "--from-literal=azure-openai-api-key=$AzureOpenAiApiKey",
     "--from-literal=external-signing-enc-key=$ExternalSigningEncKey",
-    "--from-literal=encryption-key=$EncryptionKey",
     "--from-literal=document-backup-password=$DocumentBackupPassword"
 )
 

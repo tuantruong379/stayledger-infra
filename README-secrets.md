@@ -10,19 +10,20 @@ Future: SealedSecrets or SOPS (documented below, not yet installed).
 
 | Key | Purpose |
 |-----|---------|
-| `DATABASE_URL` | PgBouncer pooled connection |
-| `DIRECT_DATABASE_URL` | Direct Postgres (migrations only) |
-| `REDIS_URL` | Redis connection |
-| `JWT_SECRET` | Access token signing |
-| `JWT_REFRESH_SECRET` | Refresh token signing |
-| `CSRF_SECRET` | CSRF protection |
-| `ENCRYPTION_KEY` | General encryption |
-| `DOCUMENT_ENCRYPTION_KEY` | Guest document encryption |
-| `DOCUMENT_BACKUP_PASSWORD` | Backup archive passphrase |
-| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | S3 DR backup |
-| `SES_SMTP_USERNAME` / `SES_SMTP_PASSWORD` | Email (keys: `smtp-user`, `smtp-password`) |
-| `METRICS_AUTH_TOKEN` | Prometheus scrape auth |
-| `AZURE_OPENAI_API_KEY` / `AZURE_OPENAI_ENDPOINT` | AI provider |
+| `database-url` | PgBouncer pooled connection (`DATABASE_URL`) |
+| `direct-database-url` | Direct Postgres — migrations only |
+| `redis-url` / `redis-password` | Redis connection |
+| `jwt-secret` / `jwt-refresh-secret` | Access / refresh token signing |
+| `external-signing-enc-key` | AES-256-GCM for external API signing secrets at rest (`EXTERNAL_SIGNING_ENC_KEY`) |
+| `document-backup-password` | Sync source for S3 backup archive passphrase |
+| `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | Prefer `stayledger-document-backup-s3` for DR backup |
+| `smtp-user` / `smtp-password` | Email (SES SMTP) |
+| `metrics-auth-token` | Prometheus scrape auth |
+| `azure-openai-api-key` / `azure-openai-endpoint` | AI provider |
+| `frontend-url` | Email link base (`FRONTEND_URL`) |
+| `turnstile-secret-key` | Landing demo form Turnstile verify (`TURNSTILE_SECRET_KEY`) |
+
+**Not used by Nest (do not inject):** `csrf-secret`, `encryption-key`, `document-encryption-key` — CSRF is double-submit cookie; crypto uses `external-signing-enc-key` only. Legacy keys in live Secrets are harmless leftovers.
 
 ### Additional secrets
 

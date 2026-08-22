@@ -7,6 +7,8 @@ spec:
   # (from base) keeps the old Ready pod serving until the surge pod is Ready.
   replicas: 1
   minReadySeconds: 15
+  # Best practice: cap rollback history in production (was unset -> live drifted to 3 via ad-hoc patch).
+  revisionHistoryLimit: 2
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -15,7 +17,11 @@ spec:
   template:
     metadata:
       labels:
-        version: "bd2970c"
+        version: "6764d49"
+      annotations:
+        stayledger.io/git-sha: "6764d49"
+        stayledger.io/branch: "release/1.3.5"
+        kubernetes.io/change-cause: "Promote API 6764d49 — MarketingModule + Turnstile 2026-08-22"
     spec:
       containers:
         - name: api

@@ -18,8 +18,9 @@ param(
   [string]$Phase = 'preflight',
 
   [string]$KubectlContext = 'stayledger',
-  [string]$PmsApiTag = 'bd2970c',
-  [string]$PmsAdminWebTag = 'f0565de',
+  [string]$PmsApiTag = '6764d49',
+  [string]$PmsAdminWebTag = '77cebd3',
+  [string]$PmsLandingTag = 'de9c838',
   # Reasoning: pin AI API to pgvector-capable image validated on staging (Phases 6–8).
   [string]$AiApiTag = 'pgva5cc393',
   [string]$AiFrontendTag = '25f29a0',
@@ -119,7 +120,6 @@ try {
     Invoke-Kubectl @('apply', '-f', 'stayledger-shared/datastores/production/namespace.yaml')
     Invoke-Kubectl @('apply', '-f', 'stayledger-shared/datastores/production/storage-stayledger-k3s.yaml')
     Invoke-Kubectl @('apply', '-k', 'stayledger-api/production/', '--dry-run=client', '-o', 'yaml') | Out-Null
-    Invoke-Kubectl @('apply', '-f', 'stayledger-api/production/guest-documents-pvc.yaml')
 
     Write-Host '[pms-datastores] postgres / pgbouncer / redis' -ForegroundColor Yellow
     Invoke-Kubectl @('apply', '-f', 'stayledger-shared/datastores/production/postgres.yaml')
@@ -139,15 +139,18 @@ try {
 
     Invoke-Kubectl @('apply', '-k', 'stayledger-api/production/')
     Invoke-Kubectl @('apply', '-k', 'stayledger-admin-web/production/')
+    Invoke-Kubectl @('apply', '-f', 'stayledger-landing/prd/')
     Invoke-Kubectl @('set', 'image', 'deployment/stayledger-api', "api=putin111/stayledger-api:$PmsApiTag", '-n', 'stayledger')
     Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-worker', "ai-worker=putin111/stayledger-api:$PmsApiTag", '-n', 'stayledger')
     # admin-web runs env-inject (init) + admin-web (main) off the SAME image; the init
     # container's /app/.next is what gets served. Both MUST be set together or the pod
     # reports the new tag but serves stale JS. See stayledger-admin-web/README.md.
     Invoke-Kubectl @('set', 'image', 'deployment/stayledger-admin-web', "env-inject=putin111/stayledger-admin-web:$PmsAdminWebTag", "admin-web=putin111/stayledger-admin-web:$PmsAdminWebTag", '-n', 'stayledger')
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-landing', "landing=putin111/stayledger-landing:$PmsLandingTag", '-n', 'stayledger')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-api', '-n', 'stayledger', '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-ai-worker', '-n', 'stayledger', '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-admin-web', '-n', 'stayledger', '--timeout=300s')
+    Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-landing', '-n', 'stayledger', '--timeout=300s')
   }
 
   if ($Phase -in @('ai-assistant', 'all')) {
@@ -204,6 +207,7 @@ try {
     # ClusterIP services + Ingress in sync (no NodePort).
     Invoke-Kubectl @('apply', '-k', 'stayledger-api/production/')
     Invoke-Kubectl @('apply', '-k', 'stayledger-admin-web/production/')
+    Invoke-Kubectl @('apply', '-f', 'stayledger-landing/prd/')
     Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant/production/')
     Write-Host "Watch certs: kubectl --context=$KubectlContext get certificate -A"
   }

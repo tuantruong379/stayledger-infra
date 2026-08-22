@@ -166,6 +166,13 @@ spec:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: frontend-url
+            # Landing demo form Turnstile (optional until secret key is provisioned).
+            - name: TURNSTILE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-staging-secrets
+                  key: turnstile-secret-key
+                  optional: true
           resources:
             requests:
               # Base profile; staging can override vertically while HPA is capped by RWO storage.

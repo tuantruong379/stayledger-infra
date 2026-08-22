@@ -19,10 +19,8 @@ data:
   INTERNAL_API_URL: "http://stayledger-api/api"
   # Public assistant API — used by PMS admin AI surfaces (Traefik ingress on stayledger cluster).
   AI_ASSISTANT_INTERNAL_API_URL: "https://api-assistant.stayledger.io"
-  NEXT_PUBLIC_AI_OPS_ENABLED: "true"
-  NEXT_PUBLIC_AI_AUTOMATION_ENABLED: "true"
-  NEXT_PUBLIC_AI_REVENUE_ENABLED: "true"
-  NEXT_PUBLIC_AI_COPILOT_ENABLED: "true"
-  NEXT_PUBLIC_AI_SAAS_OPS_ENABLED: "true"
+  # NEXT_PUBLIC_AI_* flags removed from ConfigMap 2026-08-22 — client bundles bake them at
+  # Docker build (defaults true in ai-dev-flags.ts). ConfigMap values were never sed-patched
+  # and were not mounted on the main container, so changing them here had no effect.
   NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
   NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
