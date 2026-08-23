@@ -15,12 +15,11 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote staging-verified admin-web — tag staging-77cebd39, healthy on HK-HUB staging 2026-08-22:
-#   Hide payment-settings tab; property-info VAT wired to PropertyTax; finance refunds tab;
-#   dropdown/i18n/finance polish from release/1.3.10 working tree.
+# Promote staging-verified admin-web — tag staging-0f09b514 (release/1.3.12):
+#   Hide currency selector on settings/config; keep PropertyConfig.defaultCurrency on save.
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:c36554fa82897e1911f6e0574df07a014748d9944dafcfb3c968d22dc83b0dd9
+    digest: sha256:7a6c461076993cdf87e68506e9c98719234e564529e460f018af822a419c5498
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
