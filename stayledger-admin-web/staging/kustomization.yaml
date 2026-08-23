@@ -14,10 +14,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Pin digest — release/1.3.15 @ c0c9374 (localized SSR titles, UX audit fixes).
+# Pin digest — release/1.3.16 @ d95d9c0 (tab-aware SSR titles, RBAC finance tabs, detail titles, VND list).
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:93a53616a54ff8d5b984bac4bae14ff2092b4c35348a409ae1f27abd90f40ac2
+    digest: sha256:c4bbe908572de084a275cb046ecd7574d4ea82bba4e40cc7eea76abd190f2328
 
 patches:
   - path: patches/deployment-staging.yaml
