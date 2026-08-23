@@ -15,11 +15,12 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote staging-verified admin-web — tag staging-0f09b514 (release/1.3.12):
-#   Hide currency selector on settings/config; keep PropertyConfig.defaultCurrency on save.
+# Promote staging-verified admin-web — tag staging-c30e3d39 (release/1.3.14):
+#   Staff rate-plan create UI, property fees card, stay-restrictions inventory tab,
+#   CI/CO/cancel POST alignment.
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:7a6c461076993cdf87e68506e9c98719234e564529e460f018af822a419c5498
+    digest: sha256:d3c5d54b4b2914fc6ba8125c78c6cf2b6b9a5ec27efbc03bc207ea3cabbcfc42
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
