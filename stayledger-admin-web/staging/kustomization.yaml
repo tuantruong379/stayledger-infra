@@ -14,13 +14,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Pin digest so env-inject init and main container share the same image.
-# Built from release/1.3.12 @ 0f09b514:
-# Hide currency selector on settings/config; keep VND defaultCurrency on save.
-# Tag: 0f09b514
+# Pin digest — release/1.3.15 @ c0c9374 (localized SSR titles, UX audit fixes).
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:7a6c461076993cdf87e68506e9c98719234e564529e460f018af822a419c5498
+    digest: sha256:93a53616a54ff8d5b984bac4bae14ff2092b4c35348a409ae1f27abd90f40ac2
 
 patches:
   - path: patches/deployment-staging.yaml
