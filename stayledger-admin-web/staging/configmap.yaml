@@ -19,3 +19,4 @@ data:
   # and were not mounted on the main container, so changing them here had no effect.
   NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
   NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
+  BOOKING_FRAME_ANCESTORS: ""
