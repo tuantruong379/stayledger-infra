@@ -27,13 +27,13 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Built from release/1.3.7 @ 5c4aca78:
-#   invoicePrefix from PropertyConfig drives invoice number series (PREFIX-YYYY-NNNN).
+# Built from release/1.3.11 @ 64c064ea:
+#   Demo artifact write-time markers (BK-2026, LoadTest), scrub/seed verify, k6 guard.
 #   No new Prisma migrations — migrate Job still applied for image-pin consistency.
-# Tag: 5c4aca78
+# Tag: staging-64c064ea
 images:
   - name: putin111/stayledger-api
-    digest: sha256:65cb858402bdb61b271260507c6fe1578882ac6baf6fc89967443e10ef624148
+    digest: sha256:ab4013d482476fb917f96b6f684c4d61f81cfd04d57c016387ecd8a54da6d3aa
 
 patches:
   - path: patches/deployment-staging.yaml
