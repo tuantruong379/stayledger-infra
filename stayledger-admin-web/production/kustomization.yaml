@@ -15,10 +15,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote admin-web release/1.3.17 (86a426d) — payment refund zero fix, STAFF finance subtitle, bookings filter.
+# Promote admin-web release/1.3.21 (595788b) — ledger-only payment method labels + e-wallet/QR hints.
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:b922206242a179f25735a137f552301ee2f84f10b0982b41d6b6cab9386b4343
+    digest: sha256:8bc3bd458881965e06fc26920d236f267c084f77f7a7d7035bc39bfb49395ef8
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
