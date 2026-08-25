@@ -27,13 +27,13 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Built from release/1.3.11 @ 64c064ea:
-#   Demo artifact write-time markers (BK-2026, LoadTest), scrub/seed verify, k6 guard.
+# Built from release/1.3.13 @ f6edce1:
+#   Public booking-engine property summary for storefront (GET /booking-engine/properties/:id).
 #   No new Prisma migrations — migrate Job still applied for image-pin consistency.
-# Tag: staging-64c064ea
+# Tag: f6edce1
 images:
   - name: putin111/stayledger-api
-    digest: sha256:ab4013d482476fb917f96b6f684c4d61f81cfd04d57c016387ecd8a54da6d3aa
+    digest: sha256:f69a3cad64b1cdd6c660c8ea8681f80f9e5a39a5b738ac7c44b2cf898b34d0e8
 
 patches:
   - path: patches/deployment-staging.yaml
