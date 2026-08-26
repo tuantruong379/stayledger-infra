@@ -27,13 +27,13 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Built from release/1.3.13 @ f6edce1:
-#   Public booking-engine property summary for storefront (GET /booking-engine/properties/:id).
+# Built from release/1.4.1 @ 43ce19a:
+#   Sonar complexity cleanup (refund listing, nested fee date ternary).
 #   No new Prisma migrations — migrate Job still applied for image-pin consistency.
-# Tag: f6edce1
+# Tag: 43ce19a
 images:
   - name: putin111/stayledger-api
-    digest: sha256:f69a3cad64b1cdd6c660c8ea8681f80f9e5a39a5b738ac7c44b2cf898b34d0e8
+    digest: sha256:1c4c52cb912f21c8187c46a4e406422a614a3be4972a68c66e63dc715c873eb9
 
 patches:
   - path: patches/deployment-staging.yaml

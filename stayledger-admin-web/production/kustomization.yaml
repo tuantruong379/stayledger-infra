@@ -15,10 +15,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote admin-web release/1.3.21 (595788b) — ledger-only payment method labels + e-wallet/QR hints.
+# Promote admin-web release/1.4.1 (c1033cb) — Sonar cleanup + Verify pipeline speedups.
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:8bc3bd458881965e06fc26920d236f267c084f77f7a7d7035bc39bfb49395ef8
+    digest: sha256:a30cfea53b67d43b2217676234dee523888e866985610a6c87def6fc2752da19
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
