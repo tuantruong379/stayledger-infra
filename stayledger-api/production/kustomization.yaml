@@ -16,12 +16,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote API — release/1.4.1 (43ce19a):
-#   Sonar complexity cleanup (refund listing, nested fee date ternary).
-# No new Prisma migrations — schema unchanged.
+# Promote API — tag fa20d93 (release/1.4.3).
 images:
   - name: putin111/stayledger-api
-    digest: sha256:1c4c52cb912f21c8187c46a4e406422a614a3be4972a68c66e63dc715c873eb9
+    digest: sha256:52ff3b5f3444872f2ddaa3b266ee2473b2feb57bf8d605d09e8cf5852d5e84f4
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

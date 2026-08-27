@@ -15,10 +15,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote admin-web release/1.4.1 (c1033cb) — Sonar cleanup + Verify pipeline speedups.
+# Promote admin-web — tag 91bcebc (release/1.4.3).
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:a30cfea53b67d43b2217676234dee523888e866985610a6c87def6fc2752da19
+    digest: sha256:a5e51b1dd28cb16d34d643a637c5732ff0d5a58f1fe044dfdcee2eb5b971993a
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
