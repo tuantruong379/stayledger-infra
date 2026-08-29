@@ -1,0 +1,8 @@
+# Staging hub is single-node — keep admin-web at 1 replica.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stayledger-admin-web
+spec:
+  minReplicas: 1
+  maxReplicas: 1

@@ -21,6 +21,10 @@ patches:
   - path: stayledger-ai-assistant-channel-worker-resources-patch.yaml
   - path: stayledger-ai-assistant-webhook-worker-resources-patch.yaml
   - path: stayledger-ai-assistant-scaling-production-patch.yaml
+  - path: stayledger-ai-assistant-api-topology-spread-patch.yaml
+    target:
+      kind: Deployment
+      name: stayledger-ai-assistant-api
   - path: stayledger-ai-assistant-api-release-annotations-patch.yaml
   - path: stayledger-ai-assistant-api-legacy-annotations-cleanup.yaml
   # Canonical turn is enabled for all tenants in the main ConfigMap patch (no tenant allowlist).

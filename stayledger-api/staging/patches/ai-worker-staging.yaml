@@ -3,7 +3,8 @@ kind: Deployment
 metadata:
   name: stayledger-ai-worker
 spec:
-  replicas: 2
+  # Single-node staging: one worker is enough; avoids double CPU/memory.
+  replicas: 1
   # Cap stale ReplicaSet history alongside API (Cycle 10 staging hygiene).
   revisionHistoryLimit: 3
   template:

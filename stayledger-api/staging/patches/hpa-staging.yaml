@@ -1,9 +1,9 @@
-# P1C — enable API autoscaling on staging after connection_limit budget is sized.
-# See docs/runbooks/p1c-hpa-capacity-apply.md
+# Staging hub is single-node — keep API at 1 replica (no scale-out).
+# See docs/runbooks/p1c-hpa-capacity-apply.md for multi-node scale-out.
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: stayledger-api
 spec:
-  minReplicas: 2
-  maxReplicas: 6
+  minReplicas: 1
+  maxReplicas: 1

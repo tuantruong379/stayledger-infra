@@ -3,14 +3,14 @@ kind: Deployment
 metadata:
   name: stayledger-admin-web
 spec:
-  replicas: 2
+  # Single-node hub: 2nd replica is unschedulable under DoNotSchedule topology.
+  replicas: 1
   # Cap stale ReplicaSet history (Cycle 10 staging hygiene).
   revisionHistoryLimit: 3
   template:
     metadata:
       labels:
         # Cycle 10 a11y + residual + cachebust candidate 4066ee7
-        version: "staging-709172d"
-
+        version: "staging-91bcebc"
 
 
