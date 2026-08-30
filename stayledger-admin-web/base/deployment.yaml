@@ -222,6 +222,11 @@ spec:
                 configMapKeyRef:
                   name: stayledger-admin-web-config
                   key: NEXT_PUBLIC_FEATURE_DOCUMENT_OCR
+            - name: NEXT_PUBLIC_FEATURE_INVOICE_EMAIL
+              valueFrom:
+                configMapKeyRef:
+                  name: stayledger-admin-web-config
+                  key: NEXT_PUBLIC_FEATURE_INVOICE_EMAIL
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

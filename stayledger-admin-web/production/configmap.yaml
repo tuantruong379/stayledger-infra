@@ -24,4 +24,6 @@ data:
   # and were not mounted on the main container, so changing them here had no effect.
   NEXT_PUBLIC_FEATURE_CHECKIN_DOCUMENT_CAPTURE: "true"
   NEXT_PUBLIC_FEATURE_DOCUMENT_OCR: "false"
+  # Invoice email UI — keep false until POST …/invoices/:id/send-email + SES attachment ship.
+  NEXT_PUBLIC_FEATURE_INVOICE_EMAIL: "false"
   BOOKING_FRAME_ANCESTORS: ""
