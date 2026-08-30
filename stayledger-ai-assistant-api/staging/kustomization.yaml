@@ -43,10 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-19 r8 — PROPERTY_DISCOVERY uses fallback_outcome
-# (release/1.7.22 @ 91d1bc8). Tag: staging-golive-20260819-r8
-# Digest: sha256:66eb9102d7240e50c179e49b02850699b52c5852016d907267993773d656d72d
+# Rebuild 2026-08-30 — Matrix v3 staging-run fixes: standalone in-stay-service
+# questions no longer swallowed into the booking funnel, RAG answerability gate
+# requires question/evidence overlap before affirming/denying a specific item,
+# 4 prompt-injection pattern gaps closed (release/1.7.22 @ 9883a3b).
+# Tag: staging-20260830-9883a3b
+# Digest: sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
+#
+# Superseded rebuild history:
+#   2026-08-19 r8 — PROPERTY_DISCOVERY uses fallback_outcome (release/1.7.22 @ 91d1bc8)
+#     digest sha256:66eb9102d7240e50c179e49b02850699b52c5852016d907267993773d656d72d
+#   2026-08-27 (out-of-band, never recorded here until now) — live digest was
+#     sha256:180ff01ee6d1f0b9f37a072fa1e336ab78ed742b723a4bc281709f093c44f6b5,
+#     applied via kubectl set image without updating this file. This rebuild
+#     supersedes it; it was built from the same release/1.7.22 branch at a
+#     later commit, so nothing from it is lost.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:66eb9102d7240e50c179e49b02850699b52c5852016d907267993773d656d72d
+    digest: sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
