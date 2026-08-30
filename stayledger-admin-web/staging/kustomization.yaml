@@ -14,10 +14,10 @@ labels:
       environment: staging
     includeSelectors: false
 
-# Pin digest — tag 4a9dba2 (release/1.4.4)
+# Pin digest — tag 645fc77 (release/1.4.5)
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:57ab16870307ecf21e0c3e96ca5f9780e0c8421cb31f08da915091dfe4ae100e
+    digest: sha256:4efce28da245e18eaea0bc9cbfa293a97a3e807e1d9e2a315892e78d9e3fafa3
 
 patches:
   - path: patches/deployment-staging.yaml
