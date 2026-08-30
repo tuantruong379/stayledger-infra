@@ -19,7 +19,7 @@ labels:
 # Promote API — tag fa20d93 (release/1.4.3).
 images:
   - name: putin111/stayledger-api
-    digest: sha256:52ff3b5f3444872f2ddaa3b266ee2473b2feb57bf8d605d09e8cf5852d5e84f4
+    digest: sha256:23f0e038c4925e2db0da096befadacdb8d8bf362c6ade4712edb200642f6c810
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
