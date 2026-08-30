@@ -43,22 +43,29 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-30 — Matrix v3 staging-run fixes: standalone in-stay-service
-# questions no longer swallowed into the booking funnel, RAG answerability gate
-# requires question/evidence overlap before affirming/denying a specific item,
-# 4 prompt-injection pattern gaps closed (release/1.7.22 @ 9883a3b).
-# Tag: staging-20260830-9883a3b
-# Digest: sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
+# Rebuild 2026-08-30 (r2) — extends the r1 rebuild below with a second retest
+# finding: the RAG answerability overlap check's stopword list was missing
+# common VN filler/politeness words ("xin", "mình", "với", "được", "cần"...),
+# letting generic FAQ chunks satisfy the ">=2 overlap" bar with zero topical
+# connection to the actual item asked about (release/1.7.22 @ 1c71392).
+# Tag: staging-20260830-1c71392
+# Digest: sha256:748e094959e84efcd9a535bf7c4fa96a0906444ee49f69e16ed4c4df9c361623
 #
 # Superseded rebuild history:
+#   2026-08-30 (r1) — standalone in-stay-service questions no longer swallowed
+#     into the booking funnel, RAG answerability gate requires question/evidence
+#     overlap (later found to target a retrieval branch inactive for this
+#     tenant — see r2 above), 4 prompt-injection pattern gaps closed
+#     (release/1.7.22 @ 9883a3b)
+#     digest sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
 #   2026-08-19 r8 — PROPERTY_DISCOVERY uses fallback_outcome (release/1.7.22 @ 91d1bc8)
 #     digest sha256:66eb9102d7240e50c179e49b02850699b52c5852016d907267993773d656d72d
 #   2026-08-27 (out-of-band, never recorded here until now) — live digest was
 #     sha256:180ff01ee6d1f0b9f37a072fa1e336ab78ed742b723a4bc281709f093c44f6b5,
-#     applied via kubectl set image without updating this file. This rebuild
-#     supersedes it; it was built from the same release/1.7.22 branch at a
-#     later commit, so nothing from it is lost.
+#     applied via kubectl set image without updating this file. r1 superseded
+#     it; it was built from the same release/1.7.22 branch at a later commit,
+#     so nothing from it is lost.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
+    digest: sha256:748e094959e84efcd9a535bf7c4fa96a0906444ee49f69e16ed4c4df9c361623
