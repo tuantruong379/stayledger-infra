@@ -43,19 +43,29 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-30 (r2) — extends the r1 rebuild below with a second retest
-# finding: the RAG answerability overlap check's stopword list was missing
-# common VN filler/politeness words ("xin", "mình", "với", "được", "cần"...),
-# letting generic FAQ chunks satisfy the ">=2 overlap" bar with zero topical
-# connection to the actual item asked about (release/1.7.22 @ 1c71392).
-# Tag: staging-20260830-1c71392
-# Digest: sha256:748e094959e84efcd9a535bf7c4fa96a0906444ee49f69e16ed4c4df9c361623
+# Rebuild 2026-08-30 (r3) — extends r2 with a third retest finding: the coat-
+# hanger false-answer traced to "quan" accent-collision ("Quận" branch name vs
+# "Quần" as in "quần áo"=clothes) plus "phong" (room) being near-universal
+# boilerplate; excluding "phong" then exposed that single-noun amenity
+# questions ("Phòng có wifi không?") can never clear a flat ">=2 overlap" bar
+# on one real content token. Fixed with an adaptive threshold
+# (min(2, real-content-token-count)) plus a wifi-hyphen tokenization fix
+# ("Wi-Fi" was splitting into {"wi","fi"}, never matching "wifi")
+# (release/1.7.22 @ adc4530).
+# Tag: staging-20260830-adc4530
+# Digest: sha256:ec3bfcfb65023d1ae42c533c96879df6edb98c184a63051ee9f523fbe9bdfd33
 #
 # Superseded rebuild history:
+#   2026-08-30 (r2) — RAG answerability overlap check's stopword list was
+#     missing common VN filler/politeness words ("xin", "mình", "với",
+#     "được", "cần"...), letting generic FAQ chunks satisfy the ">=2
+#     overlap" bar with zero topical connection to the actual item asked
+#     about (later found incomplete — see r3 above) (release/1.7.22 @ 1c71392)
+#     digest sha256:748e094959e84efcd9a535bf7c4fa96a0906444ee49f69e16ed4c4df9c361623
 #   2026-08-30 (r1) — standalone in-stay-service questions no longer swallowed
 #     into the booking funnel, RAG answerability gate requires question/evidence
 #     overlap (later found to target a retrieval branch inactive for this
-#     tenant — see r2 above), 4 prompt-injection pattern gaps closed
+#     tenant — see r2), 4 prompt-injection pattern gaps closed
 #     (release/1.7.22 @ 9883a3b)
 #     digest sha256:af4fb5ee55dd56d647f0e6c5f1306de9fa94f3497bc0ee6c1d0ca504f2f01d29
 #   2026-08-19 r8 — PROPERTY_DISCOVERY uses fallback_outcome (release/1.7.22 @ 91d1bc8)
@@ -68,4 +78,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:748e094959e84efcd9a535bf7c4fa96a0906444ee49f69e16ed4c4df9c361623
+    digest: sha256:ec3bfcfb65023d1ae42c533c96879df6edb98c184a63051ee9f523fbe9bdfd33
