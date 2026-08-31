@@ -30,7 +30,7 @@ labels:
 # Tag: 1b6772f (release/1.4.8)
 images:
   - name: putin111/stayledger-api
-    digest: sha256:1aa7807e8e42bd1a3733bcd09a34841c3406dfa2e5eb0e7244ed6d58dd1e8c96
+    digest: sha256:f1c36ac0132e6556d7c6677d641ad0855dc77903da0ab8eb129a7fa456c1fc3e
 
 patches:
   - path: patches/deployment-staging.yaml
