@@ -17,11 +17,11 @@ spec:
   template:
     metadata:
       labels:
-        version: "77cebd3"
+        version: "0df9b30"
       annotations:
-        stayledger.io/git-sha: "77cebd3"
-        stayledger.io/branch: "release/1.3.10"
-        kubernetes.io/change-cause: "Promote admin-web 77cebd3 — error/404 UX 2026-08-22"
+        stayledger.io/git-sha: "0df9b30"
+        stayledger.io/branch: "release/1.4.9"
+        kubernetes.io/change-cause: "Promote admin-web 0df9b30 — document titles + console noise P1-P2 2026-08-31"
     spec:
       containers:
         - name: admin-web
