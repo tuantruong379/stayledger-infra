@@ -15,10 +15,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote admin-web — tag 0df9b30 (release/1.4.9).
+# Promote admin-web — tag ef3d50b (release/1.4.10).
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:852866858829e0a1dbfe153591fd4a4b7e7d201653c40acdd823ecb148470115
+    digest: sha256:f20c767bed81f4c4256d250b9de7e19499879aaf0324bf0f9e65689868bcb5b4
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
