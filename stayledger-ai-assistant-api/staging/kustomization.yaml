@@ -43,20 +43,30 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-31 (Phase 2) — adds an LLM safety classifier as defense-in-depth
-# behind the regex prompt-injection guard (inspect_prompt_injection): fires only
-# on messages the regex already let through, catching a manipulation attempt the
-# regex authors never anticipated — never duplicates a regex-guaranteed block.
-# Fail-open on any classifier failure/timeout/unparseable response (explicit user
-# decision — the first LLM call in this effort where fail-open vs fail-closed is
-# a real availability/protection tradeoff rather than a safe default either way).
-# Off by default; ConfigMap patch below turns it on for cupid_hotel only,
-# azure_nano (-> gpt-4o-mini) already registered for safety_injection_classify
-# via scripts/add_llm_profile.py (release/1.7.22 @ 91dd585).
-# Tag: staging-20260831-91dd585
-# Digest: sha256:a481164d6d58ef1ebb140054219d202d55b05946a2df126c112cd2ad9f552e97
+# Rebuild 2026-08-31 (bug-fix pass) — 5 real bugs found via a full matrix v3
+# CAT05/CAT08 review, no new features/flags. Off-topic-redirect regex misfired
+# on unrelated requests (rain-umbrella ask, buy-tickets ask, breakfast-menu ask
+# all got a canned "no discount codes" refusal) — narrowed the weather/local-food
+# smalltalk pattern to require real context; "mua" (buy) was especially risky
+# since accent-stripped "mưa" (rain) collides with it. Also closed 2 booking/
+# pricing-funnel-swallow gaps (dry-clean price, early-breakfast timing) that an
+# earlier session's ancillary-fee-FAQ escape hatch didn't yet cover. Pure regex
+# fix — no ConfigMap/env changes (release/1.7.22 @ 45bda7d).
+# Tag: staging-20260831-45bda7d
+# Digest: sha256:e585378456184fa559ec11ecc9ce7bd2940f8a7f75758c47e1bb77a48a6c5caa
 #
 # Superseded rebuild history:
+#   2026-08-31 (Phase 2) — adds an LLM safety classifier as defense-in-depth
+#     behind the regex prompt-injection guard (inspect_prompt_injection): fires
+#     only on messages the regex already let through, catching a manipulation
+#     attempt the regex authors never anticipated — never duplicates a regex-
+#     guaranteed block. Fail-open on any classifier failure/timeout/unparseable
+#     response (explicit user decision — the first LLM call in this effort
+#     where fail-open vs fail-closed is a real availability/protection tradeoff
+#     rather than a safe default either way). Off by default; ConfigMap patch
+#     turned it on for cupid_hotel only, azure_nano (-> gpt-4o-mini) already
+#     registered for safety_injection_classify (release/1.7.22 @ 91dd585)
+#     digest sha256:a481164d6d58ef1ebb140054219d202d55b05946a2df126c112cd2ad9f552e97
 #   2026-08-31 (Phase 1) — adds the RAG relevance verifier: a new optional LLM
 #     second opinion layered on top of (never instead of) the deterministic
 #     _rag_evidence_answerable gate — confirms/downgrades a deterministic True via
@@ -110,4 +120,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:a481164d6d58ef1ebb140054219d202d55b05946a2df126c112cd2ad9f552e97
+    digest: sha256:e585378456184fa559ec11ecc9ce7bd2940f8a7f75758c47e1bb77a48a6c5caa
