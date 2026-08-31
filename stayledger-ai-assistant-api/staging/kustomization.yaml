@@ -43,19 +43,33 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-30 (r3) — extends r2 with a third retest finding: the coat-
-# hanger false-answer traced to "quan" accent-collision ("Quận" branch name vs
-# "Quần" as in "quần áo"=clothes) plus "phong" (room) being near-universal
-# boilerplate; excluding "phong" then exposed that single-noun amenity
-# questions ("Phòng có wifi không?") can never clear a flat ">=2 overlap" bar
-# on one real content token. Fixed with an adaptive threshold
-# (min(2, real-content-token-count)) plus a wifi-hyphen tokenization fix
-# ("Wi-Fi" was splitting into {"wi","fi"}, never matching "wifi")
-# (release/1.7.22 @ adc4530).
-# Tag: staging-20260830-adc4530
-# Digest: sha256:ec3bfcfb65023d1ae42c533c96879df6edb98c184a63051ee9f523fbe9bdfd33
+# Rebuild 2026-08-31 — regex-reduction effort: lands 3 previously-uncommitted,
+# tested-but-disabled LLM-routing features (LLM intent-classify fallback when
+# the regex classifier finds nothing; agentic RAG re-retrieval via one bounded
+# query-reformulation retry when first-pass evidence fails the answerability
+# gate; deterministic complexity-based rag_answer vs rag_answer_simple model
+# routing), plus a fix making complete_raw/acomplete_raw's operation= actually
+# select the model via a tenant's routing_operations (previously always
+# resolved via a hardcoded "chat" operation, so per-operation model routing —
+# including the two new operations above — silently had no effect).
+# All 3 features stay OFF by default; ConfigMap patch below turns on 2 of them
+# (intent-classify fallback, agentic re-retrieval) for cupid_hotel only, no
+# percent canary yet, azure_nano already registered as their profile for this
+# tenant via scripts/add_llm_profile.py (release/1.7.22 @ a7c52ed).
+# Tag: staging-20260831-a7c52ed
+# Digest: sha256:e5097649b7ec28bfff43719c5e710bc81ecc5dbd08da99e5364f904b24b271fb
 #
 # Superseded rebuild history:
+#   2026-08-30 (r3) — extends r2 with a third retest finding: the coat-hanger
+#     false-answer traced to "quan" accent-collision ("Quận" branch name vs
+#     "Quần" as in "quần áo"=clothes) plus "phong" (room) being near-universal
+#     boilerplate; excluding "phong" then exposed that single-noun amenity
+#     questions ("Phòng có wifi không?") can never clear a flat ">=2 overlap"
+#     bar on one real content token. Fixed with an adaptive threshold
+#     (min(2, real-content-token-count)) plus a wifi-hyphen tokenization fix
+#     ("Wi-Fi" was splitting into {"wi","fi"}, never matching "wifi")
+#     (release/1.7.22 @ adc4530)
+#     digest sha256:ec3bfcfb65023d1ae42c533c96879df6edb98c184a63051ee9f523fbe9bdfd33
 #   2026-08-30 (r2) — RAG answerability overlap check's stopword list was
 #     missing common VN filler/politeness words ("xin", "mình", "với",
 #     "được", "cần"...), letting generic FAQ chunks satisfy the ">=2
@@ -78,4 +92,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ec3bfcfb65023d1ae42c533c96879df6edb98c184a63051ee9f523fbe9bdfd33
+    digest: sha256:e5097649b7ec28bfff43719c5e710bc81ecc5dbd08da99e5364f904b24b271fb

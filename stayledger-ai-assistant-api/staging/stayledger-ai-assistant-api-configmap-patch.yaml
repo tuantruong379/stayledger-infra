@@ -62,6 +62,14 @@ data:
   AI_MULTITURN_MEMORY_ENABLED: "1"
   # Phase 3 canary — history replay only for cupid_hotel on staging.
   AI_MULTITURN_MEMORY_TENANT_ALLOWLIST: "cupid_hotel"
+  # LLM-routing regex-reduction effort (2026-08-31) — staging validation, cupid_hotel
+  # only, no percent canary (allowlist + pct<=0 = 100% within that one tenant). Both
+  # operations already registered to the azure_nano profile for this tenant via
+  # scripts/add_llm_profile.py before flipping these on.
+  INTENT_LLM_FALLBACK_ENABLED: "1"
+  INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: "cupid_hotel"
+  AGENTIC_RAG_ENABLED: "1"
+  AGENTIC_RAG_TENANT_ALLOWLIST: "cupid_hotel"
   AI_CONVERSATION_STATE_RETENTION_DAYS: "30"
   AI_CONVERSATION_RETENTION_BATCH_SIZE: "100"
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"
