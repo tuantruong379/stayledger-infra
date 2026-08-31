@@ -70,6 +70,11 @@ data:
   INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: "cupid_hotel"
   AGENTIC_RAG_ENABLED: "1"
   AGENTIC_RAG_TENANT_ALLOWLIST: "cupid_hotel"
+  # Phase 1 (2026-08-31) — RAG relevance verifier, same cupid_hotel-only staging
+  # validation shape as the two flags above; rag_relevance_verify already
+  # registered to azure_nano for this tenant.
+  RAG_RELEVANCE_VERIFIER_ENABLED: "1"
+  RAG_RELEVANCE_VERIFIER_TENANT_ALLOWLIST: "cupid_hotel"
   AI_CONVERSATION_STATE_RETENTION_DAYS: "30"
   AI_CONVERSATION_RETENTION_BATCH_SIZE: "100"
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"
