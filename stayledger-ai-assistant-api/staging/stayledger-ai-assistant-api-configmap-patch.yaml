@@ -75,6 +75,11 @@ data:
   # registered to azure_nano for this tenant.
   RAG_RELEVANCE_VERIFIER_ENABLED: "1"
   RAG_RELEVANCE_VERIFIER_TENANT_ALLOWLIST: "cupid_hotel"
+  # Phase 2 (2026-08-31) — LLM safety classifier, same cupid_hotel-only staging
+  # validation shape; fail-open on classifier failure (explicit user decision).
+  # safety_injection_classify already registered to azure_nano for this tenant.
+  INJECTION_LLM_CLASSIFIER_ENABLED: "1"
+  INJECTION_LLM_CLASSIFIER_TENANT_ALLOWLIST: "cupid_hotel"
   AI_CONVERSATION_STATE_RETENTION_DAYS: "30"
   AI_CONVERSATION_RETENTION_BATCH_SIZE: "100"
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"

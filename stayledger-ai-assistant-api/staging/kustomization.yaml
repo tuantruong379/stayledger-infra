@@ -43,20 +43,29 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-31 (Phase 1) — adds the RAG relevance verifier: a new optional
-# LLM second opinion layered on top of (never instead of) the deterministic
-# _rag_evidence_answerable gate — confirms/downgrades a deterministic True via
-# one narrow yes/no LLM call on the top retrieved chunk, targeting the exact
-# hallucination pattern 3 rounds of regex patching couldn't close (a fluent but
-# unsupported claim from a loosely-related chunk that already clears the
-# deterministic bar). Never upgrades a deterministic rejection; a verifier
-# failure keeps the deterministic verdict unchanged. Off by default; ConfigMap
-# patch below turns it on for cupid_hotel only, azure_nano already registered
-# for rag_relevance_verify via scripts/add_llm_profile.py (release/1.7.22 @ 7448fd9).
-# Tag: staging-20260831-7448fd9
-# Digest: sha256:52b72ab36bd729b0ae67182c6db7c3c45418057bd126c1eb2c77d46443082ad3
+# Rebuild 2026-08-31 (Phase 2) — adds an LLM safety classifier as defense-in-depth
+# behind the regex prompt-injection guard (inspect_prompt_injection): fires only
+# on messages the regex already let through, catching a manipulation attempt the
+# regex authors never anticipated — never duplicates a regex-guaranteed block.
+# Fail-open on any classifier failure/timeout/unparseable response (explicit user
+# decision — the first LLM call in this effort where fail-open vs fail-closed is
+# a real availability/protection tradeoff rather than a safe default either way).
+# Off by default; ConfigMap patch below turns it on for cupid_hotel only,
+# azure_nano (-> gpt-4o-mini) already registered for safety_injection_classify
+# via scripts/add_llm_profile.py (release/1.7.22 @ 91dd585).
+# Tag: staging-20260831-91dd585
+# Digest: sha256:a481164d6d58ef1ebb140054219d202d55b05946a2df126c112cd2ad9f552e97
 #
 # Superseded rebuild history:
+#   2026-08-31 (Phase 1) — adds the RAG relevance verifier: a new optional LLM
+#     second opinion layered on top of (never instead of) the deterministic
+#     _rag_evidence_answerable gate — confirms/downgrades a deterministic True via
+#     one narrow yes/no LLM call on the top retrieved chunk, targeting the exact
+#     hallucination pattern 3 rounds of regex patching couldn't close (a fluent
+#     but unsupported claim from a loosely-related chunk that already clears the
+#     deterministic bar). Never upgrades a deterministic rejection; a verifier
+#     failure keeps the deterministic verdict unchanged (release/1.7.22 @ 7448fd9)
+#     digest sha256:52b72ab36bd729b0ae67182c6db7c3c45418057bd126c1eb2c77d46443082ad3
 #   2026-08-31 — regex-reduction effort: lands 3 previously-uncommitted,
 #     tested-but-disabled LLM-routing features (LLM intent-classify fallback when
 #     the regex classifier finds nothing; agentic RAG re-retrieval via one bounded
@@ -101,4 +110,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:52b72ab36bd729b0ae67182c6db7c3c45418057bd126c1eb2c77d46443082ad3
+    digest: sha256:a481164d6d58ef1ebb140054219d202d55b05946a2df126c112cd2ad9f552e97
