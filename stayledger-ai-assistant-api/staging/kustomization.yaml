@@ -43,19 +43,37 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
-# Rebuild 2026-08-31 (bug-fix pass) — 5 real bugs found via a full matrix v3
-# CAT05/CAT08 review, no new features/flags. Off-topic-redirect regex misfired
-# on unrelated requests (rain-umbrella ask, buy-tickets ask, breakfast-menu ask
-# all got a canned "no discount codes" refusal) — narrowed the weather/local-food
-# smalltalk pattern to require real context; "mua" (buy) was especially risky
-# since accent-stripped "mưa" (rain) collides with it. Also closed 2 booking/
-# pricing-funnel-swallow gaps (dry-clean price, early-breakfast timing) that an
-# earlier session's ancillary-fee-FAQ escape hatch didn't yet cover. Pure regex
-# fix — no ConfigMap/env changes (release/1.7.22 @ 45bda7d).
-# Tag: staging-20260831-45bda7d
-# Digest: sha256:e585378456184fa559ec11ecc9ce7bd2940f8a7f75758c47e1bb77a48a6c5caa
+# Rebuild 2026-08-31 (follow-up bug-fix pass) — two gaps scoped out after the
+# prior pass: non-VI/EN language handling and duplicate-letter typo tolerance.
+# The product already had a deliberate "please use Vietnamese or English"
+# decline mechanism, but its French keyword list missed common hotel-FAQ
+# vocabulary AND its own Vietnamese-diacritic exclusion check vetoed nearly
+# every real French sentence (plain é/è/à/â/ê are shared with French, so the
+# exclusion almost always fired); narrowed to Vietnamese-specific diacritics
+# only, and moved the check to run unconditionally in input hardening instead
+# of only on the empty-RAG fallback tail. Separately, the RAG answerability
+# gate's exact-token overlap check had zero fuzzy tolerance, so heavy
+# duplicate-letter typos ("khácch"->"khách") never matched correctly-spelled
+# KB tokens — fixed by adding each token's duplicate-letter-collapsed form as
+# an additional (not replacing) candidate, no new dependency. Explicitly did
+# NOT build real native-language (FR/KO/JA/ZH) replies or general
+# edit-distance matching — both scoped out as separate, larger initiatives
+# (release/1.7.22 @ 500f62a).
+# Tag: staging-20260831-500f62a
+# Digest: sha256:a631a5eb1db0aaecc578f5f95c01227dfff3a2e45a35cc84d77aae9b196ffa45
 #
 # Superseded rebuild history:
+#   2026-08-31 (bug-fix pass) — 5 real bugs found via a full matrix v3
+#     CAT05/CAT08 review, no new features/flags. Off-topic-redirect regex
+#     misfired on unrelated requests (rain-umbrella ask, buy-tickets ask,
+#     breakfast-menu ask all got a canned "no discount codes" refusal) —
+#     narrowed the weather/local-food smalltalk pattern to require real
+#     context; "mua" (buy) was especially risky since accent-stripped "mưa"
+#     (rain) collides with it. Also closed 2 booking/pricing-funnel-swallow
+#     gaps (dry-clean price, early-breakfast timing) that an earlier
+#     session's ancillary-fee-FAQ escape hatch didn't yet cover
+#     (release/1.7.22 @ 45bda7d)
+#     digest sha256:e585378456184fa559ec11ecc9ce7bd2940f8a7f75758c47e1bb77a48a6c5caa
 #   2026-08-31 (Phase 2) — adds an LLM safety classifier as defense-in-depth
 #     behind the regex prompt-injection guard (inspect_prompt_injection): fires
 #     only on messages the regex already let through, catching a manipulation
@@ -120,4 +138,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e585378456184fa559ec11ecc9ce7bd2940f8a7f75758c47e1bb77a48a6c5caa
+    digest: sha256:a631a5eb1db0aaecc578f5f95c01227dfff3a2e45a35cc84d77aae9b196ffa45
