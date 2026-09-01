@@ -43,6 +43,18 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-01 (tenant-scope detection follow-up fix) — the tenant-scope write
+# path shipped one rebuild ago detected scope from a strict "must be literal line 1"
+# regex match on the leading content_scope=tenant_global directive. Live verification
+# immediately after that deploy found cupid_hotel.shared.md's own leading
+# `<!-- Reasoning: ... -->` context comment (an established convention throughout this
+# repo's KB source files) pushed the marker past line 1, so detection missed it and the
+# file still resolved as PROPERTY scope. Now searches the whole header region (before
+# the first heading), matching how classify_kb_markdown already tolerates multiple
+# leading directive comments (release/1.7.22 @ 7f2ee2e).
+# Tag: staging-20260901-7f2ee2e
+# Digest: sha256:9f49a08e8f1e28ce4ea9edb3e4e26d85797b61c545cfde068445f3f6de943651
+#
 # Rebuild 2026-09-01 (tenant-scope write path) — process_canonical_kb_run always
 # resolved a single property_id and stamped every derived revision/chunk to that one
 # branch, so a multi-branch tenant's whole KB silently collapsed onto one branch on
@@ -184,4 +196,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:965169b3cd781e8fe6ba7c9bdac1f6ae4cc681503a0ff4ec9fb03ab940728260
+    digest: sha256:9f49a08e8f1e28ce4ea9edb3e4e26d85797b61c545cfde068445f3f6de943651
