@@ -43,6 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-01 (tenant-scope write path) — process_canonical_kb_run always
+# resolved a single property_id and stamped every derived revision/chunk to that one
+# branch, so a multi-branch tenant's whole KB silently collapsed onto one branch on
+# every fresh standard-reimport import (the old content_scope=tenant_global-per-
+# section authoring convention was discarded by the AI-normalize round-trip before
+# chunking ever saw it -- confirmed live 2026-09-01 by reproducing the collapse
+# against the currently-published generation's own stored markdown with today's
+# code). Adds a real scope_type=TENANT write path plus kb_canonical_chunk_worker.py
+# support for combining a branch's PROPERTY revision with the tenant's shared
+# TENANT revision into one generation per branch. cupid_hotel's pack is split into
+# cupid_hotel.shared.md + one file per branch (see
+# kb/standard-reimport/README.md's Multi-branch scope caveat) (release/1.7.22 @
+# aa7d156).
+# Tag: staging-20260901-aa7d156
+# Digest: sha256:965169b3cd781e8fe6ba7c9bdac1f6ae4cc681503a0ff4ec9fb03ab940728260
+#
 # Rebuild 2026-09-01 (eval auto-enqueue resurrection fix) — cupid_hotel generation
 # 21 (candidate for 3 new KB policy paragraphs: force_majeure, guest_modification,
 # credit_transfer) was permanently stuck in status='building', occupying the
@@ -168,4 +184,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:9f2b5e22da9f56bec2083bead65d9b646a741a8d3694eb745202e06787c200bb
+    digest: sha256:965169b3cd781e8fe6ba7c9bdac1f6ae4cc681503a0ff4ec9fb03ab940728260
