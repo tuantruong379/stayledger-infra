@@ -29,6 +29,20 @@ data:
   STAYLEDGER_PMS_INTERNAL_BASE_URL: "https://stg-api.stayledger.io"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
   LLM_OPERATION_BOOKING_EXTRACT_TIMEOUT_S: "4"
+  # 2026-09-01 timeout tuning (Part 3) — real staging traffic (CAT04 matrix batch,
+  # 200 cases) showed these narrow "second opinion" LLM calls timing out and
+  # discarding a real (if late) result at a meaningful rate: injection_llm_classify
+  # missed budget 20/57 sampled turns (elapsed 1.0-2.5s vs 1.0s default budget),
+  # plus isolated overruns on reformulate/relevance-verify/intent-fallback (up to
+  # ~3.5s). Each call fails open on timeout (never blocks the turn), so raising the
+  # budget only trades a little latency for actually getting the LLM's second
+  # opinion instead of silently falling back to deterministic-only more often than
+  # intended. New values cover the observed p90-ish overrun with headroom; code
+  # defaults (1.0/1.5/1.8/1.2s) are unchanged, this only overrides for staging.
+  INJECTION_LLM_CLASSIFIER_TIMEOUT_S: "2.5"
+  INTENT_LLM_FALLBACK_TIMEOUT_S: "2.2"
+  RAG_REFORMULATE_TIMEOUT_S: "3.5"
+  RAG_RELEVANCE_VERIFY_TIMEOUT_S: "2.5"
   # Staging rollout safety: one Uvicorn worker per API replica. The node is
   # resource-constrained and two startup workers repeatedly exited before
   # readiness; scale remains replica-based.
