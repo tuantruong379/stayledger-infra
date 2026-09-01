@@ -1,0 +1,186 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-landing-config
+  namespace: stayledger
+  labels:
+    app: stayledger-landing
+    component: marketing
+    environment: production
+data:
+  TZ: "Asia/Ho_Chi_Minh"
+  LANDING_APP_URL: "https://stayledger.io"
+  LANDING_PMS_LOGIN_URL: "https://app.stayledger.io/login"
+  # Demo form → StayLedger API MarketingModule (email + Turnstile verify).
+  LANDING_DEMO_WEBHOOK_URL: "https://api.stayledger.io/api/marketing/demo-requests"
+  LANDING_FLOWNEXA_URL: "https://flownexa.ai"
+  # Public Turnstile site key — secret is TURNSTILE_SECRET_KEY on stayledger-api.
+  LANDING_TURNSTILE_SITE_KEY: "0x4AAAAAAEYHX18xHfrsuEk1"
+  LANDING_GA_MEASUREMENT_ID: "G-PFTN2GS4BP"
+  # Production AI Assistant admin UI.
+  LANDING_AI_ASSISTANT_URL: "https://assistant.stayledger.io"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-landing-nginx
+  namespace: stayledger
+  labels:
+    app: stayledger-landing
+    component: marketing
+    environment: production
+data:
+  default.conf: |
+    server {
+        listen 8080;
+        server_name _;
+        root /usr/share/nginx/html;
+        index index.html;
+
+        absolute_redirect off;
+        port_in_redirect off;
+
+        location = /healthz {
+            access_log off;
+            add_header Content-Type text/plain;
+            return 200 'ok';
+        }
+
+        location = / {
+            return 302 /vi/;
+        }
+
+        # Custom 404 from Next static export (keep in sync with stayledger-landing/nginx.conf).
+        error_page 404 /404.html;
+        location = /404.html {
+            internal;
+        }
+
+        location / {
+            try_files $uri $uri/ $uri/index.html =404;
+        }
+
+        gzip on;
+        gzip_types text/plain text/css application/javascript application/json image/svg+xml;
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+        add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+        add_header Cross-Origin-Opener-Policy "same-origin" always;
+        add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self'; frame-src https://challenges.cloudflare.com https://www.youtube-nocookie.com https://www.youtube.com; img-src 'self' data: https:; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://challenges.cloudflare.com; connect-src 'self' https:; upgrade-insecure-requests" always;
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-landing
+  namespace: stayledger
+  labels:
+    app: stayledger-landing
+    component: marketing
+    environment: production
+spec:
+  # HPA owns desired count after apply (minReplicas: 1, maxReplicas: 2 in hpa.yaml).
+  # Baseline 1 matches live + HPA floor; scale-up adds a second pod under load.
+  replicas: 1
+  minReadySeconds: 10
+  # Best practice: cap rollback history in production (was unset -> live drifted to 3 via ad-hoc patch).
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: stayledger-landing
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # ZERO-DOWNTIME: surge new pod to Ready before terminating the old one.
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stayledger-landing
+        component: marketing
+        environment: production
+    spec:
+      # preStop sleep + nginx drain window before SIGKILL.
+      terminationGracePeriodSeconds: 45
+      containers:
+        - name: landing
+          # Pin landing release/1.1.9 @ bfd2146 — PMS feature map + whats-included user guide.
+          image: putin111/stayledger-landing@sha256:dcfd349aa0b9cd14d4710e08327b1861ac02e98a65fd8e1a6353a44d958a9619
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: stayledger-landing-config
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+              add: [SETGID, SETUID]
+          lifecycle:
+            # Endpoint propagation lag — avoid connection resets mid-rollout.
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "32Mi"
+            limits:
+              cpu: "200m"
+              memory: "256Mi"
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            # Entrypoint rewrites placeholders across the static export before nginx
+            # binds :8080; larger HTML trees need more than ~3m (36*5s).
+            periodSeconds: 5
+            failureThreshold: 120
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: stayledger-landing-nginx
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stayledger-landing
+  namespace: stayledger
+  labels:
+    app: stayledger-landing
+    component: marketing
+    environment: production
+spec:
+  type: ClusterIP
+  selector:
+    app: stayledger-landing
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

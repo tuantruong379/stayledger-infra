@@ -20,7 +20,7 @@ param(
   [string]$KubectlContext = 'stayledger',
   [string]$PmsApiTag = 'fa20d93',
   [string]$PmsAdminWebTag = '645fc77',
-  [string]$PmsLandingTag = '85d3b2e',
+  [string]$PmsLandingTag = 'bfd2146',
   # Reasoning: pin AI API to pgvector-capable image validated on staging (Phases 6–8).
   [string]$AiApiTag = 'pgva5cc393',
   [string]$AiFrontendTag = '25f29a0',
