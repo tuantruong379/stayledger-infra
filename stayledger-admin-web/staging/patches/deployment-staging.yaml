@@ -10,7 +10,7 @@ spec:
   template:
     metadata:
       labels:
-        # Cycle 10 a11y + residual + cachebust candidate 4066ee7
-        version: "staging-645fc77"
+        # P1-P2 follow-up: permission-limited titles + GM dashboard gate
+        version: "staging-6b8d3a6"
 
 
