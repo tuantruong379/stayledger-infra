@@ -43,6 +43,37 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-01 (eval auto-enqueue resurrection fix) — cupid_hotel generation
+# 21 (candidate for 3 new KB policy paragraphs: force_majeure, guest_modification,
+# credit_transfer) was permanently stuck in status='building', occupying the
+# tenant's one candidate-generation slot. Root cause: enqueue_ready_eval_jobs
+# (app/repositories/rag_eval_repository.py) is called unconditionally after every
+# embedding-worker batch success, system-wide, with no eval_status exclusion --
+# so it kept re-enqueueing eval for generation 21 and flipping eval_status back
+# to 'queued' before kb_canonical_chunk_worker._active_candidate_exists ever
+# observed the 'failed' state needed to free the slot (confirmed live: two
+# separate rag_eval_jobs rows created 7s apart, neither operator-triggered).
+# Fixed by adding the same eval_status/workflow_state exclusion
+# _active_candidate_exists already uses. New realdb integration test proves the
+# fix (2/2 pass) (release/1.7.22 @ 642ef26).
+# Tag: staging-20260901-642ef26
+# Digest: sha256:9f2b5e22da9f56bec2083bead65d9b646a741a8d3694eb745202e06787c200bb
+#
+# Rebuild 2026-08-31 (RAG relevance-verifier negation fix) — G5_577 still showed
+# rag_fallback live even after the synonym-gap fix (migration 0083, DB-only,
+# no image rebuild — see migrations/alembic/versions/0083_...py) made the
+# deterministic answerability gate correctly return True. Traced to the Phase 1
+# LLM relevance verifier (only enabled for cupid_hotel): its zero-shot prompt
+# made the model reply "no" for a passage that clearly says the hotel does NOT
+# have a pool, even though a clear negation is itself a complete, correct
+# answer — downgrading the correct verdict back to unanswerable. Fixed by
+# adding one clarifying sentence to the prompt; live-tested the revised prompt
+# against 3 cases before shipping (the bug case, the original hallucination-
+# guard case this verifier exists for, and an ordinary positive answer) — all
+# 3 came back correct (release/1.7.22 @ 654a97a).
+# Tag: staging-20260831-654a97a
+# Digest: sha256:0310fefdfc29a05b4d8854e588d642a5b722fd44be8243d9da0d7ad6e81e3940
+#
 # Rebuild 2026-08-31 (follow-up refinement) — live staging retest of the
 # duplicate-letter typo tolerance below (G5_577) found a typo'd stopword
 # ("khonng" -> collapses to "khong", already a stopword) wasn't being
@@ -51,30 +82,16 @@ patches:
 # wrong direction. Fixed by discarding the original typo'd token too
 # whenever its collapsed form is a stopword, not just skipping the
 # collapsed twin (release/1.7.22 @ f1913c1).
-# Tag: staging-20260831-f1913c1
-# Digest: sha256:b67e9e6be337858334132840d925fe7db740150f6ff149e4f380884b227e9bf7
-#
-# Rebuild 2026-08-31 (follow-up bug-fix pass) — two gaps scoped out after the
-# prior pass: non-VI/EN language handling and duplicate-letter typo tolerance.
-# The product already had a deliberate "please use Vietnamese or English"
-# decline mechanism, but its French keyword list missed common hotel-FAQ
-# vocabulary AND its own Vietnamese-diacritic exclusion check vetoed nearly
-# every real French sentence (plain é/è/à/â/ê are shared with French, so the
-# exclusion almost always fired); narrowed to Vietnamese-specific diacritics
-# only, and moved the check to run unconditionally in input hardening instead
-# of only on the empty-RAG fallback tail. Separately, the RAG answerability
-# gate's exact-token overlap check had zero fuzzy tolerance, so heavy
-# duplicate-letter typos ("khácch"->"khách") never matched correctly-spelled
-# KB tokens — fixed by adding each token's duplicate-letter-collapsed form as
-# an additional (not replacing) candidate, no new dependency. Explicitly did
-# NOT build real native-language (FR/KO/JA/ZH) replies or general
-# edit-distance matching — both scoped out as separate, larger initiatives
-# (release/1.7.22 @ 500f62a).
 #
 # Superseded rebuild history:
-#   2026-08-31 (typo-tolerance follow-up) — the duplicate-letter collapse
-#     above didn't account for typo'd stopwords surviving as spurious "real
-#     content" (release/1.7.22 @ 500f62a)
+#   2026-08-31 (typo'd-stopword follow-up) — see body above
+#     (release/1.7.22 @ f1913c1)
+#     digest sha256:b67e9e6be337858334132840d925fe7db740150f6ff149e4f380884b227e9bf7
+#   2026-08-31 (language + typo-tolerance follow-up) — two gaps scoped out
+#     after the prior pass: non-VI/EN language handling (broadened French
+#     keyword detection + narrowed the Vietnamese-diacritic exclusion that
+#     was vetoing real French sentences) and duplicate-letter typo tolerance
+#     in the RAG answerability gate (release/1.7.22 @ 500f62a)
 #     digest sha256:a631a5eb1db0aaecc578f5f95c01227dfff3a2e45a35cc84d77aae9b196ffa45
 #   2026-08-31 (bug-fix pass) — 5 real bugs found via a full matrix v3
 #     CAT05/CAT08 review, no new features/flags. Off-topic-redirect regex
@@ -151,4 +168,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b67e9e6be337858334132840d925fe7db740150f6ff149e4f380884b227e9bf7
+    digest: sha256:9f2b5e22da9f56bec2083bead65d9b646a741a8d3694eb745202e06787c200bb
