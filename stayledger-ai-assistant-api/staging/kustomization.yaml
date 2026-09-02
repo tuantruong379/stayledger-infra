@@ -43,6 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (2 bugs found via real end-to-end verification) — live-testing the
+# explicit property_id feature through the real /kb/import-file (not the direct-script
+# bypass) hit two genuine, previously-latent bugs, both only ever exercisable once a
+# real APPROVED TENANT-scope revision exists with real facts: (1) _detect_scope_type's
+# unanchored marker search matched the marker syntax quoted as an example inside
+# cupid_hotel.hcm_q1.md's own explanatory comment, misdetecting PROPERTY as TENANT --
+# now requires the marker be an entire line by itself; (2) load_approved_guest_facts
+# never returned fact_id, but validate.py's provenance check indexes f["fact_id"]
+# directly -- KeyError the first time tenant_common_facts were non-empty; fixed the
+# missing column and scoped validation to this run's own bundle.facts (not the
+# composed set) so inherited tenant-common facts (evidence lives in a different
+# revision) don't get permanently flagged as missing provenance. Confirmed fixed via a
+# real end-to-end run through /kb/import-file (release/1.7.22 @ 9af966a).
+# Tag: staging-20260902-9af966a
+# Digest: sha256:20a2c85378141db1ef40306a5f5d399c17dc259916ceb6966086bc8218a2176f
+#
 # Rebuild 2026-09-02 (explicit scope selection for /kb/import-file + /kb/import-url) —
 # yesterday's tenant-scope write path could only be exercised by bypassing the admin
 # HTTP API entirely (calling process_canonical_kb_run directly), because
@@ -210,4 +226,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d16070d6f99f0ea4cb9ab84f6f26c2d8e0366b0fa7255f76a9b528d504502eb3
+    digest: sha256:20a2c85378141db1ef40306a5f5d399c17dc259916ceb6966086bc8218a2176f
