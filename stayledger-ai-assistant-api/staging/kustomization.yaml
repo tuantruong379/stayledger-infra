@@ -43,6 +43,20 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (explicit scope selection for /kb/import-file + /kb/import-url) —
+# yesterday's tenant-scope write path could only be exercised by bypassing the admin
+# HTTP API entirely (calling process_canonical_kb_run directly), because
+# /kb/import-file had no way to pick a target branch and always processed the
+# tenant's whole accumulated kb_documents blob rather than one file's own content.
+# Adds an optional property_id form field (both import endpoints), clean single-file
+# content instead of the accumulated blob whenever scope-aware, and 2 new nullable
+# columns on kb_processing_runs (migration 0085, applied) so property_id/scope_type
+# survive the async worker queue. Default case (no property_id, not TENANT-marked)
+# is byte-for-byte unchanged. staging_publish_standard_kb.py's cupid_hotel entry now
+# pins each branch file's property_id explicitly (release/1.7.22 @ 9d6eb87).
+# Tag: staging-20260902-9d6eb87
+# Digest: sha256:d16070d6f99f0ea4cb9ab84f6f26c2d8e0366b0fa7255f76a9b528d504502eb3
+#
 # Rebuild 2026-09-01 (tenant-scope detection follow-up fix) — the tenant-scope write
 # path shipped one rebuild ago detected scope from a strict "must be literal line 1"
 # regex match on the leading content_scope=tenant_global directive. Live verification
@@ -196,4 +210,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:9f49a08e8f1e28ce4ea9edb3e4e26d85797b61c545cfde068445f3f6de943651
+    digest: sha256:d16070d6f99f0ea4cb9ab84f6f26c2d8e0366b0fa7255f76a9b528d504502eb3
