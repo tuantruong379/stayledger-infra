@@ -43,6 +43,29 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (2 real bugs found via matrix core-133 root-cause investigation) —
+# rerunning the 133-case matrix against the rescan-fix build below surfaced 4 failures; 2 were
+# confirmed real product bugs via route/reason_code inspection and live-model trials (not
+# regressions from the rescan fixes below — both live in files untouched by that work):
+# (1) catalog_grounding.py's promo-code shape regex (digit+letter, 4-16 chars) was reading
+# Vietnamese currency shorthand like "300k"/"500tr" (a guest citing a price already paid) as a
+# promo code to apply, derailing the turn into slot-filling instead of answering the actual
+# question -- added a digits-then-currency-unit exclusion mirroring the existing G1_028
+# clock-token exclusion; real codes ending in a currency-unit letter (CUPID50K) are unaffected.
+# (2) injection_llm_classifier.py's Phase-2 LLM safety classifier (confirmed enabled for
+# cupid_hotel) false-positived on an ordinary group-booking negotiation request ("gặp Quản lý để
+# thương lượng giá riêng"), producing a canned security refusal; clarified the system prompt
+# that asking to speak with a manager or negotiate a group/long-stay rate is ordinary, not
+# manipulation. Verified via live-model trials against the exact matrix message (8 completions
+# each, same tenant/gate): old prompt returned a manipulation verdict in a non-trivial share of
+# successful completions, clarified prompt returned zero in a comparable sample -- narrows
+# rather than eliminates the false-positive rate since it's a live LLM call, not a regex.
+# The other 2 matrix failures (11.2/11.9) and 9 review_required cases (category 5, payment/
+# deposit) were confirmed test-harness gaps, not product bugs -- left as-is
+# (release/1.7.22 @ a417dd8).
+# Tag: staging-20260902-a417dd8
+# Digest: sha256:3cf87ceed83b1d1ffeec1b7a09902dea7d01b177567eb7a12185d5fe67a67bdb
+#
 # Rebuild 2026-09-02 (SonarQube rescan follow-up + format-check fix) — a rescan of the
 # prior 24-finding cleanup below surfaced 5 residual/new findings: branch_compare.py's
 # _alias_index_from_tenant_context (still CC22 after one split, plus an unused tenant_id
@@ -320,4 +343,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b9af7a4b665b77be6ba8f477c05fff9562d3f84afb6ecf9d9adf581c592d88d5
+    digest: sha256:3cf87ceed83b1d1ffeec1b7a09902dea7d01b177567eb7a12185d5fe67a67bdb
