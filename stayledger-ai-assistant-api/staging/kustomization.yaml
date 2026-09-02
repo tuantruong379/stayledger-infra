@@ -43,6 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (SonarQube rescan follow-up + format-check fix) — a rescan of the
+# prior 24-finding cleanup below surfaced 5 residual/new findings: branch_compare.py's
+# _alias_index_from_tenant_context (still CC22 after one split, plus an unused tenant_id
+# param the earlier split mechanically carried forward without using) and
+# try_canonical_landmark_proximity_reply (still CC16), hotel/time.py's timezone
+# conversion topic-regex ("timezone" redundant with "time\s*zone", same bug class as
+# the "vietnam"/"viet\s*nam" fix below), intent_classifier.py's
+# _try_rule_based_amenity_early (still CC18 after reducing from CC27), and
+# reply_seal.py's _seal_monolingual_reply (CC16, untouched by the earlier pass). Each
+# fixed with a second round of behavior-preserving extraction, verified against the
+# original branch-by-branch. Also folds in the format-check fix (4 files needing
+# ruff-format reformatting, whitespace-only, no behavior change) that shipped after the
+# rebuild below but never needed its own redeploy (release/1.7.22 @ 220d3fa).
+# Tag: staging-20260902-220d3fa
+# Digest: sha256:b9af7a4b665b77be6ba8f477c05fff9562d3f84afb6ecf9d9adf581c592d88d5
+#
 # Rebuild 2026-09-02 (SonarQube cognitive-complexity cleanup, 24 findings) — the
 # remaining 24 findings from the same SonarQube backlog: cognitive-complexity refactors
 # across app/routes/admin_api.py+webhook.py, app/services/ai/routing/intent_classifier.py
@@ -304,4 +320,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:1a71ac147b1c6c96a79034c99ed5c6877d9f3c321d1a2ff5bd9ef9848a128bb4
+    digest: sha256:b9af7a4b665b77be6ba8f477c05fff9562d3f84afb6ecf9d9adf581c592d88d5
