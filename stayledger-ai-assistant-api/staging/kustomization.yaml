@@ -43,6 +43,27 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (4th bug found via real E2E verification, revision_seq is not a
+# recency key) — after the first 3 bugs were fixed, a full end-to-end re-verification
+# through the real /kb/import-file endpoint (all 4 cupid_hotel files: shared TENANT +
+# 3 branch PROPERTY) imported+approved cleanly with zero worker_error, but the
+# combined per-branch generations kb_canonical_chunk_worker.py is supposed to build
+# never appeared -- max(kb_generations.generation) stayed at 26 (yesterday's) even
+# though the outbox jobs all reached status='done'. Root cause:
+# _latest_approved_revision ordered `ORDER BY revision_seq DESC LIMIT 1`, but
+# revision_seq is a per-row optimistic-lock version counter bumped on that SAME row's
+# own status transitions (draft->approved is 1->2), not a cross-row recency key. Once
+# a scope has more than one APPROVED revision (any re-import after the first), most
+# rows tie at revision_seq=2 and Postgres breaks the tie arbitrarily -- confirmed live
+# this meant the OLDEST approved revision (from 2026-09-01) kept winning over every
+# newer one, so the worker kept silently re-upserting yesterday's stale chunks under
+# the existing generation instead of building a new one, with no error surfaced
+# anywhere. Fixed to order by approved_at (falling back to created_at), matching the
+# already-correct pattern in revision_repository.load_approved_guest_facts
+# (release/1.7.22 @ c449a42).
+# Tag: staging-20260902-c449a42
+# Digest: sha256:7c30e2a820c92dbff2b0bf2829a8c31ff246e661291124dfdfb4f43255237132
+#
 # Rebuild 2026-09-02 (3rd bug found via real E2E verification) — same real-API
 # verification pass hit a third bug once the first two were fixed: compose_guest_facts
 # copied a surviving inherited tenant fact's ORIGINAL fact_id into the composed set,
@@ -237,4 +258,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:2047277af32c4d2c4a37fa079070ff9d425aeb781ce049ca5f46ecc33017f4cf
+    digest: sha256:7c30e2a820c92dbff2b0bf2829a8c31ff246e661291124dfdfb4f43255237132
