@@ -43,6 +43,17 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (3rd bug found via real E2E verification) — same real-API
+# verification pass hit a third bug once the first two were fixed: compose_guest_facts
+# copied a surviving inherited tenant fact's ORIGINAL fact_id into the composed set,
+# but kb_canonical_facts.fact_id is a global primary key (not scoped per revision) and
+# that id's row already exists under the tenant revision -- first PROPERTY import with
+# a real tenant-common fact to inherit hit "duplicate key value violates unique
+# constraint kb_canonical_facts_pkey". The composed copy now gets a fresh id
+# (release/1.7.22 @ cedc536).
+# Tag: staging-20260902-cedc536
+# Digest: sha256:2047277af32c4d2c4a37fa079070ff9d425aeb781ce049ca5f46ecc33017f4cf
+#
 # Rebuild 2026-09-02 (2 bugs found via real end-to-end verification) — live-testing the
 # explicit property_id feature through the real /kb/import-file (not the direct-script
 # bypass) hit two genuine, previously-latent bugs, both only ever exercisable once a
@@ -226,4 +237,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:20a2c85378141db1ef40306a5f5d399c17dc259916ceb6966086bc8218a2176f
+    digest: sha256:2047277af32c4d2c4a37fa079070ff9d425aeb781ce049ca5f46ecc33017f4cf
