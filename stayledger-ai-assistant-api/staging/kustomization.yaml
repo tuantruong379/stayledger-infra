@@ -43,6 +43,21 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (SonarQube quick-win cleanup pass) — 5 findings: (1) removed
+# unused tenant_id param from reformulate_query/areformulate_query/check_relevance/
+# acheck_relevance (tenant-scoping already happens one level up); (2) hotel/time.py:
+# extracted Asia/Tokyo + Asia/Ho_Chi_Minh duplicate-literal constants, plus a real bug
+# -- _TZ_CONVERT_RE's source/dest groups each had a "vietnam" alternative that was fully
+# redundant with "viet\s*nam" already in the same alternation (\s* also matches zero
+# whitespace); (3) fact_extractor.py: [0-9] -> \d; (4) emergency_first_response.py:
+# split fire_smoke_gas/medical over the regex-complexity threshold into multiple
+# patterns checked with any() (mirrors the existing fact_extractor pattern), added
+# first-ever dedicated test file for this safety-critical classifier; (5) pms_web_jwks.py:
+# eliminated two suspicious empty if/elif pass-only branches via a De Morgan guard
+# clause, same behavior (release/1.7.22 @ c3fdd32).
+# Tag: staging-20260902-c3fdd32
+# Digest: sha256:565f4c8666a230fdd6404ad54a799debf311d4aae4a7c7019575d671d8fc9b2e
+#
 # Rebuild 2026-09-02 (SonarQube: ReDoS in utc-offset regex, S5852) —
 # app/services/hotel/time.py's `utc\s*([+\-]?\s*\d{1,2})` had unbounded \s* on both
 # sides of an optional sign; whenever the sign is absent this collapses to adjacent
@@ -271,4 +286,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d791ac36bc1f9978327797de74d9cd62c6e471c572cd29ed83888ad6dad42039
+    digest: sha256:565f4c8666a230fdd6404ad54a799debf311d4aae4a7c7019575d671d8fc9b2e
