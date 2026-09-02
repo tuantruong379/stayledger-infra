@@ -43,6 +43,19 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (SonarQube: ReDoS in utc-offset regex, S5852) —
+# app/services/hotel/time.py's `utc\s*([+\-]?\s*\d{1,2})` had unbounded \s* on both
+# sides of an optional sign; whenever the sign is absent this collapses to adjacent
+# \s*\s* over the same character class, causing polynomial-time backtracking on a long
+# non-matching whitespace run. resolve_iana_timezone() has no caller-side length guard
+# (plain public function), so this was a real DoS surface -- confirmed locally: the old
+# regex took ~23s on "utc" + 50k spaces + a non-digit; bounding to \s{0,3} (still covers
+# any realistic "utc + 7" spelling) resolves the same input in under a millisecond. The
+# identical pattern, duplicated inside _TZ_CONVERT_RE's `source` alternative, was fixed
+# too (release/1.7.22 @ 653a6ca).
+# Tag: staging-20260902-653a6ca
+# Digest: sha256:d791ac36bc1f9978327797de74d9cd62c6e471c572cd29ed83888ad6dad42039
+#
 # Rebuild 2026-09-02 (4th bug found via real E2E verification, revision_seq is not a
 # recency key) — after the first 3 bugs were fixed, a full end-to-end re-verification
 # through the real /kb/import-file endpoint (all 4 cupid_hotel files: shared TENANT +
@@ -258,4 +271,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:7c30e2a820c92dbff2b0bf2829a8c31ff246e661291124dfdfb4f43255237132
+    digest: sha256:d791ac36bc1f9978327797de74d9cd62c6e471c572cd29ed83888ad6dad42039
