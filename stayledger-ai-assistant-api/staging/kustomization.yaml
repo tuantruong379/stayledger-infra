@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (matrix v3 2000-case run + broadened safety-classifier fix) — ran the
+# full v3 2000-case suite against the fix build below: 1916 passed, 57 failed, 26
+# review_required, 1 not_tested (95.8% pass, 0/2267 HTTP errors -- deploy itself healthy).
+# Sampling the failures showed the same false-positive class from case 13.4 (below) firing on
+# wider phrasing than that fix covered: applying an (invalid) promo code, and an angry/urgent
+# guest threatening to escalate (lawyer, bad review, demanding a manager immediately) -- all
+# real guest situations that should reach normal FAQ/complaint-handoff handling, not a canned
+# security refusal. Broadened injection_llm_classifier.py's system prompt accordingly.
+# Live-model trial across the 3 exact matrix messages (5 completions each): old prompt returned
+# a manipulation verdict in 14/15 successful completions, clarified prompt in 0/15. A second,
+# separate systemic pattern was also found (booking-funnel intent routing swallowing unrelated
+# FAQ/cancellation/branch-switch questions into generic slot-filling, likely the largest single
+# contributor to the 57 failures) -- deferred to a future task per explicit scope decision, not
+# fixed in this rebuild (release/1.7.22 @ 92fb3f1).
+# Tag: staging-20260902-92fb3f1
+# Digest: sha256:dbbc18603265b420c42efba808a619c48c0c27eedf0d94ed2dbc4737da754740
+#
 # Rebuild 2026-09-02 (2 real bugs found via matrix core-133 root-cause investigation) —
 # rerunning the 133-case matrix against the rescan-fix build below surfaced 4 failures; 2 were
 # confirmed real product bugs via route/reason_code inspection and live-model trials (not
@@ -343,4 +360,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3cf87ceed83b1d1ffeec1b7a09902dea7d01b177567eb7a12185d5fe67a67bdb
+    digest: sha256:dbbc18603265b420c42efba808a619c48c0c27eedf0d94ed2dbc4737da754740
