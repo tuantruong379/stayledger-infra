@@ -16,8 +16,10 @@ patches:
   - path: admin-web-hpa-oom-mitigation-patch.yaml
   - path: scaling-admin-web-patch.yaml
 
-# Tag: 6e0fbf1 (admin UI full polish - RBAC/split/badges/e2e)
+# Tag: 941cf3e (browserslist CVE fix, package-lock.json sync, CI image renamed
+# putin111/ai-hotel-assistant-frontend -> putin111/stayledger-ai-assistant-admin-web
+# to match this deployment, Dockerfile openssl CVE fix)
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:dca356a49b095090daebf0aeaad2e1d90638837eec1764afacf62be10497a688
+    digest: sha256:e5e0e25bbafdc8bd20fb2e5925052f99cc9cc9c2a699f9c57354f6aaac9bde26
