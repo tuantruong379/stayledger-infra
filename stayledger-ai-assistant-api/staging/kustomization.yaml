@@ -43,6 +43,24 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-02 (SonarQube cognitive-complexity cleanup, 24 findings) — the
+# remaining 24 findings from the same SonarQube backlog: cognitive-complexity refactors
+# across app/routes/admin_api.py+webhook.py, app/services/ai/routing/intent_classifier.py
+# (7 findings), app/services/booking/service.py (CC44 + CC16 — the biggest single
+# finding), app/services/chat/service.py+guided_suggestions.py, app/services/hotel/time.py,
+# app/services/knowledge/canonical/pipeline.py+golden_set_autogen.py,
+# app/services/pricing/service.py (param-count), core/response/reply_seal.py, and
+# app/services/property/branch_compare.py (5 findings, up to CC46 — the highest-risk
+# file, backs every cross-branch address/landmark/compare reply). Every extraction is a
+# behavior-preserving split (early-return helpers, deduplicated vi/en branches, shared
+# try/except blocks reused instead of copy-pasted) verified branch-by-branch against the
+# original before editing; new direct test coverage added for functions that had none
+# (booking's hourly-window rules, branch_compare's cross-branch cases, matrix debug
+# slots, emergency classifier). Full suite clean across every fix's own targeted run
+# plus 5 full-suite runs at file-batch checkpoints (release/1.7.22 @ f54c47f).
+# Tag: staging-20260902-f54c47f
+# Digest: sha256:1a71ac147b1c6c96a79034c99ed5c6877d9f3c321d1a2ff5bd9ef9848a128bb4
+#
 # Rebuild 2026-09-02 (SonarQube quick-win cleanup pass) — 5 findings: (1) removed
 # unused tenant_id param from reformulate_query/areformulate_query/check_relevance/
 # acheck_relevance (tenant-scoping already happens one level up); (2) hotel/time.py:
@@ -286,4 +304,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:565f4c8666a230fdd6404ad54a799debf311d4aae4a7c7019575d671d8fc9b2e
+    digest: sha256:1a71ac147b1c6c96a79034c99ed5c6877d9f3c321d1a2ff5bd9ef9848a128bb4
