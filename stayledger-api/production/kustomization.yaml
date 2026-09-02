@@ -16,10 +16,10 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote API — tag 1b6772f (release/1.4.8).
+# Promote API — tag 192294f (release/1.4.9).
 images:
   - name: putin111/stayledger-api
-    digest: sha256:f1c36ac0132e6556d7c6677d641ad0855dc77903da0ab8eb129a7fa456c1fc3e
+    digest: sha256:f8145be443663ceb07073dac3f285c02b298231f4888ab9a0e3f49bfd0b73a7d
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).
