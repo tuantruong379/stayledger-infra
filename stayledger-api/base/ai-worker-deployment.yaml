@@ -141,11 +141,7 @@ spec:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: smtp-password
-            - name: FRONTEND_URL
-              valueFrom:
-                secretKeyRef:
-                  name: stayledger-staging-secrets
-                  key: frontend-url
+            # FRONTEND_URL comes from stayledger-api-config via envFrom (non-secret).
           resources:
             requests:
               cpu: "250m"

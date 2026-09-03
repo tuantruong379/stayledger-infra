@@ -20,10 +20,11 @@ Future: SealedSecrets or SOPS (documented below, not yet installed).
 | `smtp-user` / `smtp-password` | Email (SES SMTP) |
 | `metrics-auth-token` | Prometheus scrape auth |
 | `azure-openai-api-key` / `azure-openai-endpoint` | AI provider |
-| `frontend-url` | Email link base (`FRONTEND_URL`) |
 | `turnstile-secret-key` | Landing demo form Turnstile verify (`TURNSTILE_SECRET_KEY`) |
 
-**Not used by Nest (do not inject):** `csrf-secret`, `encryption-key`, `document-encryption-key` — CSRF is double-submit cookie; crypto uses `external-signing-enc-key` only. Legacy keys in live Secrets are harmless leftovers.
+**Non-secret (ConfigMap `stayledger-api-config`):** `FRONTEND_URL`, `ALLOWED_ORIGINS` — do not put these in the Secret.
+
+**Not used by Nest (do not inject):** `csrf-secret`, `encryption-key`, `document-encryption-key` — CSRF is double-submit cookie; crypto uses `external-signing-enc-key` only. Prune leftover keys from live Secrets when convenient.
 
 ### Additional secrets
 

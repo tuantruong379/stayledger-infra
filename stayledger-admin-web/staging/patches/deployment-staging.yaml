@@ -10,7 +10,18 @@ spec:
   template:
     metadata:
       labels:
-        # P1-P2 follow-up: permission-limited titles + GM dashboard gate
-        version: "staging-6b8d3a6"
-
-
+        # Match kustomization images pin (tag 8ee3c60 / release/1.4.13).
+        version: "8ee3c60"
+    spec:
+      containers:
+        - name: admin-web
+          # Align with production right-sizing (live ~62Mi).
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+              ephemeral-storage: "50Mi"
+            limits:
+              cpu: "500m"
+              memory: "384Mi"
+              ephemeral-storage: "200Mi"

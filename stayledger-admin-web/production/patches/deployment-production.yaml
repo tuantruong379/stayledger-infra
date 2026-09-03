@@ -17,11 +17,12 @@ spec:
   template:
     metadata:
       labels:
-        version: "6b8d3a6"
+        # Match kustomization images pin (tag 8ee3c60 / release/1.4.13).
+        version: "8ee3c60"
       annotations:
-        stayledger.io/git-sha: "6b8d3a6"
-        stayledger.io/branch: "release/1.4.11"
-        kubernetes.io/change-cause: "Promote admin-web 6b8d3a6 — permission-limited titles + GM dashboard gate 2026-09-01"
+        stayledger.io/git-sha: "8ee3c60"
+        stayledger.io/branch: "release/1.4.13"
+        kubernetes.io/change-cause: "Infra cleanup — version sync 8ee3c60"
     spec:
       containers:
         - name: admin-web

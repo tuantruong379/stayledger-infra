@@ -124,7 +124,6 @@ $SecretArgs = @(
     "--from-literal=jwt-secret=$JwtSecret",
     "--from-literal=jwt-refresh-secret=$JwtRefreshSecret",
     "--from-literal=postgres-password=$PostgresPassword",
-    "--from-literal=frontend-url=$FrontendUrl",
     "--from-literal=azure-openai-endpoint=$AzureOpenAiEndpoint",
     "--from-literal=azure-openai-api-key=$AzureOpenAiApiKey",
     "--from-literal=external-signing-enc-key=$ExternalSigningEncKey",

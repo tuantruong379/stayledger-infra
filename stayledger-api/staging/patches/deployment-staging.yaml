@@ -1,4 +1,4 @@
-# Staging-specific deployment overrides (CORS, version label, RS retention).
+# Staging-specific deployment overrides (version label, guest-chat secrets, RS retention).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,21 +9,14 @@ spec:
   template:
     metadata:
       labels:
-        # Preserve live label to avoid template-hash restart when only RS retention changes.
-        version: "score90-20260720"
+        # Match kustomization images pin (tag 192294f / release/1.4.9).
+        version: "192294f"
     spec:
       containers:
         - name: api
           env:
-            - name: ALLOWED_ORIGINS
-              # Include staging landing so browser POSTs to /api/marketing/demo-requests succeed.
-              value: "https://stg-app.stayledger.io,https://stg.stayledger.io,http://10.89.1.40:30010,http://10.89.1.40:30012"
             # Guest Chat PMS-web BFF (RS256 context JWT signing + aggregate import
-            # auth). This wiring existed live-only on staging until 2026-08-18
-            # (added imperatively at some point, never committed) — captured here
-            # so a Deployment recreated from git doesn't silently lose it. Not
-            # deployed to production; feature currently dormant (no live traffic
-            # exercises it yet).
+            # auth). Staging-only; feature dormant on production.
             - name: PMS_WEB_CHAT_JWT_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
@@ -46,11 +39,12 @@ spec:
                   name: stayledger-api-config
                   key: AI_ASSISTANT_INTERNAL_BASE_URL
           resources:
+            # Idle ~27m / ~489Mi — was 500m/2 which starved the single-node hub.
             requests:
-              cpu: "500m"
+              cpu: "250m"
               memory: "512Mi"
               ephemeral-storage: "50Mi"
             limits:
-              cpu: "2"
+              cpu: "1"
               memory: "1Gi"
               ephemeral-storage: "200Mi"

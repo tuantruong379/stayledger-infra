@@ -17,20 +17,18 @@ spec:
   template:
     metadata:
       labels:
-        version: "6764d49"
+        # Match kustomization images pin (tag 192294f / release/1.4.9).
+        version: "192294f"
       annotations:
-        stayledger.io/git-sha: "6764d49"
-        stayledger.io/branch: "release/1.3.5"
-        kubernetes.io/change-cause: "Promote API 6764d49 — MarketingModule + Turnstile 2026-08-22"
+        stayledger.io/git-sha: "192294f"
+        stayledger.io/branch: "release/1.4.9"
+        kubernetes.io/change-cause: "Infra cleanup — CORS/FRONTEND_URL via ConfigMap; version sync 192294f"
     spec:
       containers:
         - name: api
-          env:
-            - name: ALLOWED_ORIGINS
-              # PMS admin + public marketing site (demo form → /api/marketing/demo-requests).
-              value: "https://app.stayledger.io,https://stayledger.io,https://www.stayledger.io"
           # Single replica (RWO guest-docs) — give this pod more CPU than landing.
           # Request 350m / limit 1 CPU so API wins scheduling vs marketing site.
+          # ALLOWED_ORIGINS + FRONTEND_URL come from stayledger-api-config (envFrom).
           resources:
             requests:
               cpu: "350m"
@@ -38,10 +36,3 @@ spec:
             limits:
               cpu: "1000m"
               memory: "1536Mi"
-          volumeMounts:
-            - name: guest-documents
-              mountPath: /var/lib/stayledger/guest-documents
-      volumes:
-        - name: guest-documents
-          persistentVolumeClaim:
-            claimName: stayledger-guest-documents

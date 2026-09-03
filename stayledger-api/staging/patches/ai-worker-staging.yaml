@@ -10,5 +10,5 @@ spec:
   template:
     metadata:
       labels:
-        # Preserve live label to avoid template-hash restart when only RS retention changes.
-        version: "e40d7de"
+        # Match API/worker image pin (tag 192294f / release/1.4.9).
+        version: "192294f"

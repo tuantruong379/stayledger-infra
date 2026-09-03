@@ -34,9 +34,8 @@ spec:
         app: stayledger-api
         component: backend
         environment: overlay
-        # version is updated by CI at deploy time — enables version filtering
-        # in Grafana dashboards and Loki log queries.
-        version: "staging-7fe3b527"
+        # Overlay patches set version to the promoted image short SHA.
+        version: "overlay"
       annotations:
         # Prometheus scraping — matches the NestJS prom-client /metrics path.
         prometheus.io/scrape: "true"
@@ -92,12 +91,10 @@ spec:
               exec:
                 command: ["sleep", "5"]
           envFrom:
+            # Includes ALLOWED_ORIGINS + FRONTEND_URL (non-secret; set per overlay ConfigMap).
             - configMapRef:
                 name: stayledger-api-config
           env:
-            - name: ALLOWED_ORIGINS
-              # Staging defaults — production overlays replace this list.
-              value: "https://stg-app.stayledger.io,https://stg.stayledger.io,http://10.89.1.40:30010,http://10.89.1.40:30012"
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
@@ -161,11 +158,6 @@ spec:
                 secretKeyRef:
                   name: stayledger-staging-secrets
                   key: smtp-password
-            - name: FRONTEND_URL
-              valueFrom:
-                secretKeyRef:
-                  name: stayledger-staging-secrets
-                  key: frontend-url
             # Landing demo form Turnstile (optional until secret key is provisioned).
             - name: TURNSTILE_SECRET_KEY
               valueFrom:
@@ -175,7 +167,7 @@ spec:
                   optional: true
           resources:
             requests:
-              # Base profile; staging can override vertically while HPA is capped by RWO storage.
+              # Base profile; overlays override. Staging hub idle ~30m — keep modest.
               cpu: "250m"
               memory: "512Mi"
               ephemeral-storage: "50Mi"

@@ -16,6 +16,10 @@ metadata:
 data:
   NODE_ENV: "production"
   PORT: "3001"
+  # CORS — was Deployment env hardcode; keep NodePort LAN origins for hub debug.
+  ALLOWED_ORIGINS: "https://stg-app.stayledger.io,https://stg.stayledger.io,http://10.89.1.40:30010,http://10.89.1.40:30012"
+  # Non-secret public URL (email links / invites). Was Secret frontend-url.
+  FRONTEND_URL: "https://stg-app.stayledger.io"
   REDIS_HOST: "stayledger-redis"
   REDIS_PORT: "6379"
   JWT_EXPIRES_IN: "15m"
@@ -27,7 +31,7 @@ data:
   # Recipient allowlist + @stayledger.test suppress below still gate real delivery.
   EMAIL_ENABLED: "true"
   EMAIL_TRANSPORT: "smtp"
-  EMAIL_FROM: "no-reply@stayledger.io"
+  EMAIL_FROM: "noreply@stayledger.io"
   EMAIL_FROM_NAME: "StayLedger"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"
   SMTP_PORT: "465"

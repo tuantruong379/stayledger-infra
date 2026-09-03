@@ -14,6 +14,10 @@ data:
   NODE_ENV: "production"
   APP_ENV: "production"
   PORT: "3001"
+  # CORS — was Deployment env hardcode.
+  ALLOWED_ORIGINS: "https://app.stayledger.io,https://stayledger.io,https://www.stayledger.io"
+  # Non-secret public URL (email links / invites). Was Secret frontend-url.
+  FRONTEND_URL: "https://app.stayledger.io"
   REDIS_HOST: "stayledger-redis"
   REDIS_PORT: "6379"
   JWT_EXPIRES_IN: "15m"
@@ -21,6 +25,7 @@ data:
   LOG_LEVEL: "warn"
   # AWS SES SMTP (ap-southeast-1). Credentials in stayledger-secrets.
   EMAIL_ENABLED: "true"
+  EMAIL_TRANSPORT: "smtp"
   EMAIL_FROM: "noreply@stayledger.io"
   EMAIL_FROM_NAME: "StayLedger"
   SMTP_HOST: "email-smtp.ap-southeast-1.amazonaws.com"

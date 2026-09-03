@@ -8,9 +8,9 @@ metadata:
     component: frontend
     environment: overlay
   annotations:
-    kubernetes.io/change-cause: "Deploy staging-b1bbb616 — JSON parse fix, golive stabilization 2026-07-03"
-    stayledger.io/git-sha: "f5079ef"
-    stayledger.io/branch: "release/1.2.20"
+    kubectl.kubernetes.io/change-cause: "Overlay sets change-cause on promote"
+    stayledger.io/git-sha: "overlay"
+    stayledger.io/branch: "overlay"
 spec:
   # 2 replicas: enables zero-downtime rolling updates and tolerates a single
   # pod failure or node drain without any downtime window. HPA minReplicas: 2
@@ -37,9 +37,10 @@ spec:
         environment: overlay
         # version is updated by CI at deploy time — enables version filtering
         # in Grafana dashboards and Loki log queries.
-        version: "staging-b1bbb616"
+        # Overlay patches set version to the promoted image short SHA.
+        version: "overlay"
       annotations:
-        stayledger.io/git-sha: "f5079ef"
+        stayledger.io/git-sha: "overlay"
     spec:
       serviceAccountName: stayledger-admin-web
       # No K8s API access needed — suppress the auto-mounted token entirely.
