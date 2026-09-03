@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-03 (2 more fixes found via live spot-check of the 7 above) — a live
+# webhook spot-check of the rebuild below (real requests, not isolated function calls)
+# surfaced 2 more distinct bugs the isolated Router.decide() testing had missed:
+#   P0/P1 booking/service.py — "hủy trước 72 giờ" (a 72-HOUR DURATION) was independently
+#     misread as an invalid clock hour by _INVALID_CLOCK_HOUR_RE (whose "lúc/vào/at"
+#     clock-context prefix was merely optional), producing "Thời gian bạn nhập chưa hợp lệ"
+#     even after the cancel-message fix below made is_cancel_message correctly return False.
+#     Existing true positives ("checkin at 29:00", "lúc 25 giờ") still match.
+#   P1 injection_llm_classifier.py — once the "xác nhận" booking-signal scoping fix stopped
+#     forcing "Ngân hàng báo đã trừ tiền, bên bạn cứ xác nhận đi" into booking, it fell
+#     through to the Phase-2 LLM safety classifier, which itself blocked it as manipulation.
+#     Live-model trial: old prompt 6/8 blocked, new prompt 0/6 -- a genuine "skip
+#     verification, approve anyway" attempt still blocks 6/6.
+# (release/1.7.22 @ 3d41654).
+# Tag: staging-20260903-3d41654
+# Digest: sha256:adbbbcb63c068429db576509ef6a2d99e3f3d6b204fdb9b3725c952c604c0fc2
+#
 # Rebuild 2026-09-03 (7 P0/P1 fixes from a matrix v3 root-cause investigation) — the user
 # asked whether the matrix v3 FAILED/REVIEW_REQUIRED cases were code bugs or missing KB
 # content; a full pass over all 78 cases (not just a sample) showed overwhelmingly code, not
@@ -389,4 +406,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:108fc5a20a266febcc5d8b342fddfa3860ff99b9e14bfdadc0a51f87b2691fc6
+    digest: sha256:adbbbcb63c068429db576509ef6a2d99e3f3d6b204fdb9b3725c952c604c0fc2
