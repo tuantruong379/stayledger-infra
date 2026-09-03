@@ -33,7 +33,19 @@ patches:
 # Also deduped the activity banner's repeated activity text, and added a hint
 # clarifying a high score next to "Blocked" is gate-completion progress, not the
 # publish verdict.
+#
+# Tag: ec849b7 -- 2 more display bugs found investigating azure_bay_danang deeper:
+# kb_in_progress dictionary entry was lowercase ("đang chạy") as a standalone label;
+# in-flight eval controller states (generation_eval_running/_queued/_blocked) were
+# never excluded from the publish-blockers list, so a generation mid-evaluation
+# showed "Đánh giá đang chạy" (running) and "Chưa chạy đánh giá RAG" (not run) side
+# by side. This exact gap was already flagged as a known P1 in
+# docs/assessments/rag-eval-flow-investigation-20260731.md but the frontend filter
+# was apparently never updated to match. Confirmed live in the DB that the eval
+# itself is not stuck -- azure_bay_danang Gen 9 completed with a real VI-slice
+# failure (retrieval bias, content gap, one hallucination case) -- tracked
+# separately, not fixed in this rebuild.
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:49bb9f6a2fc7926252f352b5906508291dba8095548a41ae7dec7c9a537bf227
+    digest: sha256:e5a14aa16af2dfb93fb9b3feb250e8761f2f5b080125183237a7168be7126c3c
