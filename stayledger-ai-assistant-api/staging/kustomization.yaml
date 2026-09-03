@@ -43,6 +43,35 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-03 (7 P0/P1 fixes from a matrix v3 root-cause investigation) — the user
+# asked whether the matrix v3 FAILED/REVIEW_REQUIRED cases were code bugs or missing KB
+# content; a full pass over all 78 cases (not just a sample) showed overwhelmingly code, not
+# KB content: ~30/78 from one dominant symptom (booking-funnel swallowing unrelated FAQ/
+# modification/branch-compare questions into generic slot-fill), 3 genuine safety emergencies
+# misrouted to a generic RAG "not found" reply, 4 residual safety-classifier false positives,
+# ~15 multilingual/typo retrieval-robustness gaps (deferred, separate task), and the rest
+# masked by the booking-funnel bug (can't be measured until that lands). Fixed 7 distinct
+# root causes, each empirically verified in isolation and (for the booking-funnel cluster)
+# end-to-end via Router.decide() with a real tenant-context fixture:
+#   P0 handoff_signals.py — 3 emergency phrasings had no regex coverage at all ("chập điện",
+#     "con đi lạc", "kẹt TRONG thang máy" with an extra word breaking the zero-gap match).
+#   P1 safety.py — bare "camera an ninh" mention blocked as illegal activity (a documented
+#     matrix false-positive report that only checked the OTHER safety layer at the time).
+#   P1 injection_llm_classifier.py — broadened further for "chuyển tôi cho người thật" /
+#     camera-footage phrasing (14/15 -> 0/15 blocked in a live-model trial).
+#   P0/P1 intent_classifier.py — _ANCILLARY_FEE_FAQ_RES extended for visitor/odor/EV-charging/
+#     name-change/FX-rate fee questions (the single largest contributor to the swallow cluster).
+#   P0/P1 booking/service.py — "X thì sao?" (rhetorical/hypothetical) read as a direct cancel
+#     command; the existing hedge-word carve-out just never had "thì sao" in it.
+#   P0/P1 conversation_memory.py — a full question containing a bare number+unit fragment
+#     was read as a slot-fill answer because the questionish veto ran after, not before, the
+#     multiturn-slot check; added a word-count cap too.
+#   P0/P1 router.py — bare "xác nhận" fired on a bank payment-confirmation claim with zero
+#     booking context; scoped to require co-occurrence with a room/booking noun.
+# (release/1.7.22 @ 0adb8e9).
+# Tag: staging-20260903-0adb8e9
+# Digest: sha256:108fc5a20a266febcc5d8b342fddfa3860ff99b9e14bfdadc0a51f87b2691fc6
+#
 # Rebuild 2026-09-02 (matrix v3 2000-case run + broadened safety-classifier fix) — ran the
 # full v3 2000-case suite against the fix build below: 1916 passed, 57 failed, 26
 # review_required, 1 not_tested (95.8% pass, 0/2267 HTTP errors -- deploy itself healthy).
@@ -360,4 +389,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:dbbc18603265b420c42efba808a619c48c0c27eedf0d94ed2dbc4737da754740
+    digest: sha256:108fc5a20a266febcc5d8b342fddfa3860ff99b9e14bfdadc0a51f87b2691fc6
