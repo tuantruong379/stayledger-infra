@@ -154,17 +154,17 @@ try {
   }
 
   if ($Phase -in @('ai-assistant', 'all')) {
-    Write-Host '[ai-assistant] secrets + namespace' -ForegroundColor Yellow
+    Write-Host '[ai-assistant] secrets + namespace (split repos: api + admin-web)' -ForegroundColor Yellow
     $aiNs = 'stayledger-ai-assistant'
-    Invoke-Kubectl @('apply', '-f', 'stayledger-ai-assistant/base/namespace.yaml')
+    Invoke-Kubectl @('apply', '-f', 'stayledger-ai-assistant-api/base/namespace.yaml')
 
     $requiredSecrets = @(
-      'stayledger-ai-assistant/base/datastores/redis-secret.yaml',
-      'stayledger-ai-assistant/base/datastores/postgres-secret.yaml',
-      'stayledger-ai-assistant/base/datastores/pgbouncer-secret.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-api-secrets.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-smtp-secrets.yaml',
-      'stayledger-ai-assistant/base/app/hotel-assistant-frontend-secrets.yaml'
+      'stayledger-ai-assistant-api/base/datastores/redis-secret.yaml',
+      'stayledger-ai-assistant-api/base/datastores/postgres-secret.yaml',
+      'stayledger-ai-assistant-api/base/datastores/pgbouncer-secret.yaml',
+      'stayledger-ai-assistant-api/base/app/hotel-assistant-api-secrets.yaml',
+      'stayledger-ai-assistant-api/base/app/hotel-assistant-smtp-secrets.yaml',
+      'stayledger-ai-assistant-admin-web/base/app/hotel-assistant-frontend-secrets.yaml'
     )
     foreach ($rel in $requiredSecrets) {
       $path = Join-Path $InfraRoot $rel
@@ -175,30 +175,31 @@ try {
     }
 
     Write-Host '[ai-assistant] optional one-time postgres bootstrap (skip if DB already initialized)' -ForegroundColor Yellow
-    Write-Host "  kubectl --context=$KubectlContext apply -f stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml"
+    Write-Host "  kubectl --context=$KubectlContext apply -f stayledger-ai-assistant-api/base/datastores/postgres-bootstrap-job.yaml"
 
-    Write-Host '[ai-assistant] apply production overlay (datastores + apps)' -ForegroundColor Yellow
+    Write-Host '[ai-assistant] apply production overlays (api + admin-web)' -ForegroundColor Yellow
     # Reasoning: Postgres must be Ready before Alembic; CI images publish as putin111/ai-hotel-assistant*.
-    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant/production/')
+    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant-api/production/')
+    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant-admin-web/production/')
     Invoke-Kubectl @('rollout', 'status', 'deployment/postgres', '-n', $aiNs, '--timeout=300s')
     Invoke-Kubectl @('rollout', 'status', 'deployment/redis', '-n', $aiNs, '--timeout=180s')
 
     Write-Host '[ai-assistant] alembic migration job' -ForegroundColor Yellow
     Invoke-Kubectl @('delete', 'job', 'alembic-upgrade', '-n', $aiNs, '--ignore-not-found')
-    $alembicRaw = Get-Content (Join-Path $InfraRoot 'stayledger-ai-assistant/base/app/alembic-upgrade-job.yaml') -Raw
+    $alembicRaw = Get-Content (Join-Path $InfraRoot 'stayledger-ai-assistant-api/base/app/alembic-upgrade-job.yaml') -Raw
     $alembicRaw = $alembicRaw -replace 'putin111/ai-hotel-assistant:[^\s]+', "putin111/ai-hotel-assistant:$AiApiTag"
     $alembicTmp = Join-Path $env:TEMP "stayledger-alembic-$aiNs.yaml"
     Set-Content -Path $alembicTmp -Value $alembicRaw -Encoding UTF8
     Invoke-Kubectl @('apply', '-f', $alembicTmp)
     Invoke-Kubectl @('wait', '--for=condition=complete', 'job/alembic-upgrade', '-n', $aiNs, '--timeout=600s')
 
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-api', "api=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-channel-worker', "channel-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-webhook-worker', "webhook-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-metrics-aggregator', "metrics-aggregator=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
-    Invoke-Kubectl @('set', 'image', 'deployment/hotel-assistant-frontend', "frontend=putin111/ai-hotel-assistant-frontend:$AiFrontendTag", '-n', $aiNs)
-    Invoke-Kubectl @('rollout', 'status', 'deployment/hotel-assistant-api', '-n', $aiNs, '--timeout=300s')
-    Invoke-Kubectl @('rollout', 'status', 'deployment/hotel-assistant-frontend', '-n', $aiNs, '--timeout=300s')
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-assistant-api', "api=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-assistant-channel-worker', "channel-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-assistant-webhook-worker', "webhook-worker=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-assistant-metrics-aggregator', "metrics-aggregator=putin111/ai-hotel-assistant:$AiApiTag", '-n', $aiNs)
+    Invoke-Kubectl @('set', 'image', 'deployment/stayledger-ai-assistant-admin-web', "admin-web=putin111/ai-hotel-assistant-frontend:$AiFrontendTag", '-n', $aiNs)
+    Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-ai-assistant-api', '-n', $aiNs, '--timeout=300s')
+    Invoke-Kubectl @('rollout', 'status', 'deployment/stayledger-ai-assistant-admin-web', '-n', $aiNs, '--timeout=300s')
   }
 
   if ($Phase -in @('ingress', 'all')) {
@@ -208,7 +209,8 @@ try {
     Invoke-Kubectl @('apply', '-k', 'stayledger-api/production/')
     Invoke-Kubectl @('apply', '-k', 'stayledger-admin-web/production/')
     Invoke-Kubectl @('apply', '-f', 'stayledger-landing/prd/')
-    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant/production/')
+    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant-api/production/')
+    Invoke-Kubectl @('apply', '-k', 'stayledger-ai-assistant-admin-web/production/')
     Write-Host "Watch certs: kubectl --context=$KubectlContext get certificate -A"
   }
 

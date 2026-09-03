@@ -178,7 +178,7 @@ kubectl --context stayledger -n stayledger port-forward svc/stayledger-api 18080
 - [ ] Namespace `stayledger-ai-assistant` exists
 - [ ] AI postgres / redis / pgbouncer / nats Ready
 - [ ] One-time bootstrap job considered / applied if fresh DB  
-  `kubectl apply -f stayledger-ai-assistant/base/datastores/postgres-bootstrap-job.yaml`
+  `kubectl apply -f stayledger-ai-assistant-api/base/datastores/postgres-bootstrap-job.yaml`
 - [ ] Job `alembic-upgrade` Completed
 - [ ] Deployments Ready: `hotel-assistant-api`, `hotel-assistant-frontend`, workers
 - [ ] Services **ClusterIP** only (`hotel-assistant-api`, `hotel-assistant-frontend`)
