@@ -25,7 +25,15 @@ patches:
 # live on the ai-assistant-api pod), so the hint sent anyone troubleshooting a
 # staging DB error looking for an env var that isn't actually set there. Message
 # now names both.
+#
+# Tag: 362bf61 -- KB publish-readiness panel review (azure_bay_danang live capture):
+# retrieval-eval gate read "0/0 Chưa chạy" directly above a 100%-scored eval-metrics
+# card for the same evaluation (gate used evaluation_slices, metrics used the
+# separate latest_evaluation; empty slices now fall back to latest_evaluation).
+# Also deduped the activity banner's repeated activity text, and added a hint
+# clarifying a high score next to "Blocked" is gate-completion progress, not the
+# publish verdict.
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:8842b6f4938dfe82c8721671b3f6c5f654c0d4a7af3488088ccfc37208885124
+    digest: sha256:49bb9f6a2fc7926252f352b5906508291dba8095548a41ae7dec7c9a537bf227
