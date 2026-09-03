@@ -43,6 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-03 (3rd LLM classifier layer found, distinct from Phase-2 safety) —
+# re-testing the fix below via the live webhook (not isolated function calls) found 2 of 8
+# spot-checked messages still misrouting to "booking". Traced via pod logs: a THIRD, separate
+# LLM layer (app/services/ai/routing/intent_llm_fallback.py, "Phase 1" intent classifier --
+# distinct from the Phase-2 safety classifier tuned 3x earlier today) only activates when the
+# deterministic regex classifier falls through to its bare "faq" default guess -- exactly the
+# case for both remaining messages -- and its own verdict silently overrides the (now-correct)
+# regex fallback. It consistently classified "Hủy trước 72 giờ thì sao?" (asking ABOUT the
+# cancellation policy) and "Ngân hàng báo đã trừ tiền, bên bạn cứ xác nhận đi" (asking staff to
+# verify a payment) as booking. Live-model trial: old prompt 4/4 and 5/5 wrongly booking, new
+# prompt 5/5 and 6/6 correctly faq -- a genuine cancel request ("Hủy đặt phòng của tôi ngay bây
+# giờ") still classifies booking 6/6, confirming the fix doesn't degrade real detection
+# (release/1.7.22 @ 8bff4b2).
+# Tag: staging-20260903-8bff4b2
+# Digest: sha256:72a4521a5ebb2ac579ac03342567e2435a6f2510bd0cd35318feb73bfef49b82
+#
 # Rebuild 2026-09-03 (2 more fixes found via live spot-check of the 7 above) — a live
 # webhook spot-check of the rebuild below (real requests, not isolated function calls)
 # surfaced 2 more distinct bugs the isolated Router.decide() testing had missed:
@@ -406,4 +422,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:adbbbcb63c068429db576509ef6a2d99e3f3d6b204fdb9b3725c952c604c0fc2
+    digest: sha256:72a4521a5ebb2ac579ac03342567e2435a6f2510bd0cd35318feb73bfef49b82
