@@ -43,6 +43,105 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-03 (legacy chunker never persisted section_type) — the reranker
+# fix below (r1) added an "identity" section_type and made contact/identity/hours
+# boost unconditionally, but re-verifying against azure_bay_danang generation 10
+# showed byte-identical retrieval scores before/after -- the boost never fired.
+# Root cause: kb_canonical_chunk_worker.py's _rebuild_branch_generation (what
+# actually built generation 10) chunks through
+# kb_chunks_repository.chunks_from_markdown -> markdown_loader's legacy loader, a
+# completely separate implementation from canonical_chunker.py. That loader never
+# set section_type, and upsert_chunk_rows's INSERT never included the column
+# either -- every chunk landed as section_type='general' regardless of title, so
+# r1's boost condition could never match anything for this pipeline. r1 was
+# correct but lived in a chunker this tenant's generation-build path doesn't call.
+# Renamed canonical_chunker._section_type to public classify_section_type and
+# reused it from chunks_from_markdown (both branches); added section_type to
+# _write_pending_chunk_row's INSERT/UPDATE so it actually persists
+# (release/1.7.22 @ f2d8c38).
+# Tag: staging-20260903-f2d8c38
+# Digest: sha256:139de0c78a4eba2030b9af3d1e34fe97d2204f63ce98fb65cc41288ebefdf261
+#
+# Rebuild 2026-09-03 (Property identity/Contact rescued from rerank starvation) —
+# live investigation into azure_bay_danang generation 10's eval (built from the 3
+# Contact/Location extraction fixes below) found the correctly-extracted chunk
+# content still couldn't surface at retrieval time: recall_at_5 consistently False
+# for basic questions ("What's the hotel's name?", "Is the front desk open at
+# night?") whose relevant chunk was Property identity or Contact. Traced to 2
+# compounding, GLOBAL (not azure_bay_danang-specific) reranker bugs:
+#   1. canonical_chunker.py's _section_type() had no "identity" category, so
+#      "Property identity" fell through to "general" -- never eligible for the
+#      rerank boost regardless of query.
+#   2. scoped_hybrid.py's boost required query/content token overlap, but
+#      Contact/hours chunks render as short English field labels
+#      ("front_desk_hours: Open 24/7") independent of the KB's guest language --
+#      a Vietnamese question shares zero tokens with that content, so the boost
+#      silently never fired for exactly the case it existed to help.
+# Added "identity" as a recognized section_type; split boost_sections into 2
+# tiers -- policy/pricing/location keep the content-overlap gate (richer prose,
+# worth precision-guarding), contact/identity/hours (short, foundational,
+# always-relevant facts) now boost unconditionally on section_type match
+# (release/1.7.22 @ 09befc6).
+# Tag: staging-20260903-09befc6
+# Digest: sha256:a18aca75cbef502b2db17b08d4dca68096a6b635210c3032558ea569286b4417
+#
+# Rebuild 2026-09-03 (Contact phone/email/website backfilled from anywhere in the
+# document) — live A/B verification of the Contact fix below (r2) against
+# azure_bay_danang's real content exposed a deeper issue: the AI-clean step is
+# non-deterministic about WHERE it keeps a contact fact once it survives at all.
+# Across two live reprocessing runs of the SAME source: run 1 dropped
+# hotline/website/email entirely; run 2 brought the hotline back, but relocated
+# mid-sentence inside an unrelated FAQ answer ("Khách sạn có chi nhánh nào gần cầu
+# Rồng không?") instead of staying under Contact, while website/email were still
+# dropped. Section-scoped extraction can only see what landed in the Contact-mapped
+# block, so it could never recover a fact the AI moved elsewhere. Added a
+# whole-document backfill pass: for any of phone/email/website_url still null after
+# normal extraction, search the ENTIRE cleaned markdown via permissive
+# labeled-anywhere patterns (plus a bare-email fallback) and fill in whatever turns
+# up -- a value already found directly in Contact always wins, untouched if there's
+# no Contact section at all (release/1.7.22 @ 776d945).
+# Tag: staging-20260903-776d945
+# Digest: sha256:e7f476bf7b6a7f2d87076b737524af2197353f931326bd2a8258fcc497b71d44
+#
+# Rebuild 2026-09-03 (Location address_line garbled by a stray FAQ pair) — live
+# verification of the Contact fix below (r1) re-processed azure_bay_danang's actual KB
+# content and found a SECOND, related bug: fact_extractor.py's _apply_location took its
+# whole section body verbatim with no guard, unlike every other section handler in this
+# file (Contact, Facilities, Dining/Services) that already peels accidental
+# "**Q:**"/"**A:**" pairs the AI sometimes dumps under the wrong heading. Reproduced
+# live: address_line came back as a raw "**Q:** Resort có mấy chi nhánh?\n**A:** ..."
+# block with zero actual address text, because the AI's Location section that run
+# contained only a stray FAQ pair. Now mirrors the established peel-then-use-remainder
+# pattern; the peeled pair routes to FAQ instead of being lost or corrupting Location
+# (release/1.7.22 @ 5aa7da4).
+# Tag: staging-20260903-5aa7da4
+# Digest: sha256:98c692b70c5f3086b26e35fd78d7e2bdf750f6d77d10de491d24dcd6a6fa93cc
+#
+# Rebuild 2026-09-03 (Contact chunk phone/email/website discarded on every tenant) —
+# deep investigation into azure_bay_danang Gen 9's stuck VI RAG eval (0/0-vs-100% and
+# contradictory blocker states were separate frontend bugs fixed earlier today, see
+# stayledger-ai-assistant-admin-web tag ec849b7). Live chunk-content query on the
+# generation's embedded chunks found the "Contact" chunk had shrunk to 33 chars
+# ("front_desk_hours: Open 24/7") despite the tenant's source document listing a real
+# hotline, website, and email in the same "Branches & contact" section -- a chunk that
+# short can't compete against 600+ char chunks for retrieval, and the VI timezone
+# question kept failing because the fact was simply gone by the time it reached
+# pgvector. Root-caused to app/services/knowledge/canonical/fact_extractor.py's
+# _contact_payload, which hardcoded phone/email/website_url to None unconditionally --
+# every tenant's Contact chunk could only ever carry front_desk_hours, regardless of
+# what the source said. guest_markdown_repair.py's cancellation-bleed repair had the
+# same blind spot: when AI-normalize pastes Policies text into Contact (an
+# already-known, already-defended-against AI quirk -- see that file's own docstring),
+# the repair kept hours-only lines and discarded every other line in the block,
+# including the real contact facts. Confirmed this could never self-heal: re-running
+# the AI-clean step (the only "fix" the UI offers) is explicitly forbidden from
+# inventing facts, so it had nothing to restore even if it wanted to. Both layers now
+# parse phone/email/website_url out of the full body via labeled-line regexes,
+# mirroring the file's existing check-in/out extraction style, instead of nulling them
+# (release/1.7.22 @ a7a09e8).
+# Tag: staging-20260903-a7a09e8
+# Digest: sha256:896cf8a198ff800e3f15c5eb7c2c5067c776b07a45fd268eb2818521969caf9d
+#
 # Rebuild 2026-09-03 (3rd LLM classifier layer found, distinct from Phase-2 safety) —
 # re-testing the fix below via the live webhook (not isolated function calls) found 2 of 8
 # spot-checked messages still misrouting to "booking". Traced via pod logs: a THIRD, separate
@@ -422,4 +521,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:72a4521a5ebb2ac579ac03342567e2435a6f2510bd0cd35318feb73bfef49b82
+    digest: sha256:139de0c78a4eba2030b9af3d1e34fe97d2204f63ce98fb65cc41288ebefdf261

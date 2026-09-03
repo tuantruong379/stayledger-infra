@@ -20,6 +20,18 @@ patches:
 # putin111/ai-hotel-assistant-frontend -> putin111/stayledger-ai-assistant-admin-web
 # to match this deployment, Dockerfile openssl CVE fix)
 #
+# Tag: 4b34d75 -- KB eval metric cards showed en's passing scores (100%/50%/100%/
+# 100%/100%) while the blockers list right below correctly reported vi's failures --
+# a visible contradiction, live-captured on azure_bay_danang. latest_evaluation is
+# language-arbitrary (whichever slice's job finished last); the blockers list was
+# already slice-aware but the metric cards read latest_evaluation directly. Now
+# prefers a failed slice's own metrics so the numbers explain the blockers instead
+# of contradicting them. Also: "Chạy đánh giá RAG" stayed clickable through a live,
+# in-progress eval run -- evalDisabled only checked processingActive
+# (pipeline.in_flight, already false once chunking/embedding finish), never
+# evalInFlight (eval_status queued/running), even though evalInFlight was already
+# computed elsewhere in the same component. Now wired in.
+#
 # Tag: 2148ee5 -- login_db_unavailable's hint only named STAYLEDGER_AI_DSN; the
 # deployed staging config resolves the DSN via HOTEL_OPS_DSN instead (confirmed
 # live on the ai-assistant-api pod), so the hint sent anyone troubleshooting a
@@ -48,4 +60,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:e5a14aa16af2dfb93fb9b3feb250e8761f2f5b080125183237a7168be7126c3c
+    digest: sha256:5f089e3ddb3f896460df585e3aea657a15bfdee0b1d371e59bfd59439f0a25d2
