@@ -19,7 +19,13 @@ patches:
 # Tag: 941cf3e (browserslist CVE fix, package-lock.json sync, CI image renamed
 # putin111/ai-hotel-assistant-frontend -> putin111/stayledger-ai-assistant-admin-web
 # to match this deployment, Dockerfile openssl CVE fix)
+#
+# Tag: 2148ee5 -- login_db_unavailable's hint only named STAYLEDGER_AI_DSN; the
+# deployed staging config resolves the DSN via HOTEL_OPS_DSN instead (confirmed
+# live on the ai-assistant-api pod), so the hint sent anyone troubleshooting a
+# staging DB error looking for an env var that isn't actually set there. Message
+# now names both.
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:e5e0e25bbafdc8bd20fb2e5925052f99cc9cc9c2a699f9c57354f6aaac9bde26
+    digest: sha256:8842b6f4938dfe82c8721671b3f6c5f654c0d4a7af3488088ccfc37208885124
