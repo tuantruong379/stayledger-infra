@@ -43,6 +43,30 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r2: RAG eval quality metrics become advisory) — operator
+# decision. All three staging tenants were stuck in a run-eval/fail loop no
+# content fix could exit: thresholds recall 0.90 / mrr 0.85 /
+# faithfulness_p10 0.95 / correctness 0.90, judged on the WORST slice, while the
+# `en` slices hold 1-2 cases each -- so a single call to a judge measured
+# swinging 0.0 -> 0.3333 across two runs of the SAME generation decided pass/fail
+# for a whole tenant. The eval verdict was enforced in four independent places,
+# so changing any one alone is a no-op: publish_policy.evaluate_publish_gate,
+# the qualify_generation SQL, the publish-time _assert_eval_manifest_passed
+# re-check, and rag_eval_runner's auto-qualify (which only ran on all_passed and
+# would have left status='building'). All four now read one switch.
+# NOT demoted: evaluation_leakage_detected and both SQL leakage conditions (a
+# security boundary, not a metric); the structural conditions (a guest chunk
+# exists, every guest chunk embedded + classified, revision APPROVED, audience
+# GUEST); and the vacuous-clean condition, which still requires a finished eval
+# run for the generation's dataset_version that actually executed leakage probes
+# -- so a never-evaluated generation still cannot publish. Nothing writes
+# passed=TRUE for a run that did not pass, so the recorded history stays honest.
+# Set RAG_EVAL_QUALITY_GATE=true in the env to restore blocking; the default is
+# off, which also applies to production once this ships there
+# (release/1.7.22 @ 738472c).
+# Tag: staging-20260904-738472c
+# Digest: sha256:9670a24c5e2afc74be4812bab3e03369a45618d30d7157e1c68f811257eef265
+#
 # Rebuild 2026-09-04 (placeholder section ids voided every tenant-common chunk) —
 # Phase 0.5 diagnosis of why cupid_hotel could never publish. The legacy markdown
 # chunker stamps the literal placeholder "general" for BOTH canonical_section_id
@@ -572,4 +596,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:6ab9b1c735a3df8b425c8723ab895f9acf25244d6e47531c1de92265d060ad1e
+    digest: sha256:9670a24c5e2afc74be4812bab3e03369a45618d30d7157e1c68f811257eef265
