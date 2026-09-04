@@ -17,12 +17,12 @@ spec:
   template:
     metadata:
       labels:
-        # Match kustomization images pin (tag 8ee3c60 / release/1.4.13).
-        version: "8ee3c60"
+        # Match kustomization images pin (tag 131c3c4 / release/1.4.14).
+        version: "131c3c4"
       annotations:
-        stayledger.io/git-sha: "8ee3c60"
-        stayledger.io/branch: "release/1.4.13"
-        kubernetes.io/change-cause: "Infra cleanup — version sync 8ee3c60"
+        stayledger.io/git-sha: "131c3c4"
+        stayledger.io/branch: "release/1.4.14"
+        kubernetes.io/change-cause: "Deploy admin-web pagination unify 131c3c4"
     spec:
       containers:
         - name: admin-web

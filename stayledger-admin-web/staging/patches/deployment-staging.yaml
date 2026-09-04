@@ -10,8 +10,8 @@ spec:
   template:
     metadata:
       labels:
-        # Match kustomization images pin (tag 8ee3c60 / release/1.4.13).
-        version: "8ee3c60"
+        # Match kustomization images pin (tag 131c3c4 / release/1.4.14).
+        version: "131c3c4"
     spec:
       containers:
         - name: admin-web
