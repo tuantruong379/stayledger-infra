@@ -43,6 +43,24 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r10: source registry — knowledge plane rebuild, part 1).
+# Operator decision: wipe the KB entirely and rebuild it correctly rather than
+# repair. All 16 KB/RAG tables were emptied (4,303 rows, every tenant) after a
+# 54-file backup; tenant/branch/scope config and 1.3M rows of operational data
+# were left untouched.
+# What the wipe was for, measured first: cupid_hotel's active document was
+# 229,597 chars holding 28 embedded sources (cupid_hotel.md x10, shared.md x6,
+# hcm_q1.md x5); 4 of 6 hotels across the 3 tenants had NO branch-specific
+# content serving guests at all.
+# Migration 0087 adds kb_sources (replaceable slot, unique per
+# tenant+scope+source_key) + kb_source_versions (immutable content). Scope moves
+# from an authored HTML comment to columns, so the documented "AI-clean stripped
+# content_scope and collapsed a multi-branch tenant" incident becomes impossible.
+# The composed document is now a pure function of the source set
+# (release/1.7.22 @ ab96a5a).
+# Tag: staging-20260904-ab96a5a
+# Digest: sha256:40c16b41d7c80e74edcf2195ab3e21cbe3cf8d26223b924e83bbfc109f65c956
+#
 # Rebuild 2026-09-04 (r9: Phase 0 — outbox retries, snapshot immutability).
 #  * B2: the chunk outbox stranded its own retries. The error path writes
 #    status='failed' with next_retry_at = now() + 60s and only promotes to 'dead'
@@ -731,4 +749,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:306d823fa1f1687af5494a531695521e130c618efcb61a33dcb9f88c13ea208a
+    digest: sha256:4d786301ffa91fc48051dfb05efbb0f1f2b6d3f6a93868fd1018406213798668
