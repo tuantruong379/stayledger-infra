@@ -43,6 +43,28 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r8: HOTFIX — a chunk's embedding was addressed by a key
+# several rows share) — guest-facing data corruption, measured live.
+# update_chunk_embedding matched on (tenant_id, document_id, version,
+# chunk_index) with NO `generation`. In _rebuild_branch_generation document_id
+# and version both come from get_active_kb(tenant) — tenant-wide constants —
+# and chunk_index restarts at 0 per generation, so distinct generations (the
+# three branch generations of a multi-branch tenant included) share that key and
+# one embedding write landed on all of them.
+#   cupid_hotel          55 shared keys; 10 hold several distinct content_hash
+#                        but only ONE embedding_content_hash. Generations 4 and
+#                        5 each hold a "Contact" chunk with different content and
+#                        the identical vector.
+#   vertex_suites_hanoi  generation 9 — the one SERVING GUESTS — has a "Wi-Fi"
+#                        chunk whose embedding_content_hash != its content_hash:
+#                        retrieved by a vector computed from other text.
+# mark_chunk_embedding_failed three lines below already addressed rows by `id`;
+# the success path now uses the same key. Followed by a data sweep that resets
+# every row whose embedding_content_hash disagrees with its content_hash
+# (release/1.7.22 @ d4d1479).
+# Tag: staging-20260904-d4d1479
+# Digest: sha256:b866ebb7a59d13c70b1492b3d93ce78cc5d4d53ab85f31ba39ec1789913b2d02
+#
 # Rebuild 2026-09-04 (r7: idempotent re-import, judge scores clamped) — both
 # found by watching a real operator import on the dashboard.
 #  * re-importing the same file raised "duplicate key value violates unique
@@ -690,4 +712,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:cb3cc91464c12456596ce7ca9403f7eabe5e31ac25825e6eb7dce6757dccc964
+    digest: sha256:b866ebb7a59d13c70b1492b3d93ce78cc5d4d53ab85f31ba39ec1789913b2d02
