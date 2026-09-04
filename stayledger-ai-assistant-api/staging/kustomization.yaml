@@ -43,6 +43,35 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r12: a redundant rebuild event is a no-op, not a deferral).
+# Found on the first real seed. Approving N revisions for one tenant enqueues N
+# outbox events, and now that a generation carries the whole tenant they all
+# describe the SAME generation. The busy check ran before the idempotency-key
+# lookup, so every event after the first deferred against the generation it
+# wanted to build and stranded at max_attempts — 5 events at attempts=8 with
+# their work already complete. Key lookup now runs first
+# (release/1.7.22 @ 110afb9).
+# Tag: staging-20260904-110afb9
+# Digest: sha256:e4c13b4363162ee5f1cd928b9ba9b80c03e475d803f4c5d54d0d55ed3377247f
+#
+# Rebuild 2026-09-04 (r11: source endpoints + tenant-wide generations).
+#  * ONE generation now carries the whole tenant. It used to be one per branch --
+#    shared content plus exactly ONE branch -- while publish_generation allows a
+#    single is_active generation per tenant, so publishing a branch removed every
+#    other branch's own content from the guest path. Measured: cupid's serving
+#    generation held 8 chunks, all tenant_global; 4 of 6 hotels across the three
+#    tenants had no branch-specific content live. Retrieval is unchanged -- its
+#    scope predicate already filters branch_id at query time.
+#  * five endpoints over the source registry: list, save/replace, delete,
+#    versions, rollback. Each recomposes its scope and re-derives the document
+#    rather than editing it.
+#  * the operator picks a hotel by name; branch_id -> property_id is resolved
+#    server-side from ai_scope_mappings, and an unknown branch is a 400 rather
+#    than a silent fall-through to shared content
+# (release/1.7.22 @ 3894fd2).
+# Tag: staging-20260904-3894fd2
+# Digest: sha256:2e4fa73308dc255dea122bf1710a45d32efacf9d7ddbe4f198e6b361b28baaca
+#
 # Rebuild 2026-09-04 (r10: source registry — knowledge plane rebuild, part 1).
 # Operator decision: wipe the KB entirely and rebuild it correctly rather than
 # repair. All 16 KB/RAG tables were emptied (4,303 rows, every tenant) after a
@@ -749,4 +778,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:4d786301ffa91fc48051dfb05efbb0f1f2b6d3f6a93868fd1018406213798668
+    digest: sha256:e4c13b4363162ee5f1cd928b9ba9b80c03e475d803f4c5d54d0d55ed3377247f
