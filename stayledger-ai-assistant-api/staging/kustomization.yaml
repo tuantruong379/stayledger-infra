@@ -43,6 +43,46 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r6: the heading classifies the section, overwrites stop
+# losing content) — tracing every heading of the real azure_bay_danang source
+# through the extractor found four more content-destroying paths, all the same
+# shape: something wins and silently replaces something else.
+#  * _map_section_id tested title and body in ONE pass, so a section's own prose
+#    hijacked its heading: "Spa"/"Jacuzzi"/"Parking"/"Policies" -> property.contact
+#    (their text mentions the front desk), "FAQ" -> property.location (its second
+#    question says "nằm ở đâu"). That last one is why ## Location rendered EMPTY.
+#  * the policies hint was `policy`, not a substring of "Policies".
+#  * Contact/Location/Policies handlers assign, not merge, so a body-fallback
+#    match overwrote what the correctly-titled section had stored.
+#  * _dedupe_facilities dropped later items sharing a facility_id -- "Dining notes"
+#    and "Outside food" both classify as room_service, so outside-food and its 3
+#    golden spans were deleted.
+#  * _apply_check_in_out assigned `notes`, and 3 blocks map there, so the last one
+#    replaced the overnight times table.
+# Measured end to end on the real source: indexed markdown 5,133 -> 8,304 chars
+# (source 9,949), golden spans 19/22 -> 22/22
+# (release/1.7.22 @ af75658).
+# Tag: staging-20260904-af75658
+# Digest: sha256:2c33dfb9e6f050c433f8753810764a4a886e31d513edc10741b360c0ee3f8592
+#
+# Rebuild 2026-09-04 (r5: stop silently deleting authored KB sections) — found
+# by re-importing azure_bay_danang from a clean slate and diffing the operator's
+# source against what actually reached the index: 8 authored subsections under
+# "## Services & facilities" became 3, and "## Room types" vanished entirely.
+# 10,037 source chars -> 5,133 indexed. Those deletions took 3 golden
+# source_spans with them, which is where azure's 3 skipped eval cases came from.
+# Two holes in _consume_block: (1) _map_section_id returns None for headings no
+# hint matches ("Spa", "Jacuzzi"), so the block fell through every elif; (2) worse,
+# it DOES map "Parking" -> property.transportation and "Room types" ->
+# property.room_types, section ids the dispatcher has no branch for -- the schema
+# names the section and the content is discarded anyway. Unconsumed blocks now
+# land in the FAQ store, which keeps an arbitrary (title, body) verbatim. Same
+# shape fixed one level down in _apply_facilities, whose classifier knows exactly
+# three ids (wifi/pool/room_service) and dropped everything else
+# (release/1.7.22 @ 8bda376).
+# Tag: staging-20260904-8bda376
+# Digest: sha256:3a0c75382de9ead01e33e49285dad6d5ab8ec7580df53f36da0554cd823c0c00
+#
 # Rebuild 2026-09-04 (r4: readiness score must track what actually gates publish)
 # — azure_bay_danang read "0% · Đang bị chặn" while the gate returned exactly ONE
 # blocking reason (generation_not_qualified) and all nine eval reasons had been
@@ -633,4 +673,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:838d5750e2954a4eb6973456b6cd142ef030a5d34649968d942d50423a8b2070
+    digest: sha256:2c33dfb9e6f050c433f8753810764a4a886e31d513edc10741b360c0ee3f8592
