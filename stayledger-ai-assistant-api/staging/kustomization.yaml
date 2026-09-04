@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r7: idempotent re-import, judge scores clamped) — both
+# found by watching a real operator import on the dashboard.
+#  * re-importing the same file raised "duplicate key value violates unique
+#    constraint kb_canonical_revisions_processing_idem_uk", stored as error_code
+#    worker_error — a raw Postgres string for "nothing changed". The insert now
+#    carries ON CONFLICT DO NOTHING against the partial unique index and resolves
+#    the revision that key already names. Not a pre-check SELECT: two workers
+#    holding the same key would both pass it and one would still raise.
+#  * context_precision/faithfulness/correctness are defined on 0..1 but each is a
+#    number an LLM judge wrote; judge_prompts asks for mean(scores)/2 and nothing
+#    enforced it. azure gen 9's `en` slice stored 1.8, rendered as "180%", and
+#    every threshold comparison downstream worked on it. Clamped at write time,
+#    out-of-range logged rather than swallowed
+# (release/1.7.22 @ 924a5e9).
+# Tag: staging-20260904-924a5e9
+# Digest: sha256:cb3cc91464c12456596ce7ca9403f7eabe5e31ac25825e6eb7dce6757dccc964
+#
 # Rebuild 2026-09-04 (r6: the heading classifies the section, overwrites stop
 # losing content) — tracing every heading of the real azure_bay_danang source
 # through the extractor found four more content-destroying paths, all the same
@@ -673,4 +690,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:2c33dfb9e6f050c433f8753810764a4a886e31d513edc10741b360c0ee3f8592
+    digest: sha256:cb3cc91464c12456596ce7ca9403f7eabe5e31ac25825e6eb7dce6757dccc964
