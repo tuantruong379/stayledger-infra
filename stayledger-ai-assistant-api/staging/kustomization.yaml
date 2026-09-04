@@ -43,6 +43,25 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r9: Phase 0 — outbox retries, snapshot immutability).
+#  * B2: the chunk outbox stranded its own retries. The error path writes
+#    status='failed' with next_retry_at = now() + 60s and only promotes to 'dead'
+#    at max_attempts — so 'failed' IS the retryable state — but the claim only
+#    selected ('pending','deferred'). One transient error stranded the event for
+#    good and that scope's KB could never rebuild. Hard prerequisite for the
+#    source registry, whose delete fan-out would otherwise freeze a whole tenant.
+#  * migration 0086: kb_canonical_revisions was immutable only by convention.
+#    A BEFORE UPDATE trigger now enforces it. status/approved_*/updated_at and
+#    revision_seq stay mutable — revision_seq is an optimistic-lock counter here,
+#    guarding it would have broken approve. revision_id/tenant_id ARE guarded.
+#    Verified live: content rewrite blocked, tenant move blocked, approve passes.
+#  * B4 deliberately NOT included — the inventory refuted it. There is no
+#    feature_flags column anywhere and no caller supplies `overrides`; it is an
+#    unimplemented seam, not a bug. Moved to the per-tenant RAG profile work
+# (release/1.7.22 @ 3a495ce).
+# Tag: staging-20260904-3a495ce
+# Digest: sha256:306d823fa1f1687af5494a531695521e130c618efcb61a33dcb9f88c13ea208a
+#
 # Rebuild 2026-09-04 (r8: HOTFIX — a chunk's embedding was addressed by a key
 # several rows share) — guest-facing data corruption, measured live.
 # update_chunk_embedding matched on (tenant_id, document_id, version,
@@ -712,4 +731,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b866ebb7a59d13c70b1492b3d93ce78cc5d4d53ab85f31ba39ec1789913b2d02
+    digest: sha256:306d823fa1f1687af5494a531695521e130c618efcb61a33dcb9f88c13ea208a
