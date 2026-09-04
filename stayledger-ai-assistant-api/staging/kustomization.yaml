@@ -43,6 +43,26 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r3: three guest-visible answer defects) — every string
+# below was copied from rag_eval_case_results (cupid_hotel eval run 573, gen 31,
+# slice vi), not reconstructed.
+#   "- **cancellation:** cancellation: Nhiều đơn cho phép hủy..." — the pipeline
+#     DETECTS the "cancellation:" label bleed and then stores the very body it
+#     detected it in, and render_guest_markdown prints its own label on top.
+#   "lễ tân chi nhánh **Phú Nhuận là gì** của Cupid Hotel" — the branch-name
+#     capture [\w\s-]{1,40} runs across whitespace and ate the rest of the clause.
+#   "Với nhu cầu nhu cầu của bạn, ..." — the vi frame already says "Với nhu cầu".
+# The fourth symptom ("chưa tìm thấy" on identity questions despite recall=True)
+# is NOT a code defect still in the tree: gen 31's chunks all carry
+# section_type='general' because they were written before f2d8c38 taught the
+# legacy chunker to stamp it, so the identity boost cannot fire. Confirmed by
+# data: azure_bay_danang gens 11/12, chunked 2026-09-03 AFTER that deploy, show
+# typed=8; cupid gen 31 (2026-09-02) and vertex gen 11 (2026-08-06) show typed=0.
+# It resolves on re-import, with no code change
+# (release/1.7.22 @ be5dfe7).
+# Tag: staging-20260904-be5dfe7
+# Digest: sha256:e31062e1ab17240e66b98b1ebd682be52b54c77da052bed2a2c4e87d9cdc739a
+#
 # Rebuild 2026-09-04 (r2: RAG eval quality metrics become advisory) — operator
 # decision. All three staging tenants were stuck in a run-eval/fail loop no
 # content fix could exit: thresholds recall 0.90 / mrr 0.85 /
@@ -596,4 +616,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:9670a24c5e2afc74be4812bab3e03369a45618d30d7157e1c68f811257eef265
+    digest: sha256:e31062e1ab17240e66b98b1ebd682be52b54c77da052bed2a2c4e87d9cdc739a
