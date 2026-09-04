@@ -43,6 +43,57 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (placeholder section ids voided every tenant-common chunk) —
+# Phase 0.5 diagnosis of why cupid_hotel could never publish. The legacy markdown
+# chunker stamps the literal placeholder "general" for BOTH canonical_section_id
+# and field_paths on every chunk, so inheritance_conflict_keys collapses every
+# entry onto one key ('general','','general','vi') and
+# apply_property_override_to_entries reads that as "this property chunk overrides
+# all of them". Measured live on cupid_hotel gen 31: 27/27 tenant_global chunks
+# dropped, 6 of 33 left. That starved the eval corpus -> 19/20 golden source_spans
+# unresolvable -> skipped_cases=18 -> the hard evaluation_cases_skipped publish
+# block (no threshold change could have fixed it). Not only eval:
+# scoped_hybrid.py:496 + scoped_hybrid_async.py:227 run the same filter
+# post-ranking on the LIVE guest path, so shared policy/FAQ/Wi-Fi content was
+# being stripped from real answers for every multi-branch tenant. Property-wins
+# now only applies through keys that actually name what is overridden; unchanged
+# for correctly stamped data and for single-branch tenants
+# (release/1.7.22 @ d40bae8).
+# Tag: staging-20260904-d40bae8
+# Digest: sha256:6ab9b1c735a3df8b425c8723ab895f9acf25244d6e47531c1de92265d060ad1e
+#
+# Rebuild 2026-09-03 (r2: revert "hours" from the strengthened boost — live
+# regression) — live A/B verification of r1 below found a real regression:
+# recall dropped 66.7%->50%, not up. "hours" classifies 5 separate chunks per
+# tenant (Check-in/Check-out + its part 2, 2 FAQ variants, the hotline FAQ);
+# boosting all 5 unconditionally at 0.15 made them collectively dominate top-5
+# for EVERY query, not just hours questions -- confirmed live: Wi-Fi and VAT-
+# invoice questions returned zero Wi-Fi/Policies chunks, crowded out entirely
+# by Check-in/Check-out variants. Contact/identity don't share this risk (~1
+# chunk per tenant each). Moved "hours" back to the content-overlap-gated tier
+# (alongside policy/pricing/location) -- its chunks already carry natural
+# bilingual VI+EN prose (unlike bare Contact), so the gate still fires
+# correctly for real hours questions without the crowding side effect
+# (release/1.7.22 @ e7f5f78).
+# Tag: staging-20260903-e7f5f78
+# Digest: sha256:bcbed3f18181ec475935d479e414c9e6275c7a6ba77f5b60192860e190be4bc8
+#
+# Rebuild 2026-09-03 (r1: contact/identity/hours boost strengthened, on request) —
+# live A/B verification of the reranker + legacy-chunker fixes below confirmed the
+# pipeline now works end to end (section_type correctly classified and persisted,
+# boost condition firing), but the magnitude (0.5x w_title_match = 0.0075) was
+# still too weak: re-processing azure_bay_danang through the fully-fixed pipeline
+# improved VI recall 55.6%->66.7% (real progress) but Contact/identity/hours
+# chunks still lost most ties against same-tenant FAQ chunks clustering
+# 0.05-0.15 higher in observed rerank logs, missing the >=90% publish gate.
+# Raised to a dedicated w_always_boost weight (0.15) on explicit operator
+# instruction, decoupled from w_title_match. Still far below a genuinely
+# relevant chunk's typical score (0.7-0.8 observed), so it reorders among
+# weakly-matching candidates without overriding a strong real match
+# (release/1.7.22 @ 8f22597).
+# Tag: staging-20260903-8f22597
+# Digest: sha256:9d08c792a34bdd3659918bb3cfb66dbe54e113cfb0423b3440dd3b83f6df9738
+#
 # Rebuild 2026-09-03 (legacy chunker never persisted section_type) — the reranker
 # fix below (r1) added an "identity" section_type and made contact/identity/hours
 # boost unconditionally, but re-verifying against azure_bay_danang generation 10
@@ -521,4 +572,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:139de0c78a4eba2030b9af3d1e34fe97d2204f63ce98fb65cc41288ebefdf261
+    digest: sha256:6ab9b1c735a3df8b425c8723ab895f9acf25244d6e47531c1de92265d060ad1e
