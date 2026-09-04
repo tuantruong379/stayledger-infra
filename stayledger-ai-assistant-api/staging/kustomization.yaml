@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-04 (r4: readiness score must track what actually gates publish)
+# — azure_bay_danang read "0% · Đang bị chặn" while the gate returned exactly ONE
+# blocking reason (generation_not_qualified) and all nine eval reasons had been
+# correctly demoted to advisories. publish_policy already stated the right rule
+# for context_precision ("kept out of the readiness score so the percentage
+# tracks what actually gates publication"); r2 did not extend it to the metrics
+# it demoted, and two unconditional score_components.append(0.0) calls
+# (critical_failure, cases_skipped) pinned the number to exactly zero. Advisory
+# metrics no longer feed the score; leakage keeps its 0.0 because it still
+# blocks. The score still moves with ingestion (11/22 embedded => 75.0).
+# Also: as_dict() exported advisory_metrics as the hardcoded constant, so the
+# dashboard could not tell the other four metrics had been demoted and drew them
+# as hard failures; it now reports the live set
+# (release/1.7.22 @ dc2675e).
+# Tag: staging-20260904-dc2675e
+# Digest: sha256:838d5750e2954a4eb6973456b6cd142ef030a5d34649968d942d50423a8b2070
+#
 # Rebuild 2026-09-04 (r3: three guest-visible answer defects) — every string
 # below was copied from rag_eval_case_results (cupid_hotel eval run 573, gen 31,
 # slice vi), not reconstructed.
@@ -616,4 +633,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e31062e1ab17240e66b98b1ebd682be52b54c77da052bed2a2c4e87d9cdc739a
+    digest: sha256:838d5750e2954a4eb6973456b6cd142ef030a5d34649968d942d50423a8b2070
