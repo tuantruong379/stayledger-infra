@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r13: a chunk records which source it came from).
+# A generation is composed from several sources now, and document_id is the only
+# field saying which produced a chunk. It was the tenant's whole-blob filename,
+# so every chunk of every hotel claimed the same origin -- all 63 of cupid's said
+# "cupid_hotel", and before the reseed 27 tenant_global chunks were stamped
+# "cupid_hotel.hcm_trungson.md", a file none of them came from.
+# upsert_chunk_rows honours a per-chunk document_id (it soft-deletes the whole
+# generation on entry, so one call per source would erase the previous source's
+# rows), and its orphan sweep now keeps every id the call wrote instead of all
+# but the last.
+# Corrects a plan assumption: the composer's kb-source markers do NOT survive
+# into the revision -- render_guest_markdown rebuilds from typed facts and drops
+# source comments. Attribution comes from the scope, not from the markdown
+# (release/1.7.22 @ 9e236f9).
+# Tag: staging-20260905-9e236f9
+# Digest: sha256:b4da4de4e9d36de7a60b12be09e2274ca8793d2556be53853be8686d9407c119
+#
 # Rebuild 2026-09-04 (r12: a redundant rebuild event is a no-op, not a deferral).
 # Found on the first real seed. Approving N revisions for one tenant enqueues N
 # outbox events, and now that a generation carries the whole tenant they all
@@ -778,4 +795,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e4c13b4363162ee5f1cd928b9ba9b80c03e475d803f4c5d54d0d55ed3377247f
+    digest: sha256:b4da4de4e9d36de7a60b12be09e2274ca8793d2556be53853be8686d9407c119
