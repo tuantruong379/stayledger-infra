@@ -43,6 +43,28 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r18: reuse vectors across generations + collect retired
+# chunks -- Phase 3). Lookup/lifecycle only; chunk boundaries untouched, so
+# CANONICAL_CHUNKER_VERSION does not move (H1).
+# upsert_chunk_rows looked for a reusable vector only inside the SAME
+# generation, so a new generation re-embedded byte-identical text. It now falls
+# back to a content lookup across all generations -- safe by construction:
+# content_hash hashes canonical_embedding_text(title, content), which is exactly
+# what the embed worker sends as embed_text. Behind RAG_INCREMENTAL_EMBED
+# (allowlist of tenant_ids, or 1/0), default off.
+# B3: publish_generation retires a generation without touching its chunks and
+# retention only collects soft-deleted rows, so retired chunks + vectors were
+# uncollectable forever (42 of 181 live rows after one publish).
+# sweep_retired_generation_chunks handles it past KB_RETIRED_CHUNK_GRACE_DAYS
+# (0 = off), keeping the newest row per (hash, model, dims).
+# H6: retention purges generations on retired_at and chunks on deleted_at -- two
+# clocks, so the generation was always eligible first and deleting it stranded
+# its chunks behind the INNER JOIN every reader uses. The purge predicate now
+# refuses while chunks remain, which is what makes 0089's FK safe. THIS DIGEST
+# ROLLS OUT BEFORE 0089 for that reason (release/1.7.22 @ 24cbced).
+# Tag: staging-20260905-24cbced
+# Digest: sha256:d7f14d51019e114019f4a0ca3350893a5392f57e058d30fd0e2373c8d20b4afe
+#
 # Rebuild 2026-09-05 (r17: the newer approval decides scope-wide vs per-source).
 # A scope-wide revision cannot be returned alongside per-source ones -- the same
 # content would enter the generation twice -- so one shape wins. Picking
@@ -864,4 +886,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b50631dd2bd925082146daea49ab59d45f0e97976200a660218da58d8a44eece
+    digest: sha256:d7f14d51019e114019f4a0ca3350893a5392f57e058d30fd0e2373c8d20b4afe
