@@ -43,6 +43,30 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r27: a model picks the tool, never the permissions --
+# Phase 8). pick_tool had three branches (availability keywords, intent
+# classifier, else quote) and could not express "this is a knowledge-base
+# question", so search_kb and handoff_human were registered, allowlisted and
+# unreachable -- both returned "" because nothing could call them.
+# registry.py says authorization must come from backend auth context, never
+# from LLM arguments; offering tools to a model is where that becomes
+# structural. role -> catalog_for_role (model sees only what it may call) ->
+# name re-checked against catalog AND allowlist -> registry.execute re-enforces
+# RBAC + scope -> sanitize_arguments drops anything authority-bearing. No schema
+# names a tenant/property/user/role/booking; _tool_kwargs rebuilds those from
+# server context as before, so an invented {"user_id": ...} changes nothing.
+# A `not_permitted` count on ai_tool_selection_total means catalog assembly and
+# RBAC drifted -- a bug, not a breach, because the registry refuses anyway.
+# Deterministic branches stay the floor: flag off, model declines, bad JSON,
+# invented name, timeout, unregistered tool -- all fall through.
+# The gateway has no native tools= support, so selection uses a JSON contract on
+# complete_raw; function_schemas_for_role emits the provider shape from the same
+# catalog. That gateway wiring is the one piece of this phase left undone.
+# Default OFF (AI_TOOL_CALLING_ENABLED + allowlist)
+# (release/1.7.22 @ d4261b8).
+# Tag: staging-20260905-d4261b8
+# Digest: sha256:ca63edfca64dfe5269afa6d79102814b0aa2a59a97ba98b1eb5ae91555ae5670
+#
 # Rebuild 2026-09-05 (r26: claim-level grounding -- Phase 7).
 # The hallucination guard matched 4-to-7-digit runs against the context with
 # every non-digit deleted, and was wrong in both directions. It never saw
@@ -1027,4 +1051,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d8d7e11edd26b51a20601f80b86f41802b15efa05ae4414c5739d8a1f6458051
+    digest: sha256:ca63edfca64dfe5269afa6d79102814b0aa2a59a97ba98b1eb5ae91555ae5670
