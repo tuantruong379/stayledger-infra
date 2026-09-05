@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r15: size the contact/identity boost to the score it is
+# added to). w_always_boost was 0.15, justified as "far below a genuinely
+# relevant chunk's typical score (0.7-0.8)". Those are VECTOR similarities; the
+# weight is added to rrf_score, which is 1/(60+rank) over two lists -- at most
+# 2/61 = 0.033, and 0.011-0.016 in practice. The boost was 9-13x the entire
+# signal it modified, so it ranked section membership above relevance for every
+# query. Live on vertex "Lam sao de check-in nhanh?": the answering chunk led on
+# BOTH real signals (vector 0.6711, rrf 0.01613) and placed 5th behind four
+# contact/identity chunks on +0.15.
+# Hidden until r14 restored the deleted shared corpus, which put two copies of
+# every contact/identity chunk in front of every query. Swept over all 90 vi
+# golden cases (recall@5 / MRR): 0.15 -> 0.5333/0.2069; 0.02 -> 0.7333/0.4826;
+# 0.008 -> 0.7333/0.5011 (chosen); 0.004 -> 0.7444/0.4965; 0 -> 0.7444/0.4933.
+# (release/1.7.22 @ 107f680).
+# Tag: staging-20260905-107f680
+# Digest: sha256:a9eba6587c1c0de3eb9ea4a155940fe40addebdf1c36d5275bdfd03b8a9255dd
+#
 # Rebuild 2026-09-05 (r14: a property chunk may not erase a whole shared section).
 # property-wins DELETES a tenant-common chunk, so the conflict key that triggers
 # it has to name what is being replaced. The canonical extractor stamps
@@ -814,4 +831,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:238ede7f858a7657360e18f13c986cc15cfe796643ce4408131e2586419050fe
+    digest: sha256:a9eba6587c1c0de3eb9ea4a155940fe40addebdf1c36d5275bdfd03b8a9255dd
