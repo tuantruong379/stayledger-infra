@@ -1,0 +1,68 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-0088
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: kb-revision-source-identity
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          # Must run BEFORE the Deployment moves to this digest: 0088 adds
+          # kb_processing_runs.source_id/source_key and the new claim_run selects
+          # them, so the raw-processing worker would crash-loop between a deploy
+          # and the migration. This image carries 0088; the running Deployment
+          # does not yet.
+          image: putin111/stayledger-ai-assistant-api@sha256:eb9ed12aa23221813350d281f0736b018e1d4f84b05eea081f93f77c1524f3e9
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - set -eu; export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"; cd /app; PYTHONPATH=/app
+              /venv/bin/alembic upgrade head && PYTHONPATH=/app /venv/bin/alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

@@ -43,6 +43,26 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r16: one canonical revision per source, not per scope --
+# Phase 2). A revision meant "the approved state of a scope", exact while a scope
+# holds one source (all 3 tenants today: 8 scopes, 8 sources, 8 revisions) and
+# wrong the moment a hotel gets a second file: one revision covers them all, so
+# changing any one re-runs AI-clean + extraction over every file in that scope,
+# and _source_key_for_scope can only name a file when the scope holds exactly one.
+# Migration 0088 (applied by job alembic-upgrade-0088 BEFORE this digest rolls
+# out -- the new claim_run selects columns it adds) gives kb_canonical_revisions
+# and kb_processing_runs source_id/source_key, and extends the 0086 immutability
+# trigger to cover them.
+# Read path is unconditional and backward compatible: approved_revisions_for_scope
+# returns the latest APPROVED revision of EACH source; rows predating this carry
+# source_key NULL, mean "the whole scope", and are superseded once per-source
+# revisions exist. Write path is behind KB_PER_SOURCE_REVISIONS (default off).
+# The generation idempotency key deliberately produces the SAME string for a
+# scope-wide revision as before, so no tenant is re-chunked or re-embedded for
+# shipping this (H1/H4) (release/1.7.22 @ 9d998dc).
+# Tag: staging-20260905-9d998dc
+# Digest: sha256:eb9ed12aa23221813350d281f0736b018e1d4f84b05eea081f93f77c1524f3e9
+#
 # Rebuild 2026-09-05 (r15: size the contact/identity boost to the score it is
 # added to). w_always_boost was 0.15, justified as "far below a genuinely
 # relevant chunk's typical score (0.7-0.8)". Those are VECTOR similarities; the
@@ -831,4 +851,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:a9eba6587c1c0de3eb9ea4a155940fe40addebdf1c36d5275bdfd03b8a9255dd
+    digest: sha256:eb9ed12aa23221813350d281f0736b018e1d4f84b05eea081f93f77c1524f3e9
