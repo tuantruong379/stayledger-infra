@@ -43,6 +43,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r24: agentic retrieval gets a budget it cannot exceed --
+# Phase 6). What existed was one extra round, hardcoded, that could not say why
+# it did what it did. run_agentic_rounds terminates by arithmetic: max_rounds,
+# max_llm_calls (separate, because a round may spend more than one and this is
+# what costs money) and deadline_ms (the only limit bounding WALL CLOCK, checked
+# before every round AND after the reformulation call, which can blow it alone).
+# Every round records its decision, stops included.
+# Deliberately not a planner -- one action, no tool choice, no self-critique.
+# Widening that is Phase 8, and doing it before Phase 5's traces would be
+# choosing tools blind (H8).
+# Budget resolves defaults -> env -> ai_config.rag.agentic, bounds-checked, so a
+# misconfiguration cannot make a chat turn unbounded. Still gated per tenant by
+# AGENTIC_RAG_* (cupid_hotel only on staging) (release/1.7.22 @ 99c4244).
+# Tag: staging-20260905-99c4244
+# Digest: sha256:97c69d23c7cb0e8c7efd9b089c06fbf8168d23041ac48a048d6c6a9680f79dc0
+#
 # Rebuild 2026-09-05 (r23: forward trace_source).
 # retrieve_scoped_hybrid_hotpath_sync accepted trace_source and dropped it
 # before the helper that records, so the explorer wrote its traces as
@@ -983,4 +999,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:1cf6df2fb9d61b63e9d49a639aeb721df337079e47c0221be2441151401b6e5a
+    digest: sha256:97c69d23c7cb0e8c7efd9b089c06fbf8168d23041ac48a048d6c6a9680f79dc0
