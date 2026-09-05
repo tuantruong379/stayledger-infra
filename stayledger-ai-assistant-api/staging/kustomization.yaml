@@ -43,6 +43,19 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r17: the newer approval decides scope-wide vs per-source).
+# A scope-wide revision cannot be returned alongside per-source ones -- the same
+# content would enter the generation twice -- so one shape wins. Picking
+# per-source unconditionally was wrong: KB_PER_SOURCE_REVISIONS is
+# per-deployment and can go off again, and the next upload then recomposes the
+# scope into ONE revision covering every source. That operator's newest content
+# would be APPROVED and never served, with the stale per-source set still in the
+# generation. Default-off means the very next upload to vertex's han_lieugiai --
+# the scope this was verified on, now holding two per-source revisions -- would
+# have hit exactly that (release/1.7.22 @ 028400d).
+# Tag: staging-20260905-028400d
+# Digest: sha256:b50631dd2bd925082146daea49ab59d45f0e97976200a660218da58d8a44eece
+#
 # Rebuild 2026-09-05 (r16: one canonical revision per source, not per scope --
 # Phase 2). A revision meant "the approved state of a scope", exact while a scope
 # holds one source (all 3 tenants today: 8 scopes, 8 sources, 8 revisions) and
@@ -851,4 +864,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:eb9ed12aa23221813350d281f0736b018e1d4f84b05eea081f93f77c1524f3e9
+    digest: sha256:b50631dd2bd925082146daea49ab59d45f0e97976200a660218da58d8a44eece
