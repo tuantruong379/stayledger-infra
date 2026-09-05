@@ -90,6 +90,11 @@ data:
   # naming its own file. Scope-wide and per-source revisions coexist; the newer
   # approval wins, so turning this back off simply resumes scope-wide behaviour.
   KB_PER_SOURCE_REVISIONS: "1"
+  # Fraction of retrievals recorded as a trace. Staging carries no guest load,
+  # so 1.0 costs nothing and makes every probe visible; production wants a small
+  # fraction, watched via rag_trace_dropped_total -- a nonzero drop rate means
+  # the sample is biased toward the quiet moments.
+  RAG_TRACE_SAMPLE_RATE: "1.0"
   FEATURE_RAG_PGVECTOR: "1"
   RAG_PGVECTOR_MIN_SIMILARITY: "0.35"
   RAG_HYBRID_SCORE_FLOOR: "0.25"

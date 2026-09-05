@@ -16,8 +16,8 @@ spec:
             name: stayledger-ai-assistant-rag-leakage-meta
       containers:
         - name: rag-eval-worker
-          # Keep rag-eval on the same digest as kustomization images (staging-20260905-a50e028).
-          image: putin111/stayledger-ai-assistant-api@sha256:d7e97323e4519091ee907d88d3126be7dcc80c02360fbfdaef83ab1d2f350bd7
+          # Keep rag-eval on the same digest as kustomization images (staging-20260905-ecb1705).
+          image: putin111/stayledger-ai-assistant-api@sha256:1cf6df2fb9d61b63e9d49a639aeb721df337079e47c0221be2441151401b6e5a
           volumeMounts:
             - name: rag-leakage-meta
               mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json

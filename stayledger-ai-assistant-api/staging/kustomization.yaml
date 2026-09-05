@@ -43,6 +43,35 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r23: forward trace_source).
+# retrieve_scoped_hybrid_hotpath_sync accepted trace_source and dropped it
+# before the helper that records, so the explorer wrote its traces as
+# source='guest' -- exactly the pollution the label exists to prevent, and the
+# first thing anyone does with a new explorer is run a dozen probes. Caught on
+# the first live verification (release/1.7.22 @ ecb1705).
+# Tag: staging-20260905-ecb1705
+# Digest: sha256:1cf6df2fb9d61b63e9d49a639aeb721df337079e47c0221be2441151401b6e5a
+#
+# Rebuild 2026-09-05 (r22: record what retrieval actually did -- Phase 5).
+# Every number an operator wants was already computed on the hot path and then
+# dropped. Today's tuning (recall@5 0.7333 -> 0.9111) was measured entirely
+# against 90 golden cases because nothing recorded what real questions do.
+# Migration 0090 (run BEFORE this digest -- the new GET endpoints read the
+# tables) adds rag_retrieval_traces + rag_retrieval_trace_chunks.
+# Chunk identity is COPIED into the trace with no FK to kb_chunks (H7): traces
+# now outlive chunks by design, since 0089's sweeper soft-deletes retired
+# generations' chunks and retention removes them, so a trace holding only
+# chunk_id would decay into dead ids exactly as the history became useful.
+# Writer is bounded-queue + one daemon thread: never on the request path, never
+# raises, drops when full (rag_trace_dropped_total). Off unless
+# RAG_TRACE_SAMPLE_RATE > 0.
+# Endpoints: rag/traces, rag/traces/{id}, rag/chunk-leaderboard, rag/explore.
+# The explorer runs the REAL hot path with the real config rather than
+# reimplementing it, tagged source='explore' so operator probing does not
+# pollute evidence about guests (release/1.7.22 @ dc14a42).
+# Tag: staging-20260905-dc14a42
+# Digest: sha256:293dc3a13cb65af9429b356d9b7bdc0de8e611c2b1201440c095e5d8e3b00410
+#
 # Rebuild 2026-09-05 (r21: per-tenant retrieval profile + enable incremental
 # embed -- closes Phase 4). Retrieval tuning lived entirely in the HybridConfig
 # dataclass with only top_k and min_similarity reachable from env, so every knob
@@ -954,4 +983,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d7e97323e4519091ee907d88d3126be7dcc80c02360fbfdaef83ab1d2f350bd7
+    digest: sha256:1cf6df2fb9d61b63e9d49a639aeb721df337079e47c0221be2441151401b6e5a
