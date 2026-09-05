@@ -43,6 +43,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r26: claim-level grounding -- Phase 7).
+# The hallucination guard matched 4-to-7-digit runs against the context with
+# every non-digit deleted, and was wrong in both directions. It never saw
+# "14:00" (two 2-digit runs) or "450.000d" (two 3-digit runs) -- the two facts a
+# guest most wants to be true. And deleting separators made the context one long
+# string, so "8801" was supported by "...880" followed by "1..." -- two
+# unrelated numbers touching, which passes a wrong branch's phone number.
+# evidence_check extracts claims by SHAPE (time, money, long digit run), leaves
+# bare small integers alone ("2-3 phut" is a turn of phrase, and blocking a
+# correct answer is worse than letting a vague one through), and compares
+# against a SET of normalized tokens so a claim can be contained in ONE of them
+# but never assembled across two. Each failure names the claim and its
+# surrounding words. inspect_hallucination delegates, verdict shape unchanged.
+# (release/1.7.22 @ 3def0fd).
+# Tag: staging-20260905-3def0fd
+# Digest: sha256:d8d7e11edd26b51a20601f80b86f41802b15efa05ae4414c5739d8a1f6458051
+#
 # Rebuild 2026-09-05 (r25: label eval-driven retrievals).
 # A golden-set sweep drives the retrieval hot path 90+ times per run, and
 # unlabelled every one was written as source='guest' -- 236 rows on staging
@@ -1010,4 +1027,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:54529149468110b8bbc4fada6fb2a28901235accee01e45c153a0aaee1747cf2
+    digest: sha256:d8d7e11edd26b51a20601f80b86f41802b15efa05ae4414c5739d8a1f6458051
