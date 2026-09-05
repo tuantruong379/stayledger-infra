@@ -43,6 +43,30 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r21: per-tenant retrieval profile + enable incremental
+# embed -- closes Phase 4). Retrieval tuning lived entirely in the HybridConfig
+# dataclass with only top_k and min_similarity reachable from env, so every knob
+# was a fleet constant. rrf_k cannot be: it trades rank resolution against
+# robustness as a function of CORPUS SIZE, and the 5 measured best for a 25-63
+# chunk hotel KB lets one list's top hit dominate a long tail once a tenant has
+# thousands. ai_config.rag.retrieval now overrides rrf_k/top_k/min_similarity/
+# candidate counts/ef_search/every rerank weight; resolution is
+# defaults -> env -> tenant, bounds-checked per key so bad operator JSON
+# degrades to the default instead of disabling retrieval.
+# RAG_INCREMENTAL_EMBED turned on (configmap): a rebuild of 51 chunks with one
+# edited reused 50 vectors, ratio 0.980, 0 rows whose vector disagreed with
+# their text.
+# Also corrects a claim made in r20's notes: the hot path runs min_similarity
+# 0.25 (RAG_HYBRID_SCORE_FLOOR), not the dataclass default 0.0, so the "0
+# relevant chunks filtered" figure described a config nothing runs. At the real
+# floor 3 relevant chunks ARE dropped -- but recall@5 is 0.9111 at every floor
+# from 0.00 to 0.30, so nothing is available there, and the floor stays because
+# it guards UNANSWERABLE turns (WH-AI-002) that the golden set cannot measure.
+# query_locale (Phase 4 item 3) deliberately NOT done: w_locale_match is 0.005
+# while a one-rank gap at rrf_k=5 is 0.0238 (release/1.7.22 @ a50e028).
+# Tag: staging-20260905-a50e028
+# Digest: sha256:d7e97323e4519091ee907d88d3126be7dcc80c02360fbfdaef83ab1d2f350bd7
+#
 # Rebuild 2026-09-05 (r20: stop RRF compressing a hotel-sized corpus into noise).
 # rrf_k 60 -> 5, w_exact_branch 0.02 -> 0.03.
 # RRF keeps rank and discards magnitude -- right over millions of documents,
@@ -930,4 +954,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:db002f0ee7b6288a3a57af93ae96cae277fd4444502e9c917c2f2ab404dbe7d6
+    digest: sha256:d7e97323e4519091ee907d88d3126be7dcc80c02360fbfdaef83ab1d2f350bd7

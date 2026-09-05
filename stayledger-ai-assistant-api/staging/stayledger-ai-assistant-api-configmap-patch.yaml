@@ -65,6 +65,31 @@ data:
   RAG_RETRIEVAL_BACKEND: "pgvector"
   RAG_CHUNK_PERSIST: "1"
   RAG_EMBEDDING_DIMENSIONS: "1536"
+  # Copy a vector instead of paying to recompute it when the text is unchanged.
+  # upsert_chunk_rows only ever looked inside the SAME generation, so a new
+  # generation re-embedded byte-identical chunks; it now falls back to a lookup
+  # on embedding_content_hash across every generation. Safe by construction:
+  # that hash is the hash of canonical_embedding_text(title, content), which is
+  # exactly the string the embed worker sends, so an equal hash means an equal
+  # embedding input. Verified on vertex_suites_hanoi 2026-09-05 -- a rebuild of
+  # 51 chunks with one edited reused 50 (ratio 0.980) with 0 rows whose vector
+  # disagreed with their text. Accepts "1"/"0" or a comma-separated tenant
+  # allowlist. Watch rag_embedding_reused_total: a ratio collapsing toward 0
+  # means chunk boundaries moved, which is the fleet-wide re-embed
+  # CANONICAL_CHUNKER_VERSION exists to gate.
+  RAG_INCREMENTAL_EMBED: "1"
+  # One canonical revision per SOURCE rather than per scope. Without it a scope
+  # holding several files collapses to one revision on every edit: AI-clean and
+  # fact extraction re-run over every file in the scope instead of the one that
+  # changed, and _source_key_for_scope can no longer name the file a chunk came
+  # from. Observed on vertex_suites_hanoi gen 3 -- editing the dining file left
+  # Lieu Giai's chunks attributed to "property:prop-vertex-han-lieugiai" instead
+  # of the two filenames they actually came from.
+  # Verified end-to-end 2026-09-05: adding a second source to one hotel fanned
+  # out into 2 runs and 2 revisions, and the generation carried 4 segments each
+  # naming its own file. Scope-wide and per-source revisions coexist; the newer
+  # approval wins, so turning this back off simply resumes scope-wide behaviour.
+  KB_PER_SOURCE_REVISIONS: "1"
   FEATURE_RAG_PGVECTOR: "1"
   RAG_PGVECTOR_MIN_SIMILARITY: "0.35"
   RAG_HYBRID_SCORE_FLOOR: "0.25"
