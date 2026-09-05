@@ -43,6 +43,17 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r25: label eval-driven retrievals).
+# A golden-set sweep drives the retrieval hot path 90+ times per run, and
+# unlabelled every one was written as source='guest' -- 236 rows on staging
+# against a single genuine probe. The chunk leaderboard, whose entire purpose is
+# "what do real questions retrieve", would have been measuring the eval set.
+# Same class of mistake as r23's dropped explorer label: a label is only worth
+# having if every driver sets it, so a test now asserts the eval harness labels
+# every hot-path call it makes (release/1.7.22 @ 50365db).
+# Tag: staging-20260905-50365db
+# Digest: sha256:54529149468110b8bbc4fada6fb2a28901235accee01e45c153a0aaee1747cf2
+#
 # Rebuild 2026-09-05 (r24: agentic retrieval gets a budget it cannot exceed --
 # Phase 6). What existed was one extra round, hardcoded, that could not say why
 # it did what it did. run_agentic_rounds terminates by arithmetic: max_rounds,
@@ -999,4 +1010,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:97c69d23c7cb0e8c7efd9b089c06fbf8168d23041ac48a048d6c6a9680f79dc0
+    digest: sha256:54529149468110b8bbc4fada6fb2a28901235accee01e45c153a0aaee1747cf2
