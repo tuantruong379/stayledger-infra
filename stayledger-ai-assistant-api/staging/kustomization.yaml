@@ -43,6 +43,32 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r20: stop RRF compressing a hotel-sized corpus into noise).
+# rrf_k 60 -> 5, w_exact_branch 0.02 -> 0.03.
+# RRF keeps rank and discards magnitude -- right over millions of documents,
+# wrong over 25-63 chunks. ~34 candidates reach fusion, so at k=60 rank 1 and
+# rank 34 differed by 0.006 while the vector similarities behind them spanned
+# 0.29-0.67. The best signal available was compressed into noise and small
+# additive boosts decided the order.
+# Diagnosed first: over 90 vi golden cases the relevant chunk was in the
+# candidate set 100% of the time and filtered out 0% -- the whole deficit was
+# ranking. That also ruled out loosening _passes_floor (drops 3 candidates
+# across 90 queries, never the right one) and raising min_similarity (0.0 today;
+# raising it can only remove candidates that are not hurting).
+# Swept, monotonic, reproduced on each tenant independently:
+#   k=60 0.7333/0.5412 | k=20 0.8222/0.6018 | k=10 0.9000/0.6620
+#   k=5  0.9111/0.6873 | k=3  0.9222/0.7138 | k=1 0.9222/0.7148
+# 5 is the knee and still behaves like RRF; k=1 degenerates. Corpus-size
+# dependent -- belongs in the per-tenant RAG profile.
+# w_exact_branch had to move with it: a one-rank gap went 0.0003 -> 0.0238, so
+# 0.02 could no longer lift a branch chunk over a tenant_global one ranked one
+# position above. Caught by an existing test. That property is load-bearing --
+# it is why property-wins may decline to DELETE shared chunks.
+# Net: recall@5 0.7333 -> 0.9111, MRR 0.5412 -> 0.6789
+# (release/1.7.22 @ 55c7eff).
+# Tag: staging-20260905-55c7eff
+# Digest: sha256:db002f0ee7b6288a3a57af93ae96cae277fd4444502e9c917c2f2ab404dbe7d6
+#
 # Rebuild 2026-09-05 (r19: property-wins deletes a chunk only when EVERY key it
 # carries is overridden). A chunk is not a fact -- it carries several -- so
 # overriding one is no licence to delete the rest. Under intersection a property
@@ -904,4 +930,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:57840d2a8a44c43773ac53a93a4858bf52feb30406d4fd7b608b821a33e670ce
+    digest: sha256:db002f0ee7b6288a3a57af93ae96cae277fd4444502e9c917c2f2ab404dbe7d6
