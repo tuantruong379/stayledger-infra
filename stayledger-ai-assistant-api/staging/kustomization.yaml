@@ -43,6 +43,25 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r14: a property chunk may not erase a whole shared section).
+# property-wins DELETES a tenant-common chunk, so the conflict key that triggers
+# it has to name what is being replaced. The canonical extractor stamps
+# field_paths=['contact'] on a chunk whose section is already 'contact' -- a
+# claim to be "about contact", not to set contact.phone -- so every shared chunk
+# in a section collided with any one property chunk in it.
+# Live on vertex_suites_hanoi gen 1: Hoan Kiem's Contact chunk deleted the only
+# shared chunk holding BOTH branches' hotlines, and its Check-in/Check-out chunk
+# deleted six shared 'hours' chunks (fast check-in, early checkout, hourly
+# rental) while stating the same 14:00/12:00 they did. Nothing was in conflict.
+# 8 of 35 chunks vanished from Hoan Kiem's corpus -- the whole of that tenant's
+# 16 golden skips -- and scoped_hybrid runs the same filter post-ranking, so
+# real guests lost those answers too.
+# A chunk stamping no field paths at all keeps section-level authority (AC 31).
+# Precedence is unchanged: w_exact_branch already outranks tenant-global
+# (release/1.7.22 @ fd2cc16).
+# Tag: staging-20260905-fd2cc16
+# Digest: sha256:238ede7f858a7657360e18f13c986cc15cfe796643ce4408131e2586419050fe
+#
 # Rebuild 2026-09-05 (r13: a chunk records which source it came from).
 # A generation is composed from several sources now, and document_id is the only
 # field saying which produced a chunk. It was the tenant's whole-blob filename,
@@ -795,4 +814,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b4da4de4e9d36de7a60b12be09e2274ca8793d2556be53853be8686d9407c119
+    digest: sha256:238ede7f858a7657360e18f13c986cc15cfe796643ce4408131e2586419050fe
