@@ -43,6 +43,24 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-05 (r19: property-wins deletes a chunk only when EVERY key it
+# carries is overridden). A chunk is not a fact -- it carries several -- so
+# overriding one is no licence to delete the rest. Under intersection a property
+# chunk that merely restated the shared check-in time deleted the shared chunk
+# that also held the hourly rental policy and both branches' hotlines.
+# No behaviour change today (_names_no_field already disarms every canonical
+# chunk's key); this makes the rule correct before data can exercise it.
+# Recorded because the obvious next step does NOT work: stamping chunks with
+# field paths from facts cannot fix property-wins with today's extractor. On
+# vertex the shared revision has 3 facts and produced 54 chunks, and across the
+# whole tenant facts exist for only property.check_in_out and property.identity
+# (9 field paths). No facts at all for contact/hours-FAQ/Wi-Fi/policies/F&B/
+# location -- where the bug actually bit -- and chunk section ids ('contact')
+# and fact section ids ('property.check_in_out') would not even join
+# (release/1.7.22 @ b5bd612).
+# Tag: staging-20260905-b5bd612
+# Digest: sha256:57840d2a8a44c43773ac53a93a4858bf52feb30406d4fd7b608b821a33e670ce
+#
 # Rebuild 2026-09-05 (r18: reuse vectors across generations + collect retired
 # chunks -- Phase 3). Lookup/lifecycle only; chunk boundaries untouched, so
 # CANONICAL_CHUNKER_VERSION does not move (H1).
@@ -886,4 +904,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d7f14d51019e114019f4a0ca3350893a5392f57e058d30fd0e2373c8d20b4afe
+    digest: sha256:57840d2a8a44c43773ac53a93a4858bf52feb30406d4fd7b608b821a33e670ce
