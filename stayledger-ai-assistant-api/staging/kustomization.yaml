@@ -43,6 +43,20 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-06 (r28: flush queued traces at shutdown).
+# The drain thread is a daemon, so whatever is still queued when the interpreter
+# exits disappears -- not the same failure as dropping under load. A dropped
+# trace is a random sample of a busy moment; a lost tail is systematic, always
+# the most recent retrievals, and every pod restart takes some.
+# Found by using it: 25 questions driven through the hot path on the first
+# real-traffic run produced 24 traces, the missing one being the last asked.
+# flush() waits briefly then gives up, registered lazily via atexit -- shutdown
+# must not hang on diagnostics. Also adds the `time` import flush() needed; no
+# test called it, so the suite was green with a NameError waiting
+# (release/1.7.22 @ 8b7ca96).
+# Tag: staging-20260906-8b7ca96
+# Digest: sha256:2eec599d2a472b99dcfb391d3f75659779feddbc53a1ff6f23e16b9a926191c6
+#
 # Rebuild 2026-09-05 (r27: a model picks the tool, never the permissions --
 # Phase 8). pick_tool had three branches (availability keywords, intent
 # classifier, else quote) and could not express "this is a knowledge-base
@@ -1051,4 +1065,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ca63edfca64dfe5269afa6d79102814b0aa2a59a97ba98b1eb5ae91555ae5670
+    digest: sha256:2eec599d2a472b99dcfb391d3f75659779feddbc53a1ff6f23e16b9a926191c6
