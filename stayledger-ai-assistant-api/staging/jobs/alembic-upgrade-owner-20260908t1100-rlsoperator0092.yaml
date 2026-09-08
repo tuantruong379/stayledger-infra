@@ -1,0 +1,72 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-0092
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: rls-operator-plane
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          # Runs AFTER r31 rolled out, same discipline as 0091: the bindings must
+          # be live before the policies exist, because a read against an RLS table
+          # with no bound tenant returns EMPTY rather than failing.
+          # The four tables here are the ones 0091 deliberately held back while
+          # their modules still used bare pool.acquire(). Converting those turned
+          # up two live faults -- the alert evaluator reading usage_events empty
+          # (635,075 rows present, 0 visible) and the metrics aggregator unable to
+          # write metrics_1m since 2026-07-21 -- both fixed in r31, which this
+          # image is.
+          image: putin111/stayledger-ai-assistant-api@sha256:fa7f7cff180cb7f6f289884f59e4691a7875c60f5a46840592d84c5ceef44533
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - set -eu; export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"; cd /app; PYTHONPATH=/app
+              /venv/bin/alembic upgrade head && PYTHONPATH=/app /venv/bin/alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

@@ -43,6 +43,35 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-08 (r31: the alert evaluator was reading an empty table).
+# Converting the last bare pool.acquire() sites turned up two live faults with
+# one cause and opposite symptoms, which is why neither showed up in review.
+# alerts.evaluator._query_metrics read usage_events unbound. A read against an
+# RLS table with no bound tenant does not fail -- it returns EMPTY. Every rule
+# was therefore evaluated over a window containing nothing: counts of 0, latency
+# percentiles of None. No rule could fire, and that silence was indistinguishable
+# from health. Measured today: 635,075 rows present, 464,100 in the last 30 days,
+# 0 visible to that connection.
+# metrics.aggregator._flush WROTE metrics_1m the same way, and a write under a
+# WITH CHECK policy raises. Its newest row is 2026-07-21; usage_events kept
+# flowing for the seven weeks after (84,229 events on 08-16, 76,641 on 08-18,
+# 30,950 on 09-03) past a writer raising on every flush. That was logged once a
+# minute as metrics_flush_failed -- and the thing that watches logs is the alert
+# evaluator, reading the table this writer could not write to. Each hid the other.
+# All 16 sites take acquire_admin_conn: alerts is a fleet subsystem where
+# tenant_id is an optional filter, and the aggregator flushes every tenant's
+# bucket in one executemany.
+# Also fixes a guest-facing regression: the evidence gate was being applied to
+# deterministic FAQ rule replies. A rule answer to "what time is check-in" states
+# check-out too, and a chunk mentioning only check-in made that unsupported, so
+# the whole reply became "I could not find that information" -- about information
+# the system held. apply_output_policy now takes generated=False for text no
+# model wrote; every other gate still runs (release/1.7.22 @ a357c69).
+# MIGRATION 0092 RUNS AFTER THIS DIGEST -- same discipline as r30: the bindings
+# must be live before the policies exist, never the other way round.
+# Tag: staging-20260908-a357c69
+# Digest: sha256:fa7f7cff180cb7f6f289884f59e4691a7875c60f5a46840592d84c5ceef44533
+#
 # Rebuild 2026-09-08 (r30: bind a tenant scope before RLS exists -- Phase 2 prep).
 # The KB plane has had RLS since its tables were created; the conversation plane
 # never did, so isolation rested on every query remembering its own WHERE
@@ -1103,4 +1132,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:9c82c059aaee343b0fb6f3848f2e1eb1435d0c19737bd7bfe5a336dcf774ca1d
+    digest: sha256:fa7f7cff180cb7f6f289884f59e4691a7875c60f5a46840592d84c5ceef44533
