@@ -44,6 +44,43 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-08 (r35: rrf_k derived from the corpus, boosts in rank steps).
+# rrf_k was a constant carrying a comment saying it should not be one -- it is
+# corpus-size dependent, and a per-tenant knob for something the code can measure
+# is a knob nobody keeps correct as a KB grows. Derived per query now as
+# n_candidates // 8 clamped to [4, 60]; setting it still pins it.
+# The moment k varies, an absolute rerank weight means nothing fixed: one rank
+# step is 0.0238 at k=5 and 0.000264 at k=60, so the same 0.03 is a 1.26-step
+# nudge in one corpus and a 113-step veto in another. Every weight is now a
+# multiple of one rank step and holds its meaning at every k by construction.
+# Measured over 113 vi golden cases, three tenants:
+#   before (fixed k=5, absolute weights)   recall@5 0.8850  MRR 0.6653
+#   after  (derived k, rank-step weights)  recall@5 0.8938  MRR 0.6719
+# Better on both. A variant measured higher still (0.8938 / 0.6913) and was
+# rejected: it drops w_exact_branch below one rank step and silently gives up
+# branch-over-tenant_global precedence, which is what lets property-wins decline
+# to DELETE shared chunks (release/1.7.22 @ d5eb20b).
+# Traces now record rrf_k_effective -- a snapshot saying rrf_k=None explains
+# nothing, and every weight in it is denominated in that k.
+# Tag: staging-20260908-d5eb20b
+# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+#
+# Rebuild 2026-09-08 (r34: retention enforcing, and able to converge).
+# Owner confirmed the data may be deleted, so RAG_RETENTION_ENFORCE=1 is now set
+# on the CronJob. Enabling it exposed a second problem first: the run took
+# exactly one batch per category and stopped. batch_size bounds a TRANSACTION --
+# an unbounded DELETE holds locks and spikes WAL -- and using it as the run
+# bound turned it into a throughput ceiling. At 500 rows a night against a
+# 45,692-row backlog growing ~5,000/day, the job would have run green every
+# night and lost ground every time.
+# Categories now drain until empty or until the run's budget is spent
+# (RAG_RETENTION_MAX_BATCHES=50, RAG_RETENTION_MAX_SECONDS=900), committing each
+# batch so a stop costs at most one batch. Backlog clears in two nights; steady
+# state needs one bite. B3 sweeper active via KB_RETIRED_CHUNK_GRACE_DAYS=30
+# (release/1.7.22 @ b0a3d92).
+# Tag: staging-20260908-b0a3d92
+# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+#
 # Rebuild 2026-09-08 (r33: the dry run printed nothing).
 # r32's CronJob completed successfully on its first manual run and left an empty
 # heading where the batch report should have been -- run_retention_once reports
@@ -55,7 +92,7 @@ patches:
 # with psycopg ConnectionTimeout, which from the log is indistinguishable from a
 # bad DSN. Added allow-kb-retention-egress and named it in allow-pgbouncer-ingress.
 # Tag: staging-20260908-bb7b827
-# Digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
 #
 # Rebuild 2026-09-08 (r32: nothing here had ever run retention).
 # The namespace's only CronJob was postgres-backup, so no KB, conversation or
@@ -76,7 +113,7 @@ patches:
 # Ships with stayledger-ai-assistant-kb-retention, IN DRY-RUN: RAG_RETENTION_ENFORCE
 # is absent, so it reports and deletes nothing until someone reads the reports.
 # Tag: staging-20260908-8b4107d
-# Digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
 #
 # Rebuild 2026-09-08 (r31: the alert evaluator was reading an empty table).
 # Converting the last bare pool.acquire() sites turned up two live faults with
@@ -1167,4 +1204,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+    digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd

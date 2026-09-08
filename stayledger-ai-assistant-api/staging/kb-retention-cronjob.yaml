@@ -10,10 +10,10 @@
 #   knowledge_candidates     218,152 rows,  46,983 past 30 days            166 MB
 #   usage_events             635,075 rows, 170,975 past 30 days            284 MB
 #
-# STARTS IN DRY-RUN. RAG_RETENTION_ENFORCE is deliberately absent, so every run
-# reports what it would collect and deletes nothing. Turn it on only after a few
-# nights of reports look right -- the first retention run against 800 MB of
-# never-collected data is not a thing to enable and walk away from.
+# ENFORCING as of 2026-09-08, after a dry run confirmed the numbers and the
+# owner confirmed the data may be deleted. Every run still prints its inventory
+# first, and every deleted row is archived to retention_archives beforehand:
+# rollback_retention_run(purge_run_id) restores one run in full.
 #
 # Scheduled at 20:30 UTC, after postgres-backup at 19:00 UTC and with enough
 # margin for it to finish. That ordering is the actual safety net: the night's
@@ -27,15 +27,14 @@
 # '*' is still an explicit decision, recorded here, and required before anything
 # runs; it just scales. Enforcement stays a separate switch.
 #
-# KB_RETIRED_CHUNK_GRACE_DAYS is the B3 sweeper: publish_generation retires a
+# KB_RETIRED_CHUNK_GRACE_DAYS is the B3 sweeper, now active: publish_generation retires a
 # generation without touching its chunks, and the KB_CHUNKS pass only collects
 # rows with deleted_at set, so today every generation ever retired keeps its full
 # chunk set and its vectors forever. On staging vertex_suites_hanoi carries 188
 # undeleted chunks of which 51 belong to the active generation -- 137 are
 # uncollectable. 30 days is the rollback window: rollback_generation re-activates
 # a retired generation, and retrieval reads deleted_at IS NULL, so a generation
-# swept too eagerly comes back serving nothing. The sweeper is a no-op while this
-# job is in dry-run.
+# swept too eagerly comes back serving nothing.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -74,7 +73,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: retention
-              image: putin111/stayledger-ai-assistant-api@sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+              image: putin111/stayledger-ai-assistant-api@sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "-c"]
               args:
@@ -84,12 +83,32 @@ spec:
                   echo "--- retention batch ---";
                   PYTHONPATH=/app /venv/bin/python scripts/kb_retention_purge.py
               env:
-                # Absent on purpose: RAG_RETENTION_ENFORCE. Without it the policy
-                # is dry_run=True and the batch only previews.
+                # Enforcing since 2026-09-08, on explicit confirmation that the
+                # data may be deleted. Rows are archived into retention_archives
+                # before they are removed, so one run is recoverable in full via
+                # rollback_retention_run(purge_run_id) -- the id is printed by
+                # the job and written to audit_logs as retention.purge.batch.
+                - name: RAG_RETENTION_ENFORCE
+                  value: "1"
                 - name: RAG_RETENTION_TENANT_ALLOWLIST
                   value: "*"
+                # BATCH_SIZE bounds one transaction; MAX_BATCHES and MAX_SECONDS
+                # bound one run. Those are different jobs and conflating them is
+                # what made the first version unable to converge: one 500-row
+                # bite per category per night, against a 45,692-row backlog that
+                # grows by roughly 5,000 a day. It would have lost ground every
+                # night it ran. 50 x 500 = up to 25,000 rows per category per
+                # run, so the current backlog clears in two nights and steady
+                # state is reached in one bite thereafter.
                 - name: RAG_RETENTION_BATCH_SIZE
                   value: "500"
+                - name: RAG_RETENTION_MAX_BATCHES
+                  value: "50"
+                # Stops the loop cleanly well inside activeDeadlineSeconds (1800)
+                # rather than being killed mid-category. Each batch commits, so
+                # stopping costs at most one batch.
+                - name: RAG_RETENTION_MAX_SECONDS
+                  value: "900"
                 - name: KB_RETIRED_CHUNK_GRACE_DAYS
                   value: "30"
               envFrom:
