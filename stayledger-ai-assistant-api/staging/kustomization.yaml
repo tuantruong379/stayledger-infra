@@ -14,6 +14,7 @@ resources:
   - ../base
   - stayledger-ai-assistant-pms-outbox-network-patch.yaml
   - stayledger-ai-assistant-rag-leakage-meta.yaml
+  - kb-retention-cronjob.yaml
 
 patches:
   - path: stayledger-ai-assistant-api-configmap-patch.yaml
@@ -43,6 +44,40 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-08 (r33: the dry run printed nothing).
+# r32's CronJob completed successfully on its first manual run and left an empty
+# heading where the batch report should have been -- run_retention_once reports
+# through logger and a bare script configures no handler. The whole point of
+# starting in dry-run is that somebody reads the output. Now configured like the
+# aggregator, and the run result is printed as JSON (release/1.7.22 @ bb7b827).
+# Also required, found the same way: default-deny-all selects every pod for both
+# directions, so the CronJob needed naming on each side. Its first run failed
+# with psycopg ConnectionTimeout, which from the log is indistinguishable from a
+# bad DSN. Added allow-kb-retention-egress and named it in allow-pgbouncer-ingress.
+# Tag: staging-20260908-bb7b827
+# Digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+#
+# Rebuild 2026-09-08 (r32: nothing here had ever run retention).
+# The namespace's only CronJob was postgres-backup, so no KB, conversation or
+# eval data was ever collected and none of it was bounded. Two things had to be
+# fixed before scheduling one was safe.
+# The inventory could not see the data it exists to report on:
+# kb_retention_dry_run.py opened a plain psycopg.connect() with no GUC, and under
+# FORCE RLS that returns EMPTY rather than failing, so it reported nothing to
+# collect at both 30 and 90 days. With the bind fixed, the same command reports
+# 45,692 ai_conversation_states past their 30-day window (azure 8,502 / cupid
+# 24,030 / vertex 13,160) out of 206,216, plus 52,839 ai_canonical_turns and
+# 46,983 knowledge_candidates -- roughly 800 MB across the largest tables.
+# The tenant allowlist had to name every tenant, which is the right safety
+# property in the wrong mechanism: a config file someone must remember to edit
+# at every onboarding, where forgetting is silent. It now accepts '*', resolved
+# from the tenant registry at run time. Still an explicit decision, still gated
+# separately on RAG_RETENTION_ENFORCE for deletion (release/1.7.22 @ 8b4107d).
+# Ships with stayledger-ai-assistant-kb-retention, IN DRY-RUN: RAG_RETENTION_ENFORCE
+# is absent, so it reports and deletes nothing until someone reads the reports.
+# Tag: staging-20260908-8b4107d
+# Digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+#
 # Rebuild 2026-09-08 (r31: the alert evaluator was reading an empty table).
 # Converting the last bare pool.acquire() sites turned up two live faults with
 # one cause and opposite symptoms, which is why neither showed up in review.
@@ -1132,4 +1167,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:fa7f7cff180cb7f6f289884f59e4691a7875c60f5a46840592d84c5ceef44533
+    digest: sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb

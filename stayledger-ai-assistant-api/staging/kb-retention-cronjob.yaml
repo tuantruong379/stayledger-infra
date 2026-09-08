@@ -1,0 +1,160 @@
+# KB / conversation retention -- the first one this deployment has ever had.
+#
+# Until 2026-09-08 nothing on staging ever ran retention: the only CronJob in the
+# namespace was postgres-backup. Nothing was collected, so nothing was bounded.
+# Measured that day, with the inventory fixed so it could actually see the rows:
+#
+#   ai_conversation_states   206,216 rows,  45,692 past the 30-day window   82 MB
+#   ai_canonical_turns       227,352 rows,  52,839 past 30 days            132 MB
+#   ai_turn_outbox           227,333 rows,  52,822 past 30 days            119 MB
+#   knowledge_candidates     218,152 rows,  46,983 past 30 days            166 MB
+#   usage_events             635,075 rows, 170,975 past 30 days            284 MB
+#
+# STARTS IN DRY-RUN. RAG_RETENTION_ENFORCE is deliberately absent, so every run
+# reports what it would collect and deletes nothing. Turn it on only after a few
+# nights of reports look right -- the first retention run against 800 MB of
+# never-collected data is not a thing to enable and walk away from.
+#
+# Scheduled at 20:30 UTC, after postgres-backup at 19:00 UTC and with enough
+# margin for it to finish. That ordering is the actual safety net: the night's
+# dump is taken before the purge, so it still contains whatever the purge takes.
+#
+# RAG_RETENTION_TENANT_ALLOWLIST is '*', resolved at run time from the tenant
+# registry. A literal list is the right safety property -- retention must never
+# run on a tenant nobody chose -- but the wrong mechanism for a fleet: it is a
+# ConfigMap someone has to remember to edit at every onboarding, and forgetting
+# is silent. The tenant that gets no retention is the one nobody thinks about.
+# '*' is still an explicit decision, recorded here, and required before anything
+# runs; it just scales. Enforcement stays a separate switch.
+#
+# KB_RETIRED_CHUNK_GRACE_DAYS is the B3 sweeper: publish_generation retires a
+# generation without touching its chunks, and the KB_CHUNKS pass only collects
+# rows with deleted_at set, so today every generation ever retired keeps its full
+# chunk set and its vectors forever. On staging vertex_suites_hanoi carries 188
+# undeleted chunks of which 51 belong to the active generation -- 137 are
+# uncollectable. 30 days is the rollback window: rollback_generation re-activates
+# a retired generation, and retrieval reads deleted_at IS NULL, so a generation
+# swept too eagerly comes back serving nothing. The sweeper is a no-op while this
+# job is in dry-run.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stayledger-ai-assistant-kb-retention
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-kb-retention
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: retention
+spec:
+  schedule: "30 20 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 1
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: stayledger-ai-assistant-kb-retention
+            app.kubernetes.io/part-of: stayledger-ai-assistant
+        spec:
+          restartPolicy: Never
+          serviceAccountName: api-sa
+          automountServiceAccountToken: false
+          securityContext:
+            runAsUser: 10001
+            runAsGroup: 10001
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: retention
+              image: putin111/stayledger-ai-assistant-api@sha256:8306bc7aca9d4ef8c025ecb835ccfebefc95431c7e015ed8cc170d307c491ccb
+              imagePullPolicy: IfNotPresent
+              command: ["/bin/sh", "-c"]
+              args:
+                - set -eu; cd /app;
+                  echo "--- inventory (read-only) ---";
+                  PYTHONPATH=/app /venv/bin/python scripts/kb_retention_dry_run.py --older-than-days 30;
+                  echo "--- retention batch ---";
+                  PYTHONPATH=/app /venv/bin/python scripts/kb_retention_purge.py
+              env:
+                # Absent on purpose: RAG_RETENTION_ENFORCE. Without it the policy
+                # is dry_run=True and the batch only previews.
+                - name: RAG_RETENTION_TENANT_ALLOWLIST
+                  value: "*"
+                - name: RAG_RETENTION_BATCH_SIZE
+                  value: "500"
+                - name: KB_RETIRED_CHUNK_GRACE_DAYS
+                  value: "30"
+              envFrom:
+                - configMapRef:
+                    name: stayledger-ai-assistant-api-config
+                - secretRef:
+                    name: stayledger-ai-assistant-api-secrets
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 256Mi
+                  ephemeral-storage: 32Mi
+                limits:
+                  cpu: 1000m
+                  memory: 1Gi
+                  ephemeral-storage: 128Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Mi
+---
+# `default-deny-all` selects every pod in the namespace for both directions, so a
+# new workload reaches nothing until it is named. The first manual run of this
+# CronJob failed with psycopg ConnectionTimeout for exactly that reason -- not a
+# credential or DSN problem, and it looks identical to one from the logs.
+#
+# Same shape as allow-alembic-egress: Postgres and pgbouncer on 5432, nothing
+# else. This job talks to the database and to nobody: it reads the tenant
+# registry, previews or archives rows, and writes an audit_logs entry. DNS is
+# already covered for every pod by allow-egress-dns.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kb-retention-egress
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-kb-retention
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-retention
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-postgres
+      ports:
+        - port: 5432
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-pgbouncer
+      ports:
+        - port: 5432
+          protocol: TCP

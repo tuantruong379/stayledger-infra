@@ -27,6 +27,12 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: alembic-upgrade
+        # The retention CronJob. default-deny-all covers both directions, so a
+        # new workload needs naming on each side; its egress policy alone left
+        # it timing out here in a way that reads like a bad DSN.
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-kb-retention
         # Reasoning: embed worker/backfill poll kb_chunks via HOTEL_OPS_DSN → PgBouncer.
         - podSelector:
             matchLabels:
