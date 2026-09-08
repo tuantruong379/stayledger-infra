@@ -43,6 +43,44 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-08 (r30: bind a tenant scope before RLS exists -- Phase 2 prep).
+# The KB plane has had RLS since its tables were created; the conversation plane
+# never did, so isolation rested on every query remembering its own WHERE
+# tenant_id. 205 tables, 40 with RLS, and among those without: ai_canonical_turns
+# 227,352 rows, knowledge_candidates 218,152, ai_conversation_states 206,211.
+# THIS DIGEST SHIPS BEFORE MIGRATION 0091 on purpose. A read against an RLS
+# table with no bound tenant returns EMPTY rather than failing, so the binding
+# must be correct first -- db_pool records that exact failure once, when FORCE
+# RLS in 0048 emptied the tenant_runtime_config cache warm.
+# Two DB stacks were found: KB/RAG on psycopg WITH GUC discipline, branch/alerts
+# on asyncpg with 38 bare pool.acquire() calls and none. BranchRepository and
+# BranchAliasRepository now choose per METHOD (per-tenant reads scoped;
+# list_all_active_grouped is cross-tenant by design and takes admin -- scoping
+# it would warm the config cache empty). knowledge_candidates binds explicitly.
+# notifications/outbox_worker.process_batch selects across all tenants and used
+# a bare acquire; with a policy it would have returned nothing and stopped
+# sending mail silently (release/1.7.22 @ 9ed2e5c).
+# Tag: staging-20260908-9ed2e5c
+# Digest: sha256:9c82c059aaee343b0fb6f3848f2e1eb1435d0c19737bd7bfe5a336dcf774ca1d
+#
+# Rebuild 2026-09-06 (r29: 23 golden cases in real guest phrasing, 95 -> 118).
+# The golden set was measurably easier than reality, and a set drawn from the
+# corpus always would be -- it inherits the corpus's wording, so it cannot see
+# the failures reality has. Measured with the Phase 5 traces: the 95 existing
+# cases bottom out at top-vector 0.354 (mean 0.592), while 25 real-shaped
+# questions through the same hot path ran 0.290-0.621, with legitimate ones like
+# "minh can hoa don do" at 0.343 -- below anything the golden set contained.
+# The traces also produced a miss the old set could not catch: "khu vuc hut
+# thuoc o dau" retrieved a jacuzzi FAQ at 0.290 while the corpus plainly says
+# "smoking: Rooms are non-smoking". Now a case.
+# Every span verified verbatim against the live generation before being added
+# (23/23 resolved): an unresolvable span becomes a SKIPPED case, which leaves the
+# denominator rather than the numerator and so RAISES a score while measuring
+# nothing. Reported recall will fall -- that is the point
+# (release/1.7.22 @ dbee409).
+# Tag: staging-20260906-dbee409
+# Digest: sha256:72127883e8716f2418adf600a45823c43622c2b6528210c2275dcd1815e8dfa8
+#
 # Rebuild 2026-09-06 (r28: flush queued traces at shutdown).
 # The drain thread is a daemon, so whatever is still queued when the interpreter
 # exits disappears -- not the same failure as dropping under load. A dropped
@@ -1065,4 +1103,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:2eec599d2a472b99dcfb391d3f75659779feddbc53a1ff6f23e16b9a926191c6
+    digest: sha256:9c82c059aaee343b0fb6f3848f2e1eb1435d0c19737bd7bfe5a336dcf774ca1d
