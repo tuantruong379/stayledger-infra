@@ -1,0 +1,69 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-0093
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: drop-ai-turn-outbox
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          # Runs AFTER r36, which removed the INSERT. Order matters in the
+          # usual direction for a drop: stop writing first, then remove the
+          # table, so no in-flight turn hits a missing relation. The table has
+          # no reader to break -- verified before the drop, the only two
+          # references in the repository were that INSERT and the 0053 that
+          # created it.
+          image: putin111/stayledger-ai-assistant-api@sha256:965f08517d28a39b75984ad0f5099a4a01b77d548cee1c962d5e61ff87b0d65c
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - set -eu; export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"; cd /app; PYTHONPATH=/app
+              /venv/bin/alembic upgrade head && PYTHONPATH=/app /venv/bin/alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

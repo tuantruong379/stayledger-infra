@@ -78,6 +78,13 @@ data:
   # means chunk boundaries moved, which is the fleet-wide re-embed
   # CANONICAL_CHUNKER_VERSION exists to gate.
   RAG_INCREMENTAL_EMBED: "1"
+  # Off since 2026-09-08. This captured one knowledge candidate per guest turn:
+  # 218,152 rows, 212,768 still pending, 5,384 rejected, ZERO ever approved, at
+  # roughly 7,000 a day. A review queue nobody can work is not a backlog, it is
+  # 146 MB and a write on the guest path. All of them were source_type='chat';
+  # the feedback route has produced none, so this stops the whole inflow.
+  # Production is a separate decision and has not been changed.
+  RAG_CHAT_CANDIDATES_ENABLED: "0"
   # One canonical revision per SOURCE rather than per scope. Without it a scope
   # holding several files collapses to one revision on every edit: AI-clean and
   # fact extraction re-run over every file in the scope instead of the one that

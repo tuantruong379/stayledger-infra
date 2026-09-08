@@ -1,0 +1,67 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-0094
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: retention-archive-source-tables
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          # Extends retention_archives' source_table CHECK to the categories the
+          # code already has. Ordered after r37 only for tidiness -- the
+          # constraint change is independent of the image, and the run it
+          # unblocks is the nightly CronJob, not this Job.
+          image: putin111/stayledger-ai-assistant-api@sha256:16b81c3fd52187099df6bc104d1951fe219a259b03c701a3ad49c497ca008dfd
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - set -eu; export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"; cd /app; PYTHONPATH=/app
+              /venv/bin/alembic upgrade head && PYTHONPATH=/app /venv/bin/alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

@@ -1,0 +1,81 @@
+# One-off: reclaim the space freed by purging knowledge_candidates.
+#
+# 218,152 chat candidates were deleted after RAG_CHAT_CANDIDATES_ENABLED=0 closed
+# the source. DELETE marks rows dead but leaves the pages allocated, so the table
+# still measured 166 MB with zero rows.
+#
+# Runs as the OWNER role. VACUUM FULL issued by the application role is SKIPPED
+# WITH A WARNING, not refused with an error, so the first attempt reported
+# success and reclaimed nothing -- the same failure mode as everything else found
+# this week: an operation that quietly does nothing is worse than one that fails.
+#
+# The ACCESS EXCLUSIVE lock is safe here: the table is empty and nothing writes
+# to it any more.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vacuum-knowledge-candidates
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: reclaim-knowledge-candidates
+spec:
+  activeDeadlineSeconds: 900
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: vacuum
+        image: putin111/stayledger-ai-assistant-api@sha256:965f08517d28a39b75984ad0f5099a4a01b77d548cee1c962d5e61ff87b0d65c
+        imagePullPolicy: IfNotPresent
+        command:
+        - /venv/bin/python
+        - -c
+        - 'import os,psycopg;dsn=os.environ[''HOTEL_OPS_DSN_OWNER''];c=psycopg.connect(dsn,autocommit=True);c.add_notice_handler(lambda
+          d: print(''PG:'', d.message_primary));t=''knowledge_candidates'';b=c.execute("SELECT
+          pg_size_pretty(pg_total_relation_size(''%s'')),(SELECT count(*) FROM %s)"%(t,t)).fetchone();print(''truoc:'',b[0],b[1],''dong'');c.execute(''VACUUM
+          (FULL, ANALYZE) ''+t);a=c.execute("SELECT pg_size_pretty(pg_total_relation_size(''%s'')),(SELECT
+          count(*) FROM %s)"%(t,t)).fetchone();print(''sau:  '',a[0],a[1],''dong'')'
+        envFrom:
+        - configMapRef:
+            name: stayledger-ai-assistant-api-config
+        - secretRef:
+            name: stayledger-ai-assistant-migration-secrets
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        resources:
+          requests:
+            cpu: 50m
+            memory: 256Mi
+            ephemeral-storage: 32Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+            ephemeral-storage: 64Mi
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+      volumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 64Mi

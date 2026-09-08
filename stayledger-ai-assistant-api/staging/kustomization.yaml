@@ -44,6 +44,52 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-08 (r38: canonical_turn_id is TEXT, and the cast was guessed).
+# The new CANONICAL_TURNS delete cast its key array to uuid[]; the column is
+# TEXT (0053) and merely looks like a uuid, so Postgres answered "operator does
+# not exist: text = uuid". It raised after the archive INSERT, so the batch
+# rolled back and nothing was lost -- the nightly run just stopped there having
+# collected nothing. Key types are now stated once in _CATEGORY_KEY_CASTS with a
+# test that the map is complete; only a database can say the types are right,
+# which is what this deploy is for (release/1.7.22 @ 10ba090).
+# Tag: staging-20260908-10ba090
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
+#
+# Rebuild 2026-09-08 (r37: the archive's allowed-table list had drifted).
+# retention_archives.source_table carries a CHECK listing what a purge may
+# archive. 0061 wrote it and RetentionCategory grew three times without it, so
+# the first enforced run of the new categories aborted with CheckViolation --
+# after the archive INSERT and before the DELETE, which is why nothing was lost.
+# A constraint drifting the other way would have archived rows under a label
+# nothing could restore them to: worse, and silent. 0094 regenerates the list
+# whole, and a unit test now asserts it equals _CATEGORY_TABLES so the next
+# category fails in CI rather than at 20:30 UTC (release/1.7.22 @ e3e31b8).
+# Tag: staging-20260908-e3e31b8
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
+#
+# Rebuild 2026-09-08 (r36: 417 MB with nothing collecting it, three answers).
+# ai_turn_outbox is DROPPED (migration 0093). Written once per finalized turn
+# inside finalize_turn's transaction and read by nothing -- no claimer, no
+# worker, no query, and the id it returned was discarded by its only caller.
+# 227,333 rows, every one still PENDING since the table was first written,
+# 119 MB of which 57 MB was an index for a consumer never built. An outbox makes
+# delivery durable; that was never implemented, so the table was the appearance
+# of a guarantee. Replies go out inline with no retry -- now written down in
+# docs/runbooks/canonical-kb-pipeline.md rather than implied by a table name.
+# ai_canonical_turns joins retention at 30 days, TERMINAL STATES ONLY. A
+# PROCESSING row is a turn that died mid-flight (staging has 19, all from
+# 2026-07-27); ageing those out would make retention the thing that erases the
+# evidence of crashed turns. Reported as observations.ai_canonical_turns_stuck.
+# knowledge_candidates joins retention at 30 days AND capture is turned off via
+# RAG_CHAT_CANDIDATES_ENABLED=0: 218,152 rows, zero ever approved, ~7,000/day.
+# Also fixes the latent single-branch gap found while smoke-testing r35:
+# _resolve_branch_id now falls back to a tenant's only active branch. Failing
+# closed is right for a multi-branch tenant and protects nobody for a
+# single-branch one -- azure_bay_danang has one branch and no tenant_global
+# chunks, so a branchless turn retrieved nothing at all (release/1.7.22 @ 1342579).
+# Tag: staging-20260908-1342579
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
+#
 # Rebuild 2026-09-08 (r35: rrf_k derived from the corpus, boosts in rank steps).
 # rrf_k was a constant carrying a comment saying it should not be one -- it is
 # corpus-size dependent, and a per-tenant knob for something the code can measure
@@ -63,7 +109,7 @@ patches:
 # Traces now record rrf_k_effective -- a snapshot saying rrf_k=None explains
 # nothing, and every weight in it is denominated in that k.
 # Tag: staging-20260908-d5eb20b
-# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
 #
 # Rebuild 2026-09-08 (r34: retention enforcing, and able to converge).
 # Owner confirmed the data may be deleted, so RAG_RETENTION_ENFORCE=1 is now set
@@ -79,7 +125,7 @@ patches:
 # state needs one bite. B3 sweeper active via KB_RETIRED_CHUNK_GRACE_DAYS=30
 # (release/1.7.22 @ b0a3d92).
 # Tag: staging-20260908-b0a3d92
-# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
 #
 # Rebuild 2026-09-08 (r33: the dry run printed nothing).
 # r32's CronJob completed successfully on its first manual run and left an empty
@@ -92,7 +138,7 @@ patches:
 # with psycopg ConnectionTimeout, which from the log is indistinguishable from a
 # bad DSN. Added allow-kb-retention-egress and named it in allow-pgbouncer-ingress.
 # Tag: staging-20260908-bb7b827
-# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
 #
 # Rebuild 2026-09-08 (r32: nothing here had ever run retention).
 # The namespace's only CronJob was postgres-backup, so no KB, conversation or
@@ -113,7 +159,7 @@ patches:
 # Ships with stayledger-ai-assistant-kb-retention, IN DRY-RUN: RAG_RETENTION_ENFORCE
 # is absent, so it reports and deletes nothing until someone reads the reports.
 # Tag: staging-20260908-8b4107d
-# Digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+# Digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
 #
 # Rebuild 2026-09-08 (r31: the alert evaluator was reading an empty table).
 # Converting the last bare pool.acquire() sites turned up two live faults with
@@ -1204,4 +1250,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b41e770ee164819316a377edd2fb386cf10c1f0867c2fcaa6924e1bb67cee0cd
+    digest: sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
