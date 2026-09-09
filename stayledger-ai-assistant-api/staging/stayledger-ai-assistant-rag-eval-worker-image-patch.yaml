@@ -16,8 +16,15 @@ spec:
             name: stayledger-ai-assistant-rag-leakage-meta
       containers:
         - name: rag-eval-worker
-          # Keep rag-eval on the same digest as kustomization images (staging-20260908-9ed2e5c).
-          image: putin111/stayledger-ai-assistant-api@sha256:9c82c059aaee343b0fb6f3848f2e1eb1435d0c19737bd7bfe5a336dcf774ca1d
+          # No digest here on purpose. This is a strategic-merge patch; the
+          # `images:` transformer in kustomization.yaml sets the digest for every
+          # container using this image, this one included, and it wins. A digest
+          # restated here is not a second pin -- it is a stale copy that drifts.
+          # It did: on 2026-09-09 it still read staging-20260908-9ed2e5c (r30)
+          # with a comment claiming it matched kustomization, eleven rebuilds
+          # after that stopped being true, which cost real time verifying that
+          # the eval had in fact run the code under test.
+          image: putin111/stayledger-ai-assistant-api
           volumeMounts:
             - name: rag-leakage-meta
               mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
