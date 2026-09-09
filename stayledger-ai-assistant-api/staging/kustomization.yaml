@@ -44,6 +44,52 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-09 (r44: remediation patches were deleting facts).
+# First real run of the KB remediation loop, all three tenants. Six of seventeen
+# patches anchored old_text on a whole section and returned only the part the
+# model had been reasoning about, dropping the rest: cupid -528 chars (payment:,
+# pets:, vat_invoice:), vertex -818 chars (room amenities, branch parity), azure
+# -112 chars (two <!-- stayledger:... --> scope directives).
+# "vat_invoice: Request VAT invoice when booking." is the ground truth of a
+# golden case, so the run deleted the answer to a question it was trying to make
+# the bot answer. Nothing raised; only a character count gave it away
+# (cupid 12974 -> 12713, vertex 8846 -> 8058).
+# describe_destructive_patch names three ways a replacement loses knowledge --
+# dropped scope directive, dropped label: line, fewer non-blank lines out than
+# in. Exact path fails closed; approve path skips the patch and still lands the
+# additions in the same proposal (release/1.7.22 @ 5d02508).
+# Tag: staging-20260909-5d02508
+# Digest: sha256:e89e0401c3d86c9a5fd7744b4eab5a18129f22514529d2a3a1896976cd47e994
+#
+# Rebuild 2026-09-09 (r43: RLS binds for kb_processing_runs and branches).
+# Third time from the same root: 0091's docstring justified each table with
+# "repositories already set app.tenant_id and app.rls_admin", and for three of
+# the eleven that was asserted rather than checked. Found by approving a KB
+# revision -- the document reached version 2 and the pipeline enqueue died on
+# "new row violates row-level security policy for table kb_processing_runs".
+# catalog_grounding._load_branch_labels is the one that would never have been
+# found this way: it reads `branches`, swallows its own exceptions and returns
+# {}, so unbound it would have returned zero rows forever and guest replies would
+# simply have stopped naming branches (release/1.7.22 @ 1be2bc4).
+# Tag: staging-20260909-1be2bc4
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
+#
+# Rebuild 2026-09-09 (r42: leakage probes were feeding KB remediation).
+# The first real run of the eval -> proposal -> approve -> publish loop produced
+# three drafts, and all three proposed guest-facing KB sections headed
+# "[from_eval] Internal Rate from Other Property" and "[from_eval] Private
+# Amenity Code". Those are adversarial probes the corpus exists to refuse.
+# _fetch_revision_failure_cases selects from the table golden cases share with
+# leakage rows, and leakage rows carry no recall measurement, so
+# `recall_at_5 IS NOT TRUE` matched all of them -- NULL IS NOT TRUE is TRUE.
+# The bodies held the safe refusal, not leaked data, so nothing secret would have
+# been written; the objection is that an attack's framing does not belong in the
+# guest KB and a leakage test is not passed by authoring its expected answer.
+# The pipeline's own guard held: all three came back risk=high with
+# requires_source_confirmation, and nothing was approved (release/1.7.22 @ b44e921).
+# Tag: staging-20260909-b44e921
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
+#
 # Rebuild 2026-09-09 (r41: the booking funnel claimed what the handoff released).
 # Fixing the handoff moved the problem one router along: "Có thể yêu cầu hóa đơn
 # VAT khi đặt phòng không?" stopped being a handoff and was claimed by the
@@ -53,7 +99,7 @@ patches:
 # is now stated once and all three consult it. Real bookings and real ops
 # requests are unaffected and asserted (release/1.7.22 @ c24d36b).
 # Tag: staging-20260909-c24d36b
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-09 (r40: the eval could not write its own results).
 # 0091's docstring justified putting RLS on rag_eval_* with "repositories already
@@ -69,7 +115,7 @@ patches:
 # the row carries one, admin where the caller genuinely has no tenant in hand
 # (release/1.7.22 @ 08053c8).
 # Tag: staging-20260909-08053c8
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-09 (r39: three defects the eval had been mislabelling).
 # The answerability gate answered an English question and refused the Vietnamese
@@ -93,7 +139,7 @@ patches:
 # are not defects 9 -> 39, generation 40 -> 24, kb_content 50 -> 31. A quarter of
 # the KB remediation backlog was never a backlog (release/1.7.22 @ 600b378).
 # Tag: staging-20260909-600b378
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r38: canonical_turn_id is TEXT, and the cast was guessed).
 # The new CANONICAL_TURNS delete cast its key array to uuid[]; the column is
@@ -104,7 +150,7 @@ patches:
 # test that the map is complete; only a database can say the types are right,
 # which is what this deploy is for (release/1.7.22 @ 10ba090).
 # Tag: staging-20260908-10ba090
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r37: the archive's allowed-table list had drifted).
 # retention_archives.source_table carries a CHECK listing what a purge may
@@ -116,7 +162,7 @@ patches:
 # whole, and a unit test now asserts it equals _CATEGORY_TABLES so the next
 # category fails in CI rather than at 20:30 UTC (release/1.7.22 @ e3e31b8).
 # Tag: staging-20260908-e3e31b8
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r36: 417 MB with nothing collecting it, three answers).
 # ai_turn_outbox is DROPPED (migration 0093). Written once per finalized turn
@@ -139,7 +185,7 @@ patches:
 # single-branch one -- azure_bay_danang has one branch and no tenant_global
 # chunks, so a branchless turn retrieved nothing at all (release/1.7.22 @ 1342579).
 # Tag: staging-20260908-1342579
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r35: rrf_k derived from the corpus, boosts in rank steps).
 # rrf_k was a constant carrying a comment saying it should not be one -- it is
@@ -160,7 +206,7 @@ patches:
 # Traces now record rrf_k_effective -- a snapshot saying rrf_k=None explains
 # nothing, and every weight in it is denominated in that k.
 # Tag: staging-20260908-d5eb20b
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r34: retention enforcing, and able to converge).
 # Owner confirmed the data may be deleted, so RAG_RETENTION_ENFORCE=1 is now set
@@ -176,7 +222,7 @@ patches:
 # state needs one bite. B3 sweeper active via KB_RETIRED_CHUNK_GRACE_DAYS=30
 # (release/1.7.22 @ b0a3d92).
 # Tag: staging-20260908-b0a3d92
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r33: the dry run printed nothing).
 # r32's CronJob completed successfully on its first manual run and left an empty
@@ -189,7 +235,7 @@ patches:
 # with psycopg ConnectionTimeout, which from the log is indistinguishable from a
 # bad DSN. Added allow-kb-retention-egress and named it in allow-pgbouncer-ingress.
 # Tag: staging-20260908-bb7b827
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r32: nothing here had ever run retention).
 # The namespace's only CronJob was postgres-backup, so no KB, conversation or
@@ -210,7 +256,7 @@ patches:
 # Ships with stayledger-ai-assistant-kb-retention, IN DRY-RUN: RAG_RETENTION_ENFORCE
 # is absent, so it reports and deletes nothing until someone reads the reports.
 # Tag: staging-20260908-8b4107d
-# Digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+# Digest: sha256:fd69d6d492718c51033b0463aeca709ac47eded4bda28441ebf50637bf44b0cd
 #
 # Rebuild 2026-09-08 (r31: the alert evaluator was reading an empty table).
 # Converting the last bare pool.acquire() sites turned up two live faults with
@@ -1301,4 +1347,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:702212baeab7765a5291d5aadd1bc71fea6f1c2eae52f857755e4876707813bc
+    digest: sha256:e89e0401c3d86c9a5fd7744b4eab5a18129f22514529d2a3a1896976cd47e994
