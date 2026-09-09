@@ -44,6 +44,21 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-09 (r46: the canned FAQ reply defers instead of claiming).
+# r45 put the yield in the gateway's _rag_evidence_shortcut and moved 3 of 114
+# cases, because the canned layer never reaches that code -- it fires in the
+# chat pipeline, before the gateway. Captured stacks name the three seams:
+# _try_chat_deterministic_early_reply (try_soft_ops_faq_reply,
+# try_rule_based_faq_short_reply) and _areply_pre_ai_shortcuts
+# (try_pre_ai_fast_reply). The reply is now deferred rather than dropped: the
+# pipeline continues into RAG and, if RAG abstains, areply hands the turn back
+# to the reply that layer had ready. No extra retrieval call.
+# Also: _ABSTENTION_HINT_RE did not match the primary RAG abstention -- neither
+# "chưa tìm thấy" nor "could not find" was in it -- so the one reply it existed
+# to recognise was the one it missed (release/1.7.22 @ b5432cf).
+# Tag: staging-20260909-b5432cf
+# Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
+#
 # Rebuild 2026-09-09 (r45: the KB was answering 4 of 62 failing cases).
 # Recorded which component produced each answer on the golden set, all three
 # tenants: of 62 failing cases, 58 were answered by a deterministic rule before
@@ -1363,4 +1378,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3b6fc59ab1e8f9ac014e423328b2188cce9035a06d20243b6d635548174171d3
+    digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
