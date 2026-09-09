@@ -73,7 +73,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: retention
-              image: putin111/stayledger-ai-assistant-api@sha256:12b662a1c89e10bdc09aec22a29c97bbe5dd7303eb8c355d74a47bb7777239f5
+              image: putin111/stayledger-ai-assistant-api@sha256:bd705d2d8022198c54de622381edcadab54164750803f6d07574e27c527499da
               imagePullPolicy: IfNotPresent
               command: ["/bin/sh", "-c"]
               args:

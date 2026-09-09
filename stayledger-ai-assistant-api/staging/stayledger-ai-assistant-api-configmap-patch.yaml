@@ -85,6 +85,14 @@ data:
   # the feedback route has produced none, so this stops the whole inflow.
   # Production is a separate decision and has not been changed.
   RAG_CHAT_CANDIDATES_ENABLED: "0"
+  # Phase 8 (LLM tool selection) was inert for two independent reasons.
+  # ChatService._data_tool_router() never passed ai_service, so _llm_pick_tool
+  # returned on its first line -- fixed in r39. This is the other gate, and it
+  # defaults OFF, so the code fix alone would still have changed nothing.
+  # Deterministic branches still run first and a failed or invented pick falls
+  # through to them, so this only ever ADDS a choice.
+  AI_TOOL_CALLING_ENABLED: "1"
+  AI_TOOL_CALLING_TENANT_ALLOWLIST: "cupid_hotel"
   # One canonical revision per SOURCE rather than per scope. Without it a scope
   # holding several files collapses to one revision on every edit: AI-clean and
   # fact extraction re-run over every file in the scope instead of the one that
