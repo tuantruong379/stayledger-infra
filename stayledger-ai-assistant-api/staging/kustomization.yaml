@@ -44,6 +44,22 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-09 (r45: the KB was answering 4 of 62 failing cases).
+# Recorded which component produced each answer on the golden set, all three
+# tenants: of 62 failing cases, 58 were answered by a deterministic rule before
+# RAG ran at all, 3 by RAG generation, 1 by the snippet fallback after the RAG
+# answer call failed. Not retrieval failures -- recall@5 was 0.83-0.92, so the
+# chunk holding the answer had been fetched and discarded, and the guest got
+# "ask the branch front desk" for a question the KB answers. Where RAG did
+# answer, correctness ran 0.90 against 0.56 for canned replies on the same
+# tenant. One template claimed 21 of the 62 on its own, the rest spread over
+# fourteen more, which is why this is a tenant switch and not a topic list.
+# routing.rag_first_on_evidence (default false) stands the canned reply down
+# when scoped retrieval returned evidence; with no evidence it still wins, so
+# AI-MX-003 holds literally (release/1.7.22 @ 90cc77d).
+# Tag: staging-20260909-90cc77d
+# Digest: sha256:3b6fc59ab1e8f9ac014e423328b2188cce9035a06d20243b6d635548174171d3
+#
 # Rebuild 2026-09-09 (r44: remediation patches were deleting facts).
 # First real run of the KB remediation loop, all three tenants. Six of seventeen
 # patches anchored old_text on a whole section and returned only the part the
@@ -1347,4 +1363,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e89e0401c3d86c9a5fd7744b4eab5a18129f22514529d2a3a1896976cd47e994
+    digest: sha256:3b6fc59ab1e8f9ac014e423328b2188cce9035a06d20243b6d635548174171d3
