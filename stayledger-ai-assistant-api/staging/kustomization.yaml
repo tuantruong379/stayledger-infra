@@ -44,6 +44,23 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-09 (r47+r48: the fourth seam, and the deferral actually surviving).
+# r46 moved 52 of 114 answers onto RAG (from 18) and vertex correctness 0.6207 ->
+# 0.7069, but three azure cases went from a correct canned answer to an
+# abstention: the reply was deferred and never came back. Measured with task
+# identity -- the deferral ran on Task-49, the restore on Task-46. A Task copies
+# the context it is created with, so ContextVar.set() in a child is invisible to
+# the parent. The reply was not deferred, it was dropped.
+# The turn scope is now one mutable holder installed before any child task
+# exists. That also fixes the sync reply() path for free: it never opens a turn,
+# so it keeps sending the canned reply itself -- it has no restore hook, and
+# deferring there would have lost the reply the same way.
+# r47 adds the fourth seam, _try_pre_ai_hotel_ops_request_reply's multi-topic
+# FAQ branch; everything below it in that function is a real ops handoff and
+# still goes straight to the front desk (release/1.7.22 @ ba63535).
+# Tag: staging-20260909-ba63535
+# Digest: sha256:fe6434cf9061195cbcf785826537b581f0a3ec4cb0eb416de700764c207e4659
+#
 # Rebuild 2026-09-09 (r46: the canned FAQ reply defers instead of claiming).
 # r45 put the yield in the gateway's _rag_evidence_shortcut and moved 3 of 114
 # cases, because the canned layer never reaches that code -- it fires in the
@@ -1378,4 +1395,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
+    digest: sha256:fe6434cf9061195cbcf785826537b581f0a3ec4cb0eb416de700764c207e4659
