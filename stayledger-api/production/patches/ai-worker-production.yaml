@@ -9,10 +9,10 @@ spec:
   template:
     metadata:
       labels:
-        version: "83140d7"
+        version: "192294f"
       annotations:
-        stayledger.io/git-sha: "83140d7"
-        stayledger.io/branch: "release/83140d7"
+        stayledger.io/git-sha: "192294f"
+        stayledger.io/branch: "release/1.4.9"
     spec:
       containers:
         - name: ai-worker

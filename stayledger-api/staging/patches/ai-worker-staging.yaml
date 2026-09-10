@@ -10,5 +10,5 @@ spec:
   template:
     metadata:
       labels:
-        # Match API/worker image pin (tag 83140d7).
-        version: "83140d7"
+        # Match API/worker image pin (tag 192294f / release/1.4.9).
+        version: "192294f"
