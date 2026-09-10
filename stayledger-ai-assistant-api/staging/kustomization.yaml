@@ -76,6 +76,19 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-10 (r51: azure_openai model resolution has one source).
+# TenantLLMResolver.resolve() preferred a DB-stored llm.profiles.*.model_id
+# over AZURE_OPENAI_DEPLOYMENT for any tenant with routing enabled -- exactly
+# the disagreement that caused r50's mid-day outage (fixing the ConfigMap
+# alone did not fix chat completion; every call still resolved the DB row's
+# stale "gpt-4o-mini"). For provider_id=="azure_openai" (the only provider any
+# live tenant uses) the env var now always wins over the stored row, and
+# resolution fails loudly if the env var is unset. Every other provider
+# (openai/google_gemini/aws_bedrock -- real, tested, just unused by any tenant
+# today) is untouched (release/1.7.22 @ 9735a0b).
+# Tag: staging-20260910-9735a0b
+# Digest: sha256:8bf9100c2b357f5d7613801706259af435b0dfd822b2314f9502786c80f4b89f
+#
 # Rebuild 2026-09-10 (r50: Lane E — seed+temperature, topic discipline, claim tolerance).
 # Three independent, stacking causes of same-question-different-answer
 # instability, measured live (identical question, identical retrieved
@@ -1447,4 +1460,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:84aa50b309727e629c4e7062b845c8f56934c45b9e370fd618480e900941acf3
+    digest: sha256:8bf9100c2b357f5d7613801706259af435b0dfd822b2314f9502786c80f4b89f
