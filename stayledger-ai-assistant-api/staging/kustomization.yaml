@@ -76,6 +76,32 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-10 (r53: model policy engine + the 8 bypass call sites).
+# P0-1 stages 1-2. One module now decides which physical model any logical AI
+# operation calls, by task tier (nano/standard/embed/batch) rather than by
+# tenant, each tier mapping to one deployment from one env var. Tier vars
+# default to AZURE_OPENAI_DEPLOYMENT / AZURE_OPENAI_EMBEDDING_DEPLOYMENT, so
+# this deploy changes no model — it changes who decides, and starts attributing
+# cost for calls that reported none.
+# Two live faults fixed, both probed against this deployment rather than
+# inferred:
+#   * LLM rerank had been failing on every call it reached since r51 moved the
+#     model to gpt-5.4-mini: it sent max_tokens, which that model rejects with a
+#     400 naming max_completion_tokens, swallowed by a bare except into a silent
+#     heuristic fallback. Expect LLM reranking to resume on turns whose top
+#     vector score is under RAG_RERANK_SKIP_VECTOR_SCORE, which can move
+#     retrieval ordering and therefore eval scores.
+#   * The gpt-5-family rule was wrong, not just duplicated. gpt-5.4-mini rejects
+#     max_tokens but accepts temperature=0, temperature=0.2, top_p and seed. The
+#     old rule forced temperature=1 and dropped top_p for a model that takes
+#     both, which is why Lane E's determinism fix appeared to have no effect —
+#     our own code was discarding it, not the provider.
+# Five operations report token usage and cost for the first time (rerank, KB
+# clean, KB candidate classify, RAG revision repair, golden-set autogen), plus
+# every embedding call (release/1.7.22 @ 5ea06be).
+# Tag: staging-20260910-5ea06be
+# Digest: sha256:041ef640d21a43f71462713d9f84e1b95e92de75aa8419dd2293e456ea506e71
+#
 # Rebuild 2026-09-10 (r52: RLS sweep — 4 unbound reads on FORCE RLS tables).
 # Full 55-table RLS surface swept (46 files) for the same silent-read shape
 # found repeatedly this project: a WHERE clause that looks correctly scoped,
@@ -1480,4 +1506,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:517488edda92ae59e4f85e0f3b76471a03e3ad4ed6a917ba01d5c4502c6e8cac
+    digest: sha256:041ef640d21a43f71462713d9f84e1b95e92de75aa8419dd2293e456ea506e71
