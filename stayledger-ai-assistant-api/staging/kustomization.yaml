@@ -76,6 +76,29 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-10 (r49: housekeeping — leakage renewal, chunk dedup, alert-evaluator entry).
+# Three items closed from the close-out's deferred list. Leakage dataset
+# (expired 2026-09-16) renewed to 2026-10-10 after grepping all ten
+# STG_OTHER_* canary strings against real kb_chunks/kb_documents (none found)
+# and confirming the last 12 leakage runs all scored leakage_detected=False.
+# kb_canonical_chunk_worker.py now drops an exact (section_type, content)
+# repeat within one scope_id's own source-file revisions -- a branch's main
+# file plus a topic supplement (".dining") commonly repeat the same header
+# boilerplate, and each file is chunked independently; vertex_suites_hanoi's
+# han_lieugiai carried two byte-identical "Property identity" chunks this way,
+# now soft-deleted (the guard prevents recurrence for any tenant). Added
+# app.alerts.evaluator's standalone python -m entrypoint (same shape as
+# app.metrics.aggregator) so it can run as its own single-replica Deployment
+# instead of API-embedded -- the API runs several replicas and
+# evaluate_rule's check-then-write has no cross-replica guard, so several
+# replicas polling independently could each fire the same incident. The
+# matching Deployment manifest is added but left out of
+# base/kustomization.yaml: alert_rules has zero rows today, so running it now
+# has no effect, and authoring real thresholds is an operational decision
+# (release/1.7.22 @ c54e7a7).
+# Tag: staging-20260910-c54e7a7
+# Digest: sha256:71c5bfd6d8fba45392dc30845b96f12e127322a838b02fac12d9c8feafa3a59f
+#
 # Rebuild 2026-09-09 (r45: the KB was answering 4 of 62 failing cases).
 # Recorded which component produced each answer on the golden set, all three
 # tenants: of 62 failing cases, 58 were answered by a deterministic rule before
@@ -1395,4 +1418,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:fe6434cf9061195cbcf785826537b581f0a3ec4cb0eb416de700764c207e4659
+    digest: sha256:71c5bfd6d8fba45392dc30845b96f12e127322a838b02fac12d9c8feafa3a59f

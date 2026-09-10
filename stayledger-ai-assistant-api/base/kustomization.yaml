@@ -53,6 +53,11 @@ resources:
   #   kubectl apply -f stayledger-ai-assistant-api/base/app/stayledger-ai-assistant-kb-embed-backfill-job.yaml
   # - app/stayledger-ai-assistant-kb-embed-backfill-job.yaml
   - app/stayledger-ai-assistant-metrics-aggregator.yaml
+  # Not yet enabled: alert_rules has zero rows, so this would run a loop that
+  # always finds nothing. Uncomment once at least one real alert_rule exists
+  # (dimension/threshold/notification channel is an operational decision) --
+  # see the file header for why this must stay single-replica.
+  # - app/stayledger-ai-assistant-alert-evaluator.yaml
   # Singleton PMS workers (replicas=0 until controlled re-enable). Keep API PMS_WORKERS_IN_API=0.
   - app/stayledger-ai-assistant-pms-catalog-sync.yaml
   - app/stayledger-ai-assistant-pms-outbox.yaml

@@ -109,8 +109,8 @@ spec:
       terminationGracePeriodSeconds: 45
       containers:
         - name: landing
-          # Pin landing release/1.1.9 @ bfd2146 — PMS feature map + whats-included user guide.
-          image: putin111/stayledger-landing@sha256:dcfd349aa0b9cd14d4710e08327b1861ac02e98a65fd8e1a6353a44d958a9619
+          # Pin landing release/1.2.1 @ 293a59a — product PR video embed + browserslist CVE pin.
+          image: putin111/stayledger-landing@sha256:594295875505ce7f314d081886eff8584464998348710d40a6b08b4eb322674a
           imagePullPolicy: Always
           ports:
             - containerPort: 8080

@@ -1,0 +1,131 @@
+# Alert evaluator Deployment + ConfigMap.
+# Deploys app.alerts.evaluator (run_evaluator) as a separate single-replica process.
+#
+# Why a dedicated Deployment instead of the API-embedded path
+# (API_ALERT_EVALUATOR_ENABLED, wired in app/main.py):  the API runs several
+# replicas, and each replica's copy of run_evaluator polls independently.
+# evaluate_rule()'s silence-window check then incident write is a
+# check-then-act with no cross-replica guard, so two replicas can both pass
+# the check in the same poll cycle and both fire + dispatch a notification for
+# the same breach. A single-replica Deployment sidesteps that by construction.
+# Uses the same image as the API pod (see app/metrics/aggregator's Deployment
+# for the same pattern).
+#
+# NOT applied by default: `alert_rules` has zero rows today, so this would run
+# a loop that always finds nothing to evaluate. Apply once at least one real
+# alert_rule exists (dimension, threshold, notification channel are an
+# operational decision, not something to invent here) -- until then this
+# manifest just keeps the turn-on to one `kubectl apply -k`.
+#
+# Prerequisites:
+#   1. Alembic migrations for alert_rules / alert_incidents applied.
+#   2. Secret stayledger-ai-assistant-api-secrets includes HOTEL_OPS_DSN or DATABASE_URL.
+#   3. At least one row in alert_rules with enabled = TRUE.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stayledger-ai-assistant-alert-evaluator-config
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-alert-evaluator
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+data:
+  # ── Feature flag ────────────────────────────────────────────────────────────
+  FEATURE_ALERTING_ENABLED: "1"
+
+  # ── Observability ────────────────────────────────────────────────────────────
+  PYTHONUNBUFFERED: "1"
+  PYTHONUTF8: "1"
+  PYTHONIOENCODING: "utf-8"
+  LOG_JSON: "1"
+  LOG_FORMAT: "json"
+  OTEL_SERVICE_NAME: "stayledger-ai-assistant-alert-evaluator"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector.observability.svc.cluster.local:4318"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  OTEL_PROPAGATORS: "tracecontext,baggage"
+  # deployment.environment is set via overlay patches when needed (staging|production).
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-alert-evaluator
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-alert-evaluator
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  # Single replica by design -- see the file header. Do not scale this one.
+  replicas: 1
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-alert-evaluator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-alert-evaluator
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alert-evaluator
+          # Image tag managed by kustomize's images: transformer (same image as the API pod).
+          image: putin111/stayledger-ai-assistant-api:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/venv/bin/python", "-m", "app.alerts.evaluator"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-alert-evaluator-config
+            - secretRef:
+                name: stayledger-ai-assistant-api-secrets   # provides HOTEL_OPS_DSN
+          resources:
+            requests:
+              cpu: "25m"
+              memory: "96Mi"
+            limits:
+              cpu: "150m"
+              memory: "192Mi"
+          startupProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            failureThreshold: 30
+            periodSeconds: 2
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "test -d /proc/1"]
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 2
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 32Mi

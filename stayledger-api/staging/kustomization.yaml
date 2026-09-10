@@ -27,10 +27,10 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Tag: 192294f (release/1.4.9)
+# Tag: 83140d7
 images:
   - name: putin111/stayledger-api
-    digest: sha256:f8145be443663ceb07073dac3f285c02b298231f4888ab9a0e3f49bfd0b73a7d
+    digest: sha256:f5f41e0f35a79f4cb86ebd8941bbb3fa34409ff7948e405b94da97a1821aac5f
 
 patches:
   - path: patches/deployment-staging.yaml
