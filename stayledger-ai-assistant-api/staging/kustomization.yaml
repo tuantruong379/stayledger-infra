@@ -76,6 +76,35 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-10 (r50: Lane E — seed+temperature, topic discipline, claim tolerance).
+# Three independent, stacking causes of same-question-different-answer
+# instability, measured live (identical question, identical retrieved
+# evidence, three different answers across three calls). None touch retrieval
+# scoring/rrf_k/rerank weights.
+# E1: the RAG-answer call was the one LLM call in the answer path still
+# sampling at temperature=0.2 with no seed. Threaded an optional seed through
+# the full completion chain (litellm + legacy Azure SDK, sync+async); only the
+# RAG-answer call site now sets seed + temperature=0. Confirmed live before
+# building: AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini, not gpt-5-family, so
+# temperature is not force-overridden to 1 -- the fix has real effect.
+# E2: added a TOPIC DISCIPLINE section to the tenant-agnostic global RAG
+# policy -- retrieved context sometimes carries a chunk that shares wording
+# with the question but answers something else (measured: "front desk hours"
+# and "underage overnight rental" chunks both mention "overnight", recall@5
+# unaffected). Instructs the model to check each Context section against the
+# actual question, not shared wording.
+# E3: evidence_check.py's claim extraction never recognized "/" as a
+# time/number separator, so a fact written that way was silently
+# unverifiable rather than verified-or-flagged. Widened the character
+# classes; comparison logic unchanged, a genuinely unsupported "/"-form claim
+# is still blocked.
+# Also fixed: AIService is a frozen+slots dataclass, so three existing test
+# files' object.__new__() bare-instance helper never assigned the two new
+# fields' defaults, raising AttributeError instead of using them
+# (release/1.7.22 @ 7a09b4e).
+# Tag: staging-20260910-7a09b4e
+# Digest: sha256:84aa50b309727e629c4e7062b845c8f56934c45b9e370fd618480e900941acf3
+#
 # Rebuild 2026-09-10 (r49: housekeeping — leakage renewal, chunk dedup, alert-evaluator entry).
 # Three items closed from the close-out's deferred list. Leakage dataset
 # (expired 2026-09-16) renewed to 2026-10-10 after grepping all ten
@@ -1418,4 +1447,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:71c5bfd6d8fba45392dc30845b96f12e127322a838b02fac12d9c8feafa3a59f
+    digest: sha256:84aa50b309727e629c4e7062b845c8f56934c45b9e370fd618480e900941acf3
