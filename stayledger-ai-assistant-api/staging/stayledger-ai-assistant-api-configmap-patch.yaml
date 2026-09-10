@@ -17,14 +17,28 @@ data:
   APP_VERSION: "1.7.15"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
-  AZURE_OPENAI_ENDPOINT: "https://tekcent-openai.cognitiveservices.azure.com/"
+  # 2026-09-10: staging's own Azure OpenAI resource (tekcent-openai) started
+  # returning 401 on every chat + embedding call, confirmed directly against
+  # the Azure SDK (not a StayLedger code bug) -- the whole staging bot was down
+  # for every tenant. Switched to the same resource + API key production uses
+  # (stayledger-resource.services.ai.azure.com), copied live from production's
+  # Secret. Its deployment name is gpt-5.4-mini, not gpt-4o-mini -- also
+  # updated tenant_runtime_config.llm.profiles.azure_primary.model_id in the DB
+  # for all three staging tenants (that column, not this env var, is what the
+  # provider-routed completion path actually resolves against; leaving it
+  # stale caused DeploymentNotFound even after this ConfigMap was corrected).
+  # gpt-5.4-mini is gpt-5-family: app/services/ai/gateway/service.py's
+  # _is_gpt5_family check forces temperature=1 for it regardless of what a
+  # caller requests (Azure rejects any other value for this family) -- Lane E's
+  # seed still applies, its temperature=0 does not, for this model.
+  AZURE_OPENAI_ENDPOINT: "https://stayledger-resource.services.ai.azure.com"
   AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
-  AZURE_OPENAI_DEPLOYMENT: "gpt-4o-mini"
+  AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
   # Step-2 AI hotel-template Markdown normalize (before canonical extract).
   # Fail-closed when enabled; set false only as ops break-glass.
   RAG_AI_CLEAN_ENABLED: "true"
-  RAG_AI_CLEAN_DEPLOYMENT: "gpt-4o-mini"
+  RAG_AI_CLEAN_DEPLOYMENT: "gpt-5.4-mini"
   RAG_AI_CLEAN_PROMPT_VERSION: "hotel-kb-normalize-v2"
   STAYLEDGER_PMS_INTERNAL_BASE_URL: "https://stg-api.stayledger.io"
   RAG_QUERY_EMBEDDING_TIMEOUT_S: "5"
