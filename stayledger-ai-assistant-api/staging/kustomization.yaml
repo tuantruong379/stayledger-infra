@@ -76,6 +76,38 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-14 (r55: tier probe asks for 16 completion tokens, not 1).
+# r54's first strict-mode boot reported the chat tier unverified:BadRequestError
+# -- gpt-5.4-mini rejects max_completion_tokens=1 ("could not finish the
+# message"), needs room for a minimal reply. The probe classified it correctly
+# (a 400 is not a 404, boot continued) but never reached "ok", so it validated
+# nothing. r54 also measured litellm's import at 14.7s in-pod, much worse than
+# the 3.5-7.5s seen locally (release/1.7.22 @ 2f97999).
+# Tag: staging-20260914-2f97999
+# Digest: sha256:c76acad9a6d5ae94dc09aaa6f4b00b3e688858eb9a7cf47bed1687ecd2ec8685
+#
+# Rebuild 2026-09-14 (r54: P0-1 stages 3+5 — resolver on the tier table, boot probe, litellm warmup).
+# No file in app/ decides a physical model outside model_policy.py any more:
+# the conformance allowlist is down to 6 label-only reads. Three routing
+# defects fixed with tests: the legacy fallback re-resolved under a hardcoded
+# "chat" (a failing booking_extract silently switched tier); a non-Azure tenant
+# could be handed an Azure deployment name; and both copies of the gpt-5 rule
+# forced temperature=1 and dropped top_p for a model that accepts both -- so
+# from this deploy the RAG answer path actually sends the temperature Lane E
+# asked for. Expect that to move eval scores; it is the one answer-affecting
+# change in this bundle, so any movement is attributable to it.
+# Boot now (a) imports litellm before the pod reports ready -- 3.5-7.5s that
+# the first guest turn of every fresh pod used to pay, blowing every
+# short-deadline operation's budget on every deploy and scale-up, silently --
+# and (b) makes one minimal call per unique tier deployment and refuses to
+# become ready on a definitive 404 (LLM_TIER_PROBE_MODE=strict). The
+# /openai/deployments listing is 404 on this resource type, hence a real call.
+# ConfigMap: corrected the stale "gpt-5 rejects temperature" note; dropped
+# RAG_AI_CLEAN_DEPLOYMENT (deprecated per-op var, same value as the batch tier
+# fallback) (release/1.7.22 @ fc23efb).
+# Tag: staging-20260914-fc23efb
+# Digest: sha256:dfa546ee737b8274caae9bf2ceeaf0ee2bfc6a2ec9a85e72a5af13fa57770429
+#
 # Rebuild 2026-09-10 (r53: model policy engine + the 8 bypass call sites).
 # P0-1 stages 1-2. One module now decides which physical model any logical AI
 # operation calls, by task tier (nano/standard/embed/batch) rather than by
@@ -1506,4 +1538,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:041ef640d21a43f71462713d9f84e1b95e92de75aa8419dd2293e456ea506e71
+    digest: sha256:c76acad9a6d5ae94dc09aaa6f4b00b3e688858eb9a7cf47bed1687ecd2ec8685
