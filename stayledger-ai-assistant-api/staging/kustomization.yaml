@@ -76,6 +76,19 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-14 (r56: deterministic retrieval tie-break + operation label on cost metrics).
+# Two identical r55 eval runs moved 7/27 cupid, 6/58 vertex and 3/29 azure
+# cases with answer AND judge at temperature=0 -- retrieval was the only
+# nondeterministic stage left: both scoped_hybrid candidate queries sorted on a
+# single key with no tie-break, so tied chunks reached LIMIT in unpromised
+# order. c.id is now the secondary key; no score/weight change. Verified by two
+# more runs -- the number that matters is cases-changed-between-runs.
+# llm_cost_usd_total / llm_tokens_used_total gain an `operation` label so
+# spend is attributable per operation now that tiers share one model string
+# (release/1.7.22 @ d161160).
+# Tag: staging-20260914-d161160
+# Digest: sha256:722564cda701c01e494a010fb1d485721835f9c4e55af20fa3bebc143e45e5c2
+#
 # Rebuild 2026-09-14 (r55: tier probe asks for 16 completion tokens, not 1).
 # r54's first strict-mode boot reported the chat tier unverified:BadRequestError
 # -- gpt-5.4-mini rejects max_completion_tokens=1 ("could not finish the
@@ -1538,4 +1551,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:c76acad9a6d5ae94dc09aaa6f4b00b3e688858eb9a7cf47bed1687ecd2ec8685
+    digest: sha256:722564cda701c01e494a010fb1d485721835f9c4e55af20fa3bebc143e45e5c2
