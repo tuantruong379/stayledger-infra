@@ -36,8 +36,18 @@ data:
   #
   # Model selection is tier-based from r53 (app/services/llm/model_policy.py):
   # LLM_TIER_{NANO,STANDARD,EMBED,BATCH}_DEPLOYMENT, each defaulting to the two
-  # vars below. Unset here on purpose so all tiers share one deployment until a
-  # split is measured on its own.
+  # vars below.
+  #
+  # 2026-09-14: nano tier split onto gpt-5.4-nano -- the first real tier
+  # separation, and the payoff the whole engine exists for. ~10 operations
+  # (safety classify, intent fallback, relevance verify, reformulate, rerank,
+  # translate, bilingual fill, booking/pricing extract, rag_answer_simple) now
+  # run the cheaper model; rag_answer stays on standard (gpt-5.4-mini). Measured
+  # with >=2 eval runs against the 4-run r55/r56 baseline distribution, because
+  # gpt-5.4-mini is not deterministic at temperature=0 (proven: 6 identical
+  # calls -> 2 outputs) and single-run deltas under ~2 cases mean nothing.
+  # Deployment existence verified live before setting; the boot probe re-checks.
+  LLM_TIER_NANO_DEPLOYMENT: "gpt-5.4-nano"
   AZURE_OPENAI_ENDPOINT: "https://stayledger-resource.services.ai.azure.com"
   AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
   AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
