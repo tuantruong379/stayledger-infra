@@ -76,6 +76,18 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-15 (r57: CostGovernor resolves Redis lazily; daily budget key expires).
+# Closes P0-1. get_cost_governor() memoized redis=None for the life of the
+# process (every caller passed nothing), so the daily cap was N x budget across
+# N replicas and fail_closed could never fire. Resolves the shared client per
+# call now. Also: cost:daily:* had no TTL -- fleet-wide that would have been a
+# lifetime cap; SET NX EX to UTC midnight fixes it. No runtime change here:
+# AI_BUDGET_ENFORCEMENT_ENABLED is unset. Same rollout also adds
+# azure_bay_danang to the relevance-verifier and intent-fallback allowlists
+# (experiment; see the ConfigMap comment) (release/1.7.22 @ 4925110).
+# Tag: staging-20260915-4925110
+# Digest: sha256:5bd4f1d6315ca39f8bbe2dc0052b6b8bc17ad2af707e924371fea5eecaddba74
+#
 # Rebuild 2026-09-14 (r56: deterministic retrieval tie-break + operation label on cost metrics).
 # Two identical r55 eval runs moved 7/27 cupid, 6/58 vertex and 3/29 azure
 # cases with answer AND judge at temperature=0 -- retrieval was the only
@@ -1551,4 +1563,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:722564cda701c01e494a010fb1d485721835f9c4e55af20fa3bebc143e45e5c2
+    digest: sha256:5bd4f1d6315ca39f8bbe2dc0052b6b8bc17ad2af707e924371fea5eecaddba74

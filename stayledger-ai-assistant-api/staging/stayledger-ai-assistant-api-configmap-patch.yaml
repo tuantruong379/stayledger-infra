@@ -169,15 +169,20 @@ data:
   # followed up. No fix in this project may be fitted to one tenant only
   # (system must generalize across hotel types) -- default on for all tenants.
   AI_MULTITURN_MEMORY_ENABLED: "1"
-  # LLM-routing regex-reduction effort (2026-08-31) -- still cupid_hotel-only,
-  # not named in the 2026-09-10 default-on decision above; revisit separately.
+  # 2026-09-15 experiment: azure_bay_danang added to both allowlists below.
+  # After the nano tier split (2026-09-14) cupid improved by ~3 cases in both
+  # eval runs and no other tenant moved. Cupid was the only tenant with these
+  # two flags on, so they are the prime suspect for the lever (hypothesis: the
+  # relevance verifier on gpt-5.4-mini over-suppressed correct answers; on nano
+  # it lets more through). Azure is the lowest-scoring tenant and the one with
+  # the most headroom. Two eval runs against azure's 4-run baseline
+  # (0.629, [0.586, 0.672]) decide: if azure moves like cupid did, both flags
+  # become default-on like the other three were on 2026-09-10.
   INTENT_LLM_FALLBACK_ENABLED: "1"
-  INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: "cupid_hotel"
+  INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: "cupid_hotel,azure_bay_danang"
   AGENTIC_RAG_ENABLED: "1"
-  # Phase 1 (2026-08-31) -- RAG relevance verifier, still cupid_hotel-only,
-  # not named in the 2026-09-10 default-on decision above; revisit separately.
   RAG_RELEVANCE_VERIFIER_ENABLED: "1"
-  RAG_RELEVANCE_VERIFIER_TENANT_ALLOWLIST: "cupid_hotel"
+  RAG_RELEVANCE_VERIFIER_TENANT_ALLOWLIST: "cupid_hotel,azure_bay_danang"
   # Phase 2 (2026-08-31) -- LLM safety classifier; fail-open on classifier
   # failure (explicit user decision) still applies.
   INJECTION_LLM_CLASSIFIER_ENABLED: "1"
