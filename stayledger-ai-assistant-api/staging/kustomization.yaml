@@ -76,6 +76,23 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-15 (r58: LLM rerank actually reorders for the first time).
+# Same rollout reverts the nano tier split (see ConfigMap comment): gpt-5.4-nano
+# on this resource is p50 2.35s for a 32-token call vs mini 0.53s, slower than
+# every short-deadline operation's budget, so the split had silently disabled
+# them all. Live probe after this rollout: three rerank questions, three
+# semantically correct orderings, all under 1.1s.
+# The parser accepted only an exact echo of {idx}:{label} ids; gpt-5.x returns
+# bare indices ("0","1","2"), so it matched nothing, returned None on every call
+# and heuristic order was served -- true since the initial commit, masked until
+# r53 by the max_tokens 400. A bare leading index is now an alias. This changes
+# retrieval ordering on every turn whose top vector score is under
+# RAG_RERANK_SKIP_VECTOR_SCORE (0.82); measured with two eval runs against the
+# nano-split baseline (azure 0.612, cupid 0.731, vertex 0.793)
+# (release/1.7.22 @ 5067f38).
+# Tag: staging-20260915-5067f38
+# Digest: sha256:681cf9ec759b77135b7d8a8debdb7fc507395ded8e57be9d761af30f02b85c45
+#
 # Rebuild 2026-09-15 (r57: CostGovernor resolves Redis lazily; daily budget key expires).
 # Closes P0-1. get_cost_governor() memoized redis=None for the life of the
 # process (every caller passed nothing), so the daily cap was N x budget across
@@ -1563,4 +1580,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:5bd4f1d6315ca39f8bbe2dc0052b6b8bc17ad2af707e924371fea5eecaddba74
+    digest: sha256:681cf9ec759b77135b7d8a8debdb7fc507395ded8e57be9d761af30f02b85c45
