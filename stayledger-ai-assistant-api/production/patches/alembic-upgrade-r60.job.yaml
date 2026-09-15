@@ -1,0 +1,104 @@
+# Production one-off: alembic upgrade 0064 -> 0094 for the r60 promotion (2026-09-15).
+# Rendered from base/app/alembic-upgrade-job.yaml with two deliberate changes:
+#   * image pinned to the r60 digest the API will roll to next;
+#   * DSN built from postgres-secret (owner role) -- the app role owns no tables and
+#     has no CREATE on public, so the base Job's envFrom api-secrets cannot run DDL.
+#     Default ACLs grant every new table/sequence to the app role automatically, but
+#     only for objects created by the owner role -- so the Job refuses to run as
+#     anyone else.
+# Connects to the postgres Service directly, not pgbouncer.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-r60
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:10e99d5f0435c03e784127dc8302b1735189b9ce3dabe494a90021f81f773921
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              cd /app
+              export STAYLEDGER_AI_DSN="$(python - <<'PY'
+              import os, urllib.parse as u
+              print(f"postgresql://{u.quote(os.environ['PGOWNER_USER'], safe='')}:{u.quote(os.environ['PGOWNER_PASSWORD'], safe='')}@postgres:5432/{os.environ['PGOWNER_DB']}")
+              PY
+              )"
+              PYTHONPATH=/app python - <<'PY'
+              import os, psycopg
+              c = psycopg.connect(os.environ["STAYLEDGER_AI_DSN"]); cur = c.cursor()
+              cur.execute("SELECT current_user, (SELECT tableowner FROM pg_tables WHERE tablename='alembic_version'), (SELECT version_num FROM alembic_version)")
+              u, o, v = cur.fetchone(); print(f"[alembic] role={u} schema_owner={o} current={v}")
+              if u != o:
+                  raise SystemExit(f"refusing: role {u} is not the schema owner {o}; new objects would miss the default ACLs")
+              PY
+              PYTHONPATH=/app alembic upgrade head
+              echo "[alembic] after: $(PYTHONPATH=/app alembic current 2>/dev/null | tail -1)"
+          env:
+            - name: PGOWNER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: PGOWNER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGOWNER_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
