@@ -1,0 +1,30 @@
+# Production: let the alembic owner Job reach Postgres directly.
+#
+# The live allow-alembic-egress policy only permits alembic-upgrade -> pgbouncer,
+# and pgbouncer's userlist holds the app role alone -- but the app role owns no
+# tables and has no CREATE on public, so DDL migrations must run as the schema
+# owner, straight against the postgres pod (which base/security intends:
+# "Alembic owner Job prefers direct Postgres (DDL-safe)"). The base policy names
+# the pod `stayledger-ai-assistant-postgres`; production's postgres pod is
+# labelled `app.kubernetes.io/name: postgres`, so this is the same rule under
+# production's labels. Additive; selects only pods that exist while a migration
+# Job runs. Added 2026-09-15 for the r60 promotion (alembic 0064 -> 0094).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alembic-egress-direct-postgres
+  namespace: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: alembic-upgrade
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
