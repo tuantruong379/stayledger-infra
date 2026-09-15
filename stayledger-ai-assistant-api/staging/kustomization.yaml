@@ -76,6 +76,22 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-15 (r59: three more canned-reply seams stand down for RAG).
+# Azure's generation 3 (three FAQ entries) scored 0.8103 / 0.7759 on two runs
+# against a four-run baseline band of [0.586, 0.672]; four cases still 0.0 in
+# both runs with the answering chunk retrieved at #1. Stack-print at the reply
+# producer found three un-deferred seams: the pre-AI concierge template
+# (airport), the canonical-fact landmark blurb (dispatched on a bare "bao lau"
+# that is a duration word, not a distance one), and the realtime tool router
+# claiming "hoa don VAT khi dat phong" as create_draft_booking -- the fourth
+# router on that sentence after c24d36b fixed three. All tenant-neutral; the
+# deferrals act only for routing.rag_first_on_evidence tenants and keep the
+# canned reply as the abstention fallback. One golden GT corrected (early
+# check-in: the KB says "depends on room readiness", not "no info").
+# (release/1.7.22 @ 9ed8e93).
+# Tag: staging-20260915-9ed8e93
+# Digest: sha256:daef42fa546b60a5d6abd9a8d0fd8f856934cb0dc820fd474cea216fbb1e2b95
+#
 # Rebuild 2026-09-15 (r58: LLM rerank actually reorders for the first time).
 # Same rollout reverts the nano tier split (see ConfigMap comment): gpt-5.4-nano
 # on this resource is p50 2.35s for a 32-token call vs mini 0.53s, slower than
@@ -1580,4 +1596,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:681cf9ec759b77135b7d8a8debdb7fc507395ded8e57be9d761af30f02b85c45
+    digest: sha256:daef42fa546b60a5d6abd9a8d0fd8f856934cb0dc820fd474cea216fbb1e2b95
