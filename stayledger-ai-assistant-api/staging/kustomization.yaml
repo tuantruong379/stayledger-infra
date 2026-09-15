@@ -76,6 +76,26 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-15 (r60: cancellation-window is policy; a RAG abstention is never cached).
+# r59 removed the landmark blurb from "huy truoc bao lau thi khong mat tien" and
+# the next claimant took it: is_cancel_message read the leading "huy" as a
+# command, popped a pending booking that did not exist and told the guest there
+# was nothing to cancel (eval run 681: that case 0.5, the other three in the
+# cluster 1.0). "truoc bao lau" / "truoc 24h" / "co|khong mat tien|phi" are policy
+# keywords now; a real cancel that mentions a fee still cancels (asserted).
+# Also: the gateway cached the output guard's abstention under the 6h answer
+# TTL, so one timed-out turn froze "I could not find that" for every guest asking
+# the same question (a vertex golden case, 4/4 correct before, 0/6 after one
+# timeout). Abstentions are no longer cached. The eval bootstrap now warms
+# litellm (7s cold import inside a 6s answer deadline = one lost case per run).
+# Same rollout serves azure generation 4 (VAT FAQ added; the fact had lived in a
+# 67-char English field-label sliver that "khi dat phong" out-ranked).
+# r59 measured (2 runs each vs 4-run baseline band): azure 0.8276/0.8103
+# [0.586,0.672]; cupid 0.6667/0.7037 [0.593,0.630]; vertex 0.7328/0.7931 [0.759,0.793].
+# (release/1.7.22 @ e72e021).
+# Tag: staging-20260915-e72e021
+# Digest: sha256:10e99d5f0435c03e784127dc8302b1735189b9ce3dabe494a90021f81f773921
+#
 # Rebuild 2026-09-15 (r59: three more canned-reply seams stand down for RAG).
 # Azure's generation 3 (three FAQ entries) scored 0.8103 / 0.7759 on two runs
 # against a four-run baseline band of [0.586, 0.672]; four cases still 0.0 in
@@ -1596,4 +1616,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:daef42fa546b60a5d6abd9a8d0fd8f856934cb0dc820fd474cea216fbb1e2b95
+    digest: sha256:10e99d5f0435c03e784127dc8302b1735189b9ce3dabe494a90021f81f773921
