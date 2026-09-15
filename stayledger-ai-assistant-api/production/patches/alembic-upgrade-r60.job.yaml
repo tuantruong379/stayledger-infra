@@ -1,4 +1,21 @@
-# Production one-off: alembic upgrade 0064 -> 0094 for the r60 promotion (2026-09-15).
+# Production one-off: repair the skipped 0038-0053 block, then alembic upgrade -> 0094
+# for the r60 promotion (2026-09-15).
+#
+# Why a repair step: production's alembic_version said 0064, but a fingerprint check
+# of every migration 0038..0064 against pg_tables / pg_indexes / pg_policies /
+# information_schema.columns showed 0038, 0040-0044, 0046-0049, 0051 and 0053 were
+# never applied (no conversation plane, no idempotency ledger, no canonical turns,
+# no booking-reconcile columns), while 0045, 0052 and 0054-0064 were. The stamp was
+# moved past a block that never ran. 0091 (RLS on ai_canonical_turns) failed on it;
+# that run rolled back cleanly.
+#
+# Every migration in the block is written idempotently (CREATE ... IF NOT EXISTS,
+# DROP POLICY IF EXISTS + CREATE POLICY, DROP CONSTRAINT IF EXISTS + ADD, guarded
+# data backfills), so replaying it through alembic itself is faithful and safe:
+#   stamp 0037 -> upgrade 0053 -> stamp 0061 -> upgrade 0062 (one missing index)
+#   -> stamp 0064 -> fingerprint check must be all-OK -> upgrade head.
+# Any failure inside the repair phase restores the 0064 stamp, leaving the DB as found.
+#
 # Rendered from base/app/alembic-upgrade-job.yaml with two deliberate changes:
 #   * image pinned to the r60 digest the API will roll to next;
 #   * DSN built from postgres-secret (owner role) -- the app role owns no tables and
@@ -6,7 +23,7 @@
 #     Default ACLs grant every new table/sequence to the app role automatically, but
 #     only for objects created by the owner role -- so the Job refuses to run as
 #     anyone else.
-# Connects to the postgres Service directly, not pgbouncer.
+# Connects to the postgres Service directly (needs allow-alembic-egress-direct-postgres).
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -18,7 +35,7 @@ metadata:
     app.kubernetes.io/component: database
 spec:
   backoffLimit: 0
-  activeDeadlineSeconds: 600
+  activeDeadlineSeconds: 900
   ttlSecondsAfterFinished: 86400
   template:
     metadata:
@@ -56,16 +73,99 @@ spec:
               print(f"postgresql://{u.quote(os.environ['PGOWNER_USER'], safe='')}:{u.quote(os.environ['PGOWNER_PASSWORD'], safe='')}@postgres:5432/{os.environ['PGOWNER_DB']}")
               PY
               )"
-              PYTHONPATH=/app python - <<'PY'
-              import os, psycopg
-              c = psycopg.connect(os.environ["STAYLEDGER_AI_DSN"]); cur = c.cursor()
-              cur.execute("SELECT current_user, (SELECT tableowner FROM pg_tables WHERE tablename='alembic_version'), (SELECT version_num FROM alembic_version)")
-              u, o, v = cur.fetchone(); print(f"[alembic] role={u} schema_owner={o} current={v}")
+              export PYTHONPATH=/app
+              python - <<'PY'
+              import glob, os, re, subprocess, sys
+              import psycopg
+
+              DSN = os.environ["STAYLEDGER_AI_DSN"]
+
+              def alembic(*args):
+                  print(f"[alembic] $ alembic {' '.join(args)}", flush=True)
+                  subprocess.run(["alembic", *args], check=True)
+
+              def current():
+                  with psycopg.connect(DSN) as c:
+                      return c.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+
+              # --- preflight: owner role, expected starting stamp -----------------------
+              with psycopg.connect(DSN) as c:
+                  u, o, v = c.execute(
+                      "SELECT current_user, (SELECT tableowner FROM pg_tables WHERE tablename='alembic_version'),"
+                      " (SELECT version_num FROM alembic_version)"
+                  ).fetchone()
+              print(f"[alembic] role={u} schema_owner={o} current={v}", flush=True)
               if u != o:
-                  raise SystemExit(f"refusing: role {u} is not the schema owner {o}; new objects would miss the default ACLs")
+                  sys.exit(f"refusing: role {u} is not the schema owner {o}; new objects would miss the default ACLs")
+              if v != "0064":
+                  sys.exit(f"refusing: expected alembic_version 0064, found {v}")
+
+              # --- fingerprints of 0038..0064 from the migration files in this image -------
+              def fingerprints():
+                  fps = {}
+                  for f in sorted(glob.glob("/app/migrations/alembic/versions/*.py")):
+                      rev = os.path.basename(f)[:4]
+                      if not ("0038" <= rev <= "0064"):
+                          continue
+                      up = open(f, encoding="utf-8").read().split("def upgrade")[1].split("def downgrade")[0]
+                      fp = {"tables": set(), "indexes": set(), "policies": set(), "columns": set()}
+                      for m in re.finditer(r"CREATE TABLE(?: IF NOT EXISTS)?\s+([a-z_]\w*)", up):
+                          fp["tables"].add(m.group(1).lower())
+                      for m in re.finditer(r"CREATE(?: UNIQUE)? INDEX(?: IF NOT EXISTS)?\s+([a-z_]\w*)\s+ON", up):
+                          fp["indexes"].add(m.group(1).lower())
+                      for m in re.finditer(r"CREATE POLICY\s+(\w+)\s+ON\s+(\w+)", up):
+                          fp["policies"].add((m.group(1).lower(), m.group(2).lower()))
+                      for m in re.finditer(r"ALTER TABLE\s+(\w+)\s+ADD COLUMN(?: IF NOT EXISTS)?\s+(\w+)", up):
+                          fp["columns"].add((m.group(1).lower(), m.group(2).lower()))
+                      fps[rev] = fp
+                  return fps
+
+              def check(label):
+                  with psycopg.connect(DSN) as c:
+                      tables = {r[0] for r in c.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")}
+                      indexes = {r[0] for r in c.execute("SELECT indexname FROM pg_indexes WHERE schemaname='public'")}
+                      policies = {(a, b) for a, b in c.execute("SELECT policyname, tablename FROM pg_policies WHERE schemaname='public'")}
+                      cols = {(a, b) for a, b in c.execute("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='public'")}
+                  # ai_turn_outbox (+ its index) is created by 0053 and dropped again by 0093;
+                  # it is checked at 0064, where it must exist, but never allowed to block.
+                  dropped_later = {"ai_turn_outbox", "idx_ai_turn_outbox_pending"}
+                  missing = []
+                  for rev, fp in fingerprints().items():
+                      missing += [f"{rev}:T:{t}" for t in fp["tables"] if t not in tables and t != "if" and t not in dropped_later]
+                      missing += [f"{rev}:I:{i}" for i in fp["indexes"] if i not in indexes and not i.endswith("_") and i not in dropped_later]
+                      missing += [f"{rev}:P:{p}@{t}" for p, t in fp["policies"] if (p, t) not in policies and "{" not in t]
+                      missing += [f"{rev}:C:{t}.{c}" for t, c in fp["columns"] if (t, c) not in cols]
+                  print(f"[alembic] fingerprint check ({label}): {len(missing)} missing {missing[:12]}", flush=True)
+                  return missing
+
+              before = check("before repair")
+
+              # --- repair: replay the skipped block through alembic --------------------
+              repair_ok = False
+              try:
+                  alembic("stamp", "0037")
+                  alembic("upgrade", "0053")
+                  alembic("stamp", "0061")
+                  alembic("upgrade", "0062")
+                  alembic("stamp", "0064")
+                  repair_ok = True
+              finally:
+                  if not repair_ok:
+                      print("[alembic] repair failed -- restoring the 0064 stamp", flush=True)
+                      subprocess.run(["alembic", "stamp", "0064"], check=False)
+                      print(f"[alembic] current after restore: {current()}", flush=True)
+
+              after = check("after repair")
+              if after:
+                  sys.exit(f"refusing to continue: fingerprints still missing after repair: {after}")
+
+              # --- the real upgrade ------------------------------------------------------
+              alembic("upgrade", "head")
+              v = current()
+              print(f"[alembic] after: {v}", flush=True)
+              if v != "0094":
+                  sys.exit(f"expected 0094, found {v}")
               PY
-              PYTHONPATH=/app alembic upgrade head
-              echo "[alembic] after: $(PYTHONPATH=/app alembic current 2>/dev/null | tail -1)"
           env:
             - name: PGOWNER_USER
               valueFrom:
