@@ -76,6 +76,30 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-16 (r62: Rollout 2 -- booking-funnel seams + Phase C outcomes).
+# Three causes behind five golden cases answered with a check-in-date slot ask:
+#   * "giu{0,24}phong" (hold a room) matched "giUA cac phong" (BETWEEN the rooms)
+#     -- giu is a literal prefix of giua; a word boundary separates them.
+#   * the refund/cancel regex did not know "chinh sach huy ..." / "dat phong roi huy".
+#   * it knew only one of the two Vietnamese spellings of huy, missing the other,
+#     which guests type just as often.
+# Flags settled by Phase C, both measured against the B1 baseline:
+#   * RAG_RELEVANCE_VERIFIER_ENABLED 1 -> 0 (C1): cupid 0.790 -> 0.845 over four
+#     runs; the one case the verifier gated went 0.25 -> 1.00. Criticals in the OFF
+#     arm all sit on canned/slot_fill paths it never gates and OFF produces fewer of.
+#   * RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED stays 0 (C2): every tenant inside its
+#     noise band while the reranker genuinely fired; measured cost p50 0.94s per
+#     turn (30% of a 2.48s turn) plus an LLM call. No benefit, real cost.
+# (release/1.7.22 @ c15a068).
+# Re-cut at 88a5cea: app.routing.router keeps its OWN booking predicate, so the
+# room-attribute carve-out had to be taught there too (the seam still slot-filled
+# live after the first commit; confirmed by stack-print).
+# Re-cut at feffe39: the fourth seam lived in a third predicate --
+# message_looks_like_booking_contact_followup_line matched the "24 gio" inside
+# "Quay le tan co mo cua 24 gio khong?". A slot reply answers, it never asks.
+# Tag: staging-20260916-feffe39
+# Digest: sha256:b0edd84c2af2e142cce1b3512730fd376ecc16c1d2db7570df435919b66f8b0d
+#
 # Rebuild 2026-09-15 (r61: Rollout 1 of the staging closeout -- content, fixtures, plumbing).
 # Ghost 'building' generations (0 chunks, older than KB_CANDIDATE_GHOST_TTL_S=1800)
 # are retired by the chunk worker before the candidate-slot check (cupid gen 2,
@@ -1650,4 +1674,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:4814d1273b49334a679ff79b27503851b50b09b4d4ad233acc9594374b7f498d
+    digest: sha256:b0edd84c2af2e142cce1b3512730fd376ecc16c1d2db7570df435919b66f8b0d

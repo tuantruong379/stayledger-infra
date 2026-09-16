@@ -161,6 +161,11 @@ data:
   RAG_HYBRID_SCORE_FLOOR: "0.25"
   FEATURE_RERANKER_ENABLED: "1"
   # Extra LLM rerank on scoped-hybrid remains off until quality evidence says otherwise.
+  # Stays OFF after experiment C2 (2026-09-16, 2 runs x 3 tenants vs baseline):
+  # every tenant landed inside its noise band (azure +0.009, cupid -0.025,
+  # vertex -0.022) while the reranker genuinely fired (3/3 successful orderings
+  # on a live probe). Measured cost: p50 0.94s, max 1.28s per turn -- 30% of a
+  # 2.48s turn -- plus one LLM call. No measured benefit does not justify that.
   RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED: "0"
   AI_CANONICAL_TURN_ENABLED: "1"
   AI_DURABLE_MEMORY_ENABLED: "1"
@@ -186,7 +191,13 @@ data:
   INTENT_LLM_FALLBACK_ENABLED: "1"
   INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: "cupid_hotel"
   AGENTIC_RAG_ENABLED: "1"
-  RAG_RELEVANCE_VERIFIER_ENABLED: "1"
+  # OFF since 2026-09-16 (experiment C1, four runs on cupid vs the B1 baseline):
+  # correctness 0.790 -> 0.845, and the one case the verifier actually gated
+  # ("Khách sạn có bao nhiêu chi nhánh?") went 0.25 -> 1.00 -- it was
+  # suppressing a correct answer. Every critical failure in the OFF arm sits on
+  # canned_restored/slot_fill, paths the verifier never gates and which OFF
+  # produces FEWER of, so none of them is attributable to this switch.
+  RAG_RELEVANCE_VERIFIER_ENABLED: "0"
   RAG_RELEVANCE_VERIFIER_TENANT_ALLOWLIST: "cupid_hotel"
   # Phase 2 (2026-08-31) -- LLM safety classifier; fail-open on classifier
   # failure (explicit user decision) still applies.
