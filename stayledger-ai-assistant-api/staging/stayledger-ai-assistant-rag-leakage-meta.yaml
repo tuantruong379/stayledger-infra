@@ -2,6 +2,14 @@
 # this overlay only refreshes expires_at so publish-gate eval is not blocked
 # by leakage_dataset_stale. Worker root filesystem is read-only, so the meta
 # file is mounted from this ConfigMap.
+#
+# THIS FILE SHADOWS THE IMAGE COPY (tests/evals/rag_leakage/staging.v1.jsonl.meta.json).
+# Renewing one and not the other is what happened on 2026-09-10: the repo file
+# was renewed to 2026-10-10, this was not, and at 00:00 on 2026-09-16 every
+# candidate evaluation started failing with leakage_dataset_stale -- silently,
+# because a blocked generation just sits there. Renew BOTH, and keep
+# content_sha256 equal to the sha256 of the image's staging.v1.jsonl.
+# The eval runner now warns while an expiry is within RAG_LEAKAGE_EXPIRY_WARN_DAYS.
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,8 +25,8 @@ data:
         "tenant_ids": ["cupid_hotel", "vertex_suites_hanoi", "azure_bay_danang", "stg_ai_pms_sync_property_1", "stg_ai_rag_validation_property_2"],
         "property_ids": ["hcm_q1", "hanoi_old_quarter", "danang_beach", "property_1", "property_2"]
       },
-      "expires_at": "2026-09-16T00:00:00Z",
+      "expires_at": "2026-10-10T00:00:00Z",
       "content_sha256": "c4032ae8e0778137502863a6f84477ae07c004d20995d03f3565724862cb92b5",
       "reviewed_by": "staging-rag-operator",
-      "reviewed_at": "2026-08-16T00:00:00Z"
+      "reviewed_at": "2026-09-10T00:00:00Z"
     }

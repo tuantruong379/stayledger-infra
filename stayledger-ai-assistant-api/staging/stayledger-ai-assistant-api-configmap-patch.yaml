@@ -60,7 +60,11 @@ data:
   # RAG_AI_CLEAN_DEPLOYMENT removed (r54): deprecated per-operation var, honored
   # with a warning for one release. KB clean resolves through the batch tier,
   # which falls back to AZURE_OPENAI_DEPLOYMENT -- the same value this pinned.
-  RAG_AI_CLEAN_PROMPT_VERSION: "hotel-kb-normalize-v2"
+  # v3 (2026-09-15): "Location" is a required heading and preserve_source_sections
+  # re-attaches any source section the model drops. Pinned here rather than left to
+  # the code default on purpose -- the value is part of the processing idempotency
+  # key, so bumping it is what makes every source normalize again.
+  RAG_AI_CLEAN_PROMPT_VERSION: "hotel-kb-normalize-v3"
   # Boot-time check that every tier's deployment actually exists on the
   # resource (one minimal call per unique deployment). strict = refuse to become
   # ready on a missing deployment; this is the 2026-09-10 outage class closed at

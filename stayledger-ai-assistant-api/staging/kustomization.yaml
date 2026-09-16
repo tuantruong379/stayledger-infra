@@ -76,6 +76,40 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-15 (r61: Rollout 1 of the staging closeout -- content, fixtures, plumbing).
+# Ghost 'building' generations (0 chunks, older than KB_CANDIDATE_GHOST_TTL_S=1800)
+# are retired by the chunk worker before the candidate-slot check (cupid gen 2,
+# vertex gen 5 had blocked their tenants since 09-09). Canonical extractor keeps
+# only the hours line as front_desk_hours (every tenant's Contact chunk carried
+# the whole block as the value). Remediation classifier gains fact_misfiled_in_kb.
+# Golden set 118 -> 114 (4 metadata cases out, 3 GTs corrected to the KB, 2
+# azure spans fixed). Guest memory embeds via the scoped runtime (get_retriever
+# raises in deployed pods) and the RAG cache key carries the memory snippet;
+# verifier verdicts are logged/labelled; tool selection is routed through the
+# provider adapter with tenant_id passed; publish gate = outcome metrics (switch
+# still off here); every eval case records answer_path (migration 0095, applied
+# by jobs/alembic-upgrade-owner-0095-answer-path-20260915.yaml).
+# Re-cut at 8460d4f: extractor version bumped to md-heading-map-v2 (part of the
+# idempotency key -- azure and two vertex sources had produced no new revision),
+# labelled hour lines preferred, source anchors never taken as hours.
+# Re-cut again at 02371ce: the AI normalizer had dropped cupid Q1's whole
+# Location section; preserve_source_sections re-attaches any dropped source
+# section verbatim before extraction (prompt version hotel-kb-normalize-v3).
+# Re-cut at 5446b6c: the leakage corpus metadata exists twice (image + the
+# ConfigMap mounted over it); the 09-10 renewal touched only the image copy, so
+# at 00:00 on 09-16 every candidate eval blocked on leakage_dataset_stale.
+# ConfigMap renewed to 2026-10-10 and the runner now warns 14 days ahead.
+# Also: multi-line canonical field values render as their own lines (Location's
+# address_line had been nesting a label inside a label).
+# Flag change: RAG_AI_CLEAN_PROMPT_VERSION v2 -> v3 (idempotency key; forces
+# every source to normalize again under the section guard).
+# Final cut at 84ed19f: builder_version joins extractor_version as a constant in
+# the processing idempotency key -- without the bump the renderer fix would have
+# applied to no already-processed source.
+# (release/1.7.22 @ 84ed19f).
+# Tag: staging-20260916-84ed19f
+# Digest: sha256:4814d1273b49334a679ff79b27503851b50b09b4d4ad233acc9594374b7f498d
+#
 # Rebuild 2026-09-15 (r60: cancellation-window is policy; a RAG abstention is never cached).
 # r59 removed the landmark blurb from "huy truoc bao lau thi khong mat tien" and
 # the next claimant took it: is_cancel_message read the leading "huy" as a
@@ -1616,4 +1650,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:10e99d5f0435c03e784127dc8302b1735189b9ce3dabe494a90021f81f773921
+    digest: sha256:4814d1273b49334a679ff79b27503851b50b09b4d4ad233acc9594374b7f498d

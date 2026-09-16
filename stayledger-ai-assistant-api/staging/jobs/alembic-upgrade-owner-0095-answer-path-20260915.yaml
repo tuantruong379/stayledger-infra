@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-owner-0095-answer-path-20260915
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: rag-candidate-reuse
+spec:
+  backoffLimit: 1
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:8c3a0fbb245deee8bd01f7b6c3d21c21ec0692d28984b81cd15f9ec9fa6b7bb0
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - >-
+              set -euo pipefail;
+              test -n "${HOTEL_OPS_DSN_OWNER:-}";
+              export HOTEL_OPS_DSN="$HOTEL_OPS_DSN_OWNER";
+              export DATABASE_URL="$HOTEL_OPS_DSN_OWNER";
+              PYTHONPATH=/app alembic upgrade head && PYTHONPATH=/app alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          env:
+            - name: HOTEL_OPS_DSN_OWNER
+              valueFrom:
+                secretKeyRef:
+                  name: stayledger-ai-assistant-migration-secrets
+                  key: HOTEL_OPS_DSN_OWNER
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
