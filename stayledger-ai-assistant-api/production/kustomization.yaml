@@ -38,6 +38,16 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-16 (r63): release/1.7.22 @ f425ec2 -- the staging closeout.
+# Rollout 1 (content/fixtures/plumbing), Phase C (verifier off, rerank stays
+# off), Rollout 2 (booking-funnel seams) and Rollout 3 (2,922 lines of dead code
+# out, nine feature-gate copies merged into one). Schema 0094 -> 0095 via
+# patches/alembic-upgrade-r63.job.yaml. Rolled with scoped `kubectl set image`,
+# NOT `apply -k`: the live ConfigMap still differs from this overlay on flags
+# that are operational decisions (see the drift list in the promotion notes).
+# Tag: staging-20260916-f425ec2
+# Digest: sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+#
 # Promotion 2026-09-15 (r60): release/1.7.22 @ e72e021 -- a month of staging work
 # (Agentic RAG r13-r27, Lane D/E, RLS sweep r52, Model Policy Engine r53-r58,
 # canned-reply seams r59-r60). Rolled with scoped `kubectl set image` on the five
@@ -65,4 +75,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:10e99d5f0435c03e784127dc8302b1735189b9ce3dabe494a90021f81f773921
+    digest: sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156

@@ -1,0 +1,172 @@
+# Production one-off: alembic 0094 -> head (0095) for the r63 promotion (2026-09-16).
+#
+# The 0038-0053 repair this file carried on 2026-09-15 has run and is not
+# repeatable: production is at 0094 with every fingerprint present, so the
+# preflight now refuses anything other than 0094 and the repair phase is gone.
+#
+# Rendered from base/app/alembic-upgrade-job.yaml with two deliberate changes:
+#   * image pinned to the r63 digest the API will roll to next;
+#   * DSN built from postgres-secret (owner role) -- the app role owns no tables
+#     and has no CREATE on public. Default ACLs grant new objects to it, but only
+#     for objects the owner created, so the Job refuses to run as anyone else.
+# Connects to the postgres Service directly (needs allow-alembic-egress-direct-postgres).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-r63
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              cd /app
+              export STAYLEDGER_AI_DSN="$(python - <<'PY'
+              import os, urllib.parse as u
+              print(f"postgresql://{u.quote(os.environ['PGOWNER_USER'], safe='')}:{u.quote(os.environ['PGOWNER_PASSWORD'], safe='')}@postgres:5432/{os.environ['PGOWNER_DB']}")
+              PY
+              )"
+              export PYTHONPATH=/app
+              python - <<'PY'
+              import glob, os, re, subprocess, sys
+              import psycopg
+
+              DSN = os.environ["STAYLEDGER_AI_DSN"]
+
+              def alembic(*args):
+                  print(f"[alembic] $ alembic {' '.join(args)}", flush=True)
+                  subprocess.run(["alembic", *args], check=True)
+
+              def current():
+                  with psycopg.connect(DSN) as c:
+                      return c.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+
+              # --- preflight: owner role, expected starting stamp -----------------------
+              with psycopg.connect(DSN) as c:
+                  u, o, v = c.execute(
+                      "SELECT current_user, (SELECT tableowner FROM pg_tables WHERE tablename='alembic_version'),"
+                      " (SELECT version_num FROM alembic_version)"
+                  ).fetchone()
+              print(f"[alembic] role={u} schema_owner={o} current={v}", flush=True)
+              if u != o:
+                  sys.exit(f"refusing: role {u} is not the schema owner {o}; new objects would miss the default ACLs")
+              if v != "0094":
+                  sys.exit(f"refusing: expected alembic_version 0094, found {v}")
+
+              # --- fingerprints of 0038..0064 from the migration files in this image -------
+              def fingerprints():
+                  fps = {}
+                  for f in sorted(glob.glob("/app/migrations/alembic/versions/*.py")):
+                      rev = os.path.basename(f)[:4]
+                      if not ("0038" <= rev <= "0064"):
+                          continue
+                      up = open(f, encoding="utf-8").read().split("def upgrade")[1].split("def downgrade")[0]
+                      fp = {"tables": set(), "indexes": set(), "policies": set(), "columns": set()}
+                      for m in re.finditer(r"CREATE TABLE(?: IF NOT EXISTS)?\s+([a-z_]\w*)", up):
+                          fp["tables"].add(m.group(1).lower())
+                      for m in re.finditer(r"CREATE(?: UNIQUE)? INDEX(?: IF NOT EXISTS)?\s+([a-z_]\w*)\s+ON", up):
+                          fp["indexes"].add(m.group(1).lower())
+                      for m in re.finditer(r"CREATE POLICY\s+(\w+)\s+ON\s+(\w+)", up):
+                          fp["policies"].add((m.group(1).lower(), m.group(2).lower()))
+                      for m in re.finditer(r"ALTER TABLE\s+(\w+)\s+ADD COLUMN(?: IF NOT EXISTS)?\s+(\w+)", up):
+                          fp["columns"].add((m.group(1).lower(), m.group(2).lower()))
+                      fps[rev] = fp
+                  return fps
+
+              def check(label):
+                  with psycopg.connect(DSN) as c:
+                      tables = {r[0] for r in c.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")}
+                      indexes = {r[0] for r in c.execute("SELECT indexname FROM pg_indexes WHERE schemaname='public'")}
+                      policies = {(a, b) for a, b in c.execute("SELECT policyname, tablename FROM pg_policies WHERE schemaname='public'")}
+                      cols = {(a, b) for a, b in c.execute("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema='public'")}
+                  # ai_turn_outbox (+ its index) is created by 0053 and dropped again by 0093;
+                  # it is checked at 0064, where it must exist, but never allowed to block.
+                  dropped_later = {"ai_turn_outbox", "idx_ai_turn_outbox_pending"}
+                  missing = []
+                  for rev, fp in fingerprints().items():
+                      missing += [f"{rev}:T:{t}" for t in fp["tables"] if t not in tables and t != "if" and t not in dropped_later]
+                      missing += [f"{rev}:I:{i}" for i in fp["indexes"] if i not in indexes and not i.endswith("_") and i not in dropped_later]
+                      missing += [f"{rev}:P:{p}@{t}" for p, t in fp["policies"] if (p, t) not in policies and "{" not in t]
+                      missing += [f"{rev}:C:{t}.{c}" for t, c in fp["columns"] if (t, c) not in cols]
+                  print(f"[alembic] fingerprint check ({label}): {len(missing)} missing {missing[:12]}", flush=True)
+                  return missing
+
+              # The 0038-0053 repair ran once on 2026-09-15 and is not repeatable;
+              # this run only carries production from 0094 to head.
+
+              # --- the real upgrade ------------------------------------------------------
+              alembic("upgrade", "head")
+              v = current()
+              print(f"[alembic] after: {v}", flush=True)
+              if v != "0095":
+                  sys.exit(f"expected 0095, found {v}")
+              PY
+          env:
+            - name: PGOWNER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: PGOWNER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGOWNER_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
