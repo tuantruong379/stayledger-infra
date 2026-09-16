@@ -76,6 +76,20 @@ patches:
 # Tag: staging-20260909-b5432cf
 # Digest: sha256:e4f31a741615d8cd8d586214de17ab961a91ffdb0f7c61d865e31c227af8c194
 #
+# Rebuild 2026-09-16 (r63: Rollout 3 -- dead code out, one feature gate).
+# Deleted the legacy RAG path (generate_reply / _legacy_* / RAG_LEGACY_SERVICE --
+# nothing called the entry point, so the flag was moot) with retrieval/rag_service.py,
+# plus eleven modules with zero production importers; 2,922 lines. Each verified by
+# an import sweep rather than the inventory alone -- three listed 'orphans' turned
+# out to have live importers and stayed.
+# Nine byte-identical copies of the master/allowlist/canary gate became one
+# (app/shared/utils/feature_gate.py). The merge refused any helper whose env names
+# did not match its module prefix, which caught the real asymmetry: scoped hybrid's
+# master flag has HOTPATH in it, its allowlist and canary do not.
+# (release/1.7.22 @ f425ec2).
+# Tag: staging-20260916-f425ec2
+# Digest: sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+#
 # Rebuild 2026-09-16 (r62: Rollout 2 -- booking-funnel seams + Phase C outcomes).
 # Three causes behind five golden cases answered with a check-in-date slot ask:
 #   * "giu{0,24}phong" (hold a room) matched "giUA cac phong" (BETWEEN the rooms)
@@ -1674,4 +1688,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:b0edd84c2af2e142cce1b3512730fd376ecc16c1d2db7570df435919b66f8b0d
+    digest: sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
