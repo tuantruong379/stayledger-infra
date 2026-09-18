@@ -12,8 +12,8 @@ metadata:
 data:
   ENVIRONMENT: "staging"
   APP_ENV: "staging"
-  STAYLEDGER_IMAGE_DIGEST: "sha256:d78365ffca74f3333eade05a8efafa702dcf34388bb58339304f43895d9b8ba3"
-  STAYLEDGER_IMAGE_TAG: "staging-20260918-e54f5d1"
+  STAYLEDGER_IMAGE_DIGEST: "sha256:419d4b95feac7ab1442ddee36cd4c5e37b718ebe94853d33dad7779877fdfaaa"
+  STAYLEDGER_IMAGE_TAG: "staging-20260918-ec7e1fe"
   APP_VERSION: "1.7.22"
   OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=staging"
   # Non-secret Azure + PMS routing (moved out of stayledger-ai-assistant-api-secrets).
