@@ -54,6 +54,36 @@ data:
   AZURE_OPENAI_API_VERSION: "2024-12-01-preview"
   AZURE_OPENAI_DEPLOYMENT: "gpt-5.4-mini"
   AZURE_OPENAI_EMBEDDING_DEPLOYMENT: "text-embedding-3-small"
+  # --- Platform Model Router profiles (2026-09-18) -------------------------
+  # The router FAILS CLOSED on an unconfigured profile: no more silent fallback
+  # to AZURE_OPENAI_DEPLOYMENT. Every chat profile must be named here or the pod
+  # refuses readiness (LLM_TIER_PROBE_MODE=strict). Apply this ConfigMap BEFORE
+  # rolling the image that enforces it.
+  #
+  # All three pinned to the same deployment on purpose. This is the cost-control
+  # deploy, not the Luna cutover: GPT-5.6 Luna is the same class of "new fast
+  # cheap model" as gpt-5.4-nano, which measured p50 2.35s on this resource and
+  # silently disabled every short-deadline operation for a day (see the revert
+  # note above). Move `simple` only after scripts/probe_profile_latency.py shows
+  # Luna inside each simple operation's budget (1.0-2.0s). Until then the split is
+  # visible in metrics (model_profile label) but not yet cheaper.
+  LLM_PROFILE_SIMPLE_DEPLOYMENT: "gpt-5.4-mini"
+  LLM_PROFILE_REASONING_DEPLOYMENT: "gpt-5.4-mini"
+  # Offline/admin KB jobs and the RAG eval judge. The judge used to bypass the
+  # router and read AZURE_OPENAI_DEPLOYMENT directly; it now resolves here and is
+  # attributed as operation=rag_eval_judge, traffic_class=eval.
+  LLM_TIER_BATCH_DEPLOYMENT: "gpt-5.4-mini"
+  # --- Eval cost controls (2026-09-18) ---------------------------------------
+  # A full golden-set run was ~580 uncapped reasoning-class calls with no budget,
+  # and the harness had no mode; several such runs were the 2026-09 gpt-5.4-mini
+  # spike. The worker now runs `sample` (>= 15 cases per tenant/language, the
+  # publish gate's own minimum) unless told `full`, stops when a run overspends,
+  # and refuses to start more than N runs per day across every trigger.
+  RAG_EVAL_WORKER_MODE: "sample"
+  RAG_EVAL_MAX_COST_USD: "3.00"
+  RAG_EVAL_MAX_LLM_CALLS: "900"
+  RAG_EVAL_WORKER_MAX_RUNS_PER_DAY: "12"
+  RAG_EVAL_RELEVANCE_JUDGE_SAMPLE_RATE: "0.25"
   # Step-2 AI hotel-template Markdown normalize (before canonical extract).
   # Fail-closed when enabled; set false only as ops break-glass.
   RAG_AI_CLEAN_ENABLED: "true"

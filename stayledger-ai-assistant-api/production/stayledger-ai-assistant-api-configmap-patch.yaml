@@ -33,6 +33,25 @@ data:
   AI_MULTITURN_MEMORY_ENABLED: "1"
   AI_BUDGET_REDIS_FAILURE_MODE: "fail_closed"
 
+  # --- Platform Model Router profiles (2026-09-18) ---
+  # Live production reads AZURE_OPENAI_DEPLOYMENT=gpt-5.4-mini from the Secret
+  # (verified on the cluster 2026-09-18; the base ConfigMap's gpt-4o-mini is
+  # stale and is not what runs). The router now fails closed on an unconfigured
+  # profile, so all three chat tiers are pinned here to the model production
+  # already runs -- this deploy changes attribution, not the model. Apply this
+  # ConfigMap before rolling the enforcing image; see the runbook in
+  # stayledger-ai-assistant-api/docs/reviews/ai-architecture-cost-review-20260918.md.
+  # Luna is NOT wired in: latency-probe it first (the gpt-5.4-nano lesson).
+  LLM_PROFILE_SIMPLE_DEPLOYMENT: "gpt-5.4-mini"
+  LLM_PROFILE_REASONING_DEPLOYMENT: "gpt-5.4-mini"
+  LLM_TIER_BATCH_DEPLOYMENT: "gpt-5.4-mini"
+  # Eval controls. Production has no rag-eval-worker Deployment live today; these
+  # bound any operator-run scripts/run_rag_eval.py from a pod.
+  RAG_EVAL_WORKER_MODE: "sample"
+  RAG_EVAL_MAX_COST_USD: "3.00"
+  RAG_EVAL_MAX_LLM_CALLS: "900"
+  RAG_EVAL_WORKER_MAX_RUNS_PER_DAY: "6"
+
   # --- PMS ---
   PMS_STAYLEDGER_ENABLED: "1"
   # Production booking mutation remains gated until a separate qualification gate exists.

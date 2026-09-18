@@ -50,6 +50,10 @@ spec:
             - secretRef:
                 name: stayledger-ai-assistant-api-secrets
           env:
+            # Cost attribution: this process never binds a request context, so its
+            # LLM calls (KB clean/classify/embed) would land as traffic_class=unknown.
+            - name: LLM_DEFAULT_TRAFFIC_CLASS
+              value: "system"
             - name: RAG_CHUNK_PERSIST
               value: "1"
             - name: RAG_EMBEDDING_BATCH_SIZE

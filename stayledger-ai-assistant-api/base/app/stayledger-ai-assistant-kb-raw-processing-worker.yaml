@@ -42,6 +42,10 @@ spec:
             - secretRef:
                 name: stayledger-ai-assistant-api-secrets
           env:
+            # Cost attribution: this process never binds a request context, so its
+            # LLM calls (KB clean/classify/embed) would land as traffic_class=unknown.
+            - name: LLM_DEFAULT_TRAFFIC_CLASS
+              value: "system"
             - name: RAG_KB_PROCESSING_WORKER_POLL_SECONDS
               value: "5"
             - name: RAG_KB_PROCESSING_STUCK_TIMEOUT_SECONDS

@@ -46,6 +46,10 @@ spec:
             - secretRef:
                 name: stayledger-ai-assistant-api-secrets
           env:
+            # Belt and braces: _run_case binds traffic_class=eval per case; this
+            # covers anything the worker calls outside a case.
+            - name: LLM_DEFAULT_TRAFFIC_CLASS
+              value: "eval"
             - name: RAG_EVAL_WORKER_POLL_SECONDS
               value: "5"
             - name: RAG_EVAL_WORKER_MAX_ATTEMPTS
