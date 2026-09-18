@@ -1,0 +1,147 @@
+# LLM cost guardrails (2026-09-18), scraped from llm_cost_usd_total / llm_requests_total /
+# llm_model_router_errors_total exposed by app/observability/prom_client.py.
+#
+# Why these exist: the 2026-09 gpt-5.4-mini spike (~$16) was invisible to the only cost
+# alert we had (LLMCostSpike in prometheus-rules.yaml). That alert compares a 10m token
+# rate to its own 1h baseline, so a habit of repeated eval runs raised the baseline in
+# lockstep and the ratio never tripped; it also had no traffic_class or environment
+# dimension, so eval and guest spend -- and staging and production, which bill to ONE
+# Azure resource -- were one number. Every rule below is absolute, per-dimension, and
+# names the label that explains the cost.
+#
+# Thresholds are starting points chosen against the observed incident (~$16 over several
+# days), not tuned from a long baseline. Revisit after two weeks of labelled data.
+# Eval/non-production spend can hard-stop (the harness does, via RAG_EVAL_MAX_COST_USD);
+# these alerts never block production user traffic -- they page.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: llm-cost-alerts
+  namespace: observability
+spec:
+  groups:
+    - name: llm-cost.daily
+      rules:
+        # Platform-wide daily spend, per environment.
+        - alert: LLMDailySpendHigh
+          expr: |
+            sum by (environment) (increase(llm_cost_usd_total[24h])) > 10
+          for: 15m
+          labels:
+            severity: p2
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "LLM spend in {{ $labels.environment }} exceeded $10 in 24h"
+            description: |
+              sum(increase(llm_cost_usd_total[24h])) for environment={{ $labels.environment }} is
+              {{ $value | printf "%.2f" }} USD. Break it down by traffic_class and operation on
+              the LLM Cost dashboard before deciding whether this is guests or a batch job.
+            dashboard_url: "/d/hotel-llm-cost/stayledger-ai-assistant-llm-cost?from=now-24h&to=now"
+
+        # Eval spend on its own. This is the number that was hiding inside customer spend.
+        - alert: LLMEvalSpendHigh
+          expr: |
+            sum by (environment) (increase(llm_cost_usd_total{traffic_class="eval"}[24h])) > 5
+          for: 10m
+          labels:
+            severity: p2
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "RAG eval spend in {{ $labels.environment }} exceeded $5 in 24h"
+            description: |
+              traffic_class=eval spent {{ $value | printf "%.2f" }} USD in 24h. A full golden-set run
+              is ~485 calls; the worker caps runs/day (RAG_EVAL_WORKER_MAX_RUNS_PER_DAY) and each run
+              is budgeted (RAG_EVAL_MAX_COST_USD) -- if this fires, check for operator-launched
+              `--mode full` runs or an eval-worker restart loop.
+
+        - alert: LLMBenchmarkSpendHigh
+          expr: |
+            sum by (environment) (increase(llm_cost_usd_total{traffic_class="benchmark"}[24h])) > 5
+          for: 10m
+          labels:
+            severity: p3
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "Benchmark/synthetic traffic spent >$5 in 24h in {{ $labels.environment }}"
+            description: "Matrix packs and scenario runners are labelled traffic_class=benchmark. {{ $value | printf \"%.2f\" }} USD in 24h."
+
+    - name: llm-cost.routing
+      rules:
+        # Share of requests on the reasoning profile. Catches a profile regression, a
+        # router bug, or an experiment that moved simple work to the expensive model.
+        # NOTE: while both profiles are pinned to gpt-5.4-mini the ratio is a routing
+        # signal, not yet a cost signal; it becomes both once `simple` is moved to Luna.
+        - alert: LLMReasoningShareHigh
+          expr: |
+            (
+              sum(rate(llm_requests_total{model_profile="reasoning"}[1h]))
+              /
+              clamp_min(sum(rate(llm_requests_total{model_profile=~"simple|reasoning"}[1h])), 1e-9)
+            ) > 0.60
+            and on()
+            sum(rate(llm_requests_total{model_profile=~"simple|reasoning"}[1h])) > 0.01
+          for: 30m
+          labels:
+            severity: p3
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "Reasoning-profile share of LLM requests is {{ $value | humanizePercentage }} (>60%) over 1h"
+            description: |
+              The catalog assigns ~14 operations to `simple` and 3 to `reasoning`; on normal guest
+              traffic the reasoning share sits well under half. A sustained majority means simple
+              operations are escalating (complexity gate), the catalog changed, or a call site is
+              passing the wrong operation. Check llm_requests_total by operation,model_profile.
+
+        # Any router refusal is a configuration bug: an operation nobody registered, or a
+        # profile with no deployment. Zero is the only acceptable value.
+        - alert: LLMModelRouterError
+          expr: |
+            sum by (reason) (increase(llm_model_router_errors_total[15m])) > 0
+          for: 0m
+          labels:
+            severity: p2
+            service: stayledger-ai-assistant-api
+            slo: availability
+          annotations:
+            summary: "Platform Model Router refused a call: reason={{ $labels.reason }}"
+            description: |
+              unknown_operation: a call site passes an operation that is not in
+              app/services/llm/model_router.py::OPERATIONS -- add it (it must declare its profile).
+              tier_not_configured: LLM_PROFILE_*/LLM_TIER_*_DEPLOYMENT is unset in this environment;
+              the pod should not have passed the boot probe. Either way the call failed closed
+              rather than running on the reasoning model unlabelled.
+
+        # Cost recorded with no traffic class means a process is making LLM calls without
+        # declaring what it is -- exactly how eval spend hid in 2026-09.
+        - alert: LLMUnknownTrafficClass
+          expr: |
+            sum by (environment, operation) (increase(llm_requests_total{traffic_class="unknown"}[1h])) > 0
+          for: 5m
+          labels:
+            severity: p3
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "LLM calls with traffic_class=unknown: operation={{ $labels.operation }} in {{ $labels.environment }}"
+            description: |
+              A worker or script is calling the provider without a bound request context and
+              without LLM_DEFAULT_TRAFFIC_CLASS set on its Deployment. Set it (system|eval|benchmark)
+              so the spend is attributable.
+
+        # An operation the catalog does not know still gets its cost recorded (labelled
+        # unknown) so it can be seen; it should never appear.
+        - alert: LLMUnknownOperation
+          expr: |
+            sum by (environment, operation) (increase(llm_requests_total{model_profile="unknown"}[1h])) > 0
+          for: 5m
+          labels:
+            severity: p3
+            service: stayledger-ai-assistant-api
+            slo: cost
+          annotations:
+            summary: "LLM calls for uncatalogued operation={{ $labels.operation }}"
+            description: "model_profile=unknown means the operation string is not in the router catalog; register it with its profile."

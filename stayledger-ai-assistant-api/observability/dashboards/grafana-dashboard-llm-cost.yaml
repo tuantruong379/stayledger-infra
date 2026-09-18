@@ -1,5 +1,11 @@
 # Grafana — LLM Cost & Cache dashboard.
 #
+# 2026-09-18: added the cost-attribution row (panels 40-49): spend by environment /
+# traffic_class / model / operation / model_profile, eval spend, reasoning share, and
+# the "unexpected" stat (router errors, unknown traffic_class, unknown operation). These
+# read the labels added to llm_cost_usd_total / llm_requests_total the same day; before
+# that the dashboard could not tell eval spend from guest spend or staging from prod.
+#
 # Reasoning: Week 4/C8 — measures token throughput by direction (prompt/completion/
 # cached), cache hit-rate, and intent breakdown. Est $/hr uses dashboard constants
 # ``usd_per_1k_prompt`` and ``usd_per_1k_completion`` (edit in Grafana to match contract).
@@ -215,6 +221,158 @@ data:
             }
           ],
           "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 2, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.5 }] } } }
+        },
+        {
+          "id": 40,
+          "type": "stat",
+          "title": "Spend 24h by environment",
+          "gridPos": { "x": 0, "y": 48, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum by (environment) (increase(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[24h]))",
+              "legendFormat": "{{ environment }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+        },
+        {
+          "id": 41,
+          "type": "stat",
+          "title": "Eval spend 24h (traffic_class=eval)",
+          "gridPos": { "x": 6, "y": 48, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(increase(llm_cost_usd_total{tenant_id=~\"$tenant_id\",traffic_class=\"eval\"}[24h])) or vector(0)",
+              "legendFormat": "eval",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 2}, {"color": "red", "value": 5}]} } }
+        },
+        {
+          "id": 42,
+          "type": "stat",
+          "title": "Reasoning share of requests (1h)",
+          "gridPos": { "x": 12, "y": 48, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "(sum(rate(llm_requests_total{model_profile=\"reasoning\"}[1h])) / clamp_min(sum(rate(llm_requests_total{model_profile=~\"simple|reasoning\"}[1h])), 1e-9)) or vector(0)",
+              "legendFormat": "reasoning",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "percentunit", "decimals": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 0.4}, {"color": "red", "value": 0.6}]} } }
+        },
+        {
+          "id": 43,
+          "type": "stat",
+          "title": "Unexpected (1h): router errors / unknown class / unknown op",
+          "gridPos": { "x": 18, "y": 48, "w": 6, "h": 4 },
+          "targets": [
+            {
+              "expr": "sum(increase(llm_model_router_errors_total[1h])) or vector(0)",
+              "legendFormat": "router errors",
+              "refId": "A"
+            },
+            {
+              "expr": "sum(increase(llm_requests_total{traffic_class=\"unknown\"}[1h])) or vector(0)",
+              "legendFormat": "unknown traffic_class",
+              "refId": "B"
+            },
+            {
+              "expr": "sum(increase(llm_requests_total{model_profile=\"unknown\"}[1h])) or vector(0)",
+              "legendFormat": "unknown operation",
+              "refId": "C"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "red", "value": 1}]} } }
+        },
+        {
+          "id": 44,
+          "type": "timeseries",
+          "title": "Cost by model (USD/hr)",
+          "gridPos": { "x": 0, "y": 52, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (model) (rate(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[5m])) * 3600",
+              "legendFormat": "{{ model }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } }
+        },
+        {
+          "id": 45,
+          "type": "timeseries",
+          "title": "Cost by operation (USD/hr)",
+          "gridPos": { "x": 8, "y": 52, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (operation) (rate(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[5m])) * 3600",
+              "legendFormat": "{{ operation }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } }
+        },
+        {
+          "id": 46,
+          "type": "timeseries",
+          "title": "Cost by model profile (USD/hr)",
+          "gridPos": { "x": 16, "y": 52, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (model_profile) (rate(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[5m])) * 3600",
+              "legendFormat": "{{ model_profile }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } }
+        },
+        {
+          "id": 47,
+          "type": "timeseries",
+          "title": "Cost by traffic class (USD/hr) — user vs eval vs benchmark vs system",
+          "gridPos": { "x": 0, "y": 60, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (traffic_class) (rate(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[5m])) * 3600",
+              "legendFormat": "{{ traffic_class }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 4 } }
+        },
+        {
+          "id": 48,
+          "type": "timeseries",
+          "title": "gpt-5.4-mini requests by operation (req/s)",
+          "gridPos": { "x": 8, "y": 60, "w": 8, "h": 8 },
+          "targets": [
+            {
+              "expr": "sum by (operation) (rate(llm_requests_total{tenant_id=~\"$tenant_id\",model=~\".*5.4-mini.*\"}[5m]))",
+              "legendFormat": "{{ operation }}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 3 } }
+        },
+        {
+          "id": 49,
+          "type": "bargauge",
+          "title": "Cost by operation, 24h (USD)",
+          "gridPos": { "x": 16, "y": 60, "w": 8, "h": 8 },
+          "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            {
+              "expr": "sort_desc(sum by (operation) (increase(llm_cost_usd_total{tenant_id=~\"$tenant_id\"}[24h])))",
+              "legendFormat": "{{ operation }}",
+              "refId": "A",
+              "instant": true
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
         }
       ]
     }
