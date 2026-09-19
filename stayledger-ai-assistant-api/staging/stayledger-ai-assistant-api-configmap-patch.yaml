@@ -60,14 +60,26 @@ data:
   # refuses readiness (LLM_TIER_PROBE_MODE=strict). Apply this ConfigMap BEFORE
   # rolling the image that enforces it.
   #
-  # All three pinned to the same deployment on purpose. This is the cost-control
-  # deploy, not the Luna cutover: GPT-5.6 Luna is the same class of "new fast
-  # cheap model" as gpt-5.4-nano, which measured p50 2.35s on this resource and
-  # silently disabled every short-deadline operation for a day (see the revert
-  # note above). Move `simple` only after scripts/probe_profile_latency.py shows
-  # Luna inside each simple operation's budget (1.0-2.0s). Until then the split is
-  # visible in metrics (model_profile label) but not yet cheaper.
-  LLM_PROFILE_SIMPLE_DEPLOYMENT: "gpt-5.4-mini"
+  # 2026-09-19: Luna cutover. Probed directly (no probe_profile_latency.py was
+  # ever written; this used a 20-call p50/p95 measurement per operation against
+  # the real deployed timeout, not the OperationSpec default) on THIS resource's
+  # gpt-5.6-luna (Global Standard, redeployed 2026-09-19 12:28 -- an earlier
+  # deployment measured p95 2.44/2.69s against 2.5/2.2s budgets, borderline-to-
+  # failing, and was deleted before this one): safety_injection_classify
+  # p50=1.82s/p95=1.96s (budget 2.5s, comfortable), intent_classify_fallback
+  # p50=1.98s/p95=2.16s (budget 2.2s, tight -- 41ms margin, watch
+  # intent_llm_fallback_timeout). This is NOT the gpt-5.4-nano failure repeating:
+  # nano measured p50 2.35s, categorically slower than mini's 0.53s on this same
+  # resource; Luna measures close to mini's own current 0.66-1.33s range.
+  #
+  # simple and reasoning now genuinely differ. Four operations that also carry
+  # a `simple` OperationSpec tier by default -- rag_relevance_verify,
+  # tool_selection, rag_query_reformulation, rag_rerank -- were moved to
+  # PROFILE_REASONING in code (release/1.7.22 commit d07aa65) specifically
+  # because they have no per-operation timeout override (unlike the two above)
+  # and run sequentially inside a guest turn; they stay on gpt-5.4-mini,
+  # unaffected by this change. Rollback: revert this one line to "gpt-5.4-mini".
+  LLM_PROFILE_SIMPLE_DEPLOYMENT: "gpt-5.6-luna"
   LLM_PROFILE_REASONING_DEPLOYMENT: "gpt-5.4-mini"
   # Offline/admin KB jobs and the RAG eval judge. The judge used to bypass the
   # router and read AZURE_OPENAI_DEPLOYMENT directly; it now resolves here and is
