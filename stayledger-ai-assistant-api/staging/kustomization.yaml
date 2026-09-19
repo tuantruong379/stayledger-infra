@@ -1688,4 +1688,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:ba260473839f4382ec4299785a9e445e1c82317f7a924d36a2ddb490f83f6a97
+    digest: sha256:d24ec3b6bcbec00de901833c1cde130656a37a15ad2480dd1279056049011e45
