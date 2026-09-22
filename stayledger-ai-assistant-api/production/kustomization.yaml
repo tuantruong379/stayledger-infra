@@ -40,6 +40,26 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-22: release/1.7.22 @ 75d3292 -- same image already verified
+# live on staging same day, not a fresh build. Rolled with scoped
+# `kubectl set image` on the five Deployments (api, channel-worker,
+# kb-embed-worker, metrics-aggregator, webhook-worker), not `apply -k`.
+# Ships: a real circuit breaker wired into StayLedgerPmsConnector's booking/
+# pricing calls (circuit_breaker_state had a live alert+dashboard panel with
+# no code ever setting it); 3 metrics fixed after `make check-fix`'s ruff F821
+# pass caught them recording nothing since they were added
+# (rag_embedding_reused_total, ai_tool_selection_total, rag_trace_dropped_total
+# -- assigned _init()-local, never declared `global`); 2 confirmed-dead
+# metrics removed (ai_booking_reconciled/ai_conversation_sync_failed, zero
+# production callers); a `ruff format`/`ruff check --fix` pass verified
+# formatting-only via AST comparison before committing (56/63 files
+# byte-identical AST). Full local pytest suite green before build.
+# Live-verified on production post-rollout: health 200, 0 errors across all 5
+# deployments, and a real (traffic_class=synthetic) webhook chat turn
+# round-tripped correctly.
+# Tag: staging-20260922-75d3292 (built once, promoted to both envs same day)
+# Digest: sha256:d71d0bc98fe94cd28cca3c31c32a52025d4662028b51ed75faea2a1b270dff77
+#
 # Promotion 2026-09-16 (r63): release/1.7.22 @ f425ec2 -- the staging closeout.
 # Rollout 1 (content/fixtures/plumbing), Phase C (verifier off, rerank stays
 # off), Rollout 2 (booking-funnel seams) and Rollout 3 (2,922 lines of dead code
