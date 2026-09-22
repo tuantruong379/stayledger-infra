@@ -13,6 +13,8 @@ namespace: stayledger-ai-assistant
 resources:
   - ../base
   - ingress.yaml
+  - rag-eval-cronjob.yaml
+  - kb-retention-cronjob.yaml
 
 labels:
   - pairs:

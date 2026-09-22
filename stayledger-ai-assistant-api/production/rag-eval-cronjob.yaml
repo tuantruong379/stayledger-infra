@@ -1,0 +1,105 @@
+# Captured from live cluster state 2026-09-22 -- this CronJob has existed on production
+# since 2026-07-16 (kubectl set image / scoped edits, never through `apply -k`) with zero
+# git record until now. This file makes no live change; it documents current reality so
+# future promotions stop silently drifting further from git.
+#
+# NOTE for a human to reconcile, not resolved here: base/app/stayledger-ai-assistant-rag-eval-worker.yaml
+# is a *different*, event-driven Deployment for RAG evaluation ("there is intentionally no
+# scheduled CronJob", per its own comment) and is not deployed on production at all
+# (`kubectl get deployment` returns NotFound). This CronJob runs a separate standalone
+# script (scripts/run_rag_eval.py) on a fixed schedule instead. Whether the worker
+# Deployment is still the intended direction, or this CronJob superseded it, is unclear
+# from git history alone -- flagging the overlap rather than guessing.
+#
+# Also known and already tracked (docs/reviews, P2): status.lastSuccessfulTime as of this
+# capture is 2026-08-17 -- every run since (daily, `0 20 * * *`) has failed on a stale
+# leakage-dataset version. Fixing that failure is a separate, already-scoped follow-up.
+#
+# --tenant/--property/--top-k bind this to cupid_hotel only, matching the same-tenant
+# scoping already found on the RAG allowlists and kb-retention.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: rag-eval
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: rag-eval
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: ai-evaluation
+    environment: production
+spec:
+  schedule: "0 20 * * *"
+  startingDeadlineSeconds: 600
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  suspend: false
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 2700
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: rag-eval
+            app.kubernetes.io/part-of: stayledger-ai-assistant
+            app.kubernetes.io/component: ai-evaluation
+        spec:
+          serviceAccountName: api-sa
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: rag-eval
+              # Digest tracks the same scoped `kubectl set image` promotions as the API
+              # Deployment -- see production/kustomization.yaml's promotion notes.
+              image: putin111/stayledger-ai-assistant-api@sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+              imagePullPolicy: IfNotPresent
+              command: ["/venv/bin/python", "scripts/run_rag_eval.py"]
+              args:
+                - --tenant
+                - cupid_hotel
+                - --property
+                - prop-cupid-hcm-q1
+                - --top-k
+                - "5"
+              envFrom:
+                - configMapRef:
+                    name: stayledger-ai-assistant-api-config
+                - secretRef:
+                    name: stayledger-ai-assistant-api-secrets
+              env:
+                - name: RAG_EVAL_JUDGE_MODEL
+                  value: azure/gpt-5.4-mini
+                - name: RAG_EVAL_REQUIRE_REVIEWED
+                  value: "1"
+                - name: RAG_EVAL_REPORTS_DIR
+                  value: /tmp/rag_eval_reports
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 192Mi
+                limits:
+                  cpu: 500m
+                  memory: 768Mi
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir:
+                medium: Memory
+                sizeLimit: 64Mi

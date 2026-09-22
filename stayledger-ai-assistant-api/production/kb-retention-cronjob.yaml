@@ -1,0 +1,83 @@
+# Captured from live cluster state 2026-09-22 -- this CronJob has existed on production
+# since 2026-07-29 (kubectl set image / scoped edits, never through `apply -k`) with zero
+# git record until now. This file makes no live change; it documents current reality so
+# future promotions stop silently drifting further from git.
+#
+# Scoped to cupid_hotel only (RAG_RETENTION_TENANT_ALLOWLIST) -- same single-tenant
+# pattern already found on the RAG scoped-hybrid/rerank allowlists. Healthy: last run
+# succeeded at capture time.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: kb-retention
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: kb-retention
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: maintenance
+spec:
+  schedule: "30 1 * * *"
+  timeZone: Asia/Ho_Chi_Minh
+  startingDeadlineSeconds: 600
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  suspend: false
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 1800
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: kb-retention
+            app.kubernetes.io/part-of: stayledger-ai-assistant
+        spec:
+          serviceAccountName: api-sa
+          automountServiceAccountToken: false
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            fsGroup: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: kb-retention
+              # Digest tracks the same scoped `kubectl set image` promotions as the API
+              # Deployment -- see production/kustomization.yaml's promotion notes.
+              image: putin111/stayledger-ai-assistant-api@sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+              imagePullPolicy: IfNotPresent
+              command: ["/venv/bin/python", "scripts/kb_retention_purge.py"]
+              envFrom:
+                - configMapRef:
+                    name: stayledger-ai-assistant-api-config
+                - secretRef:
+                    name: stayledger-ai-assistant-api-secrets
+              env:
+                - name: RAG_RETENTION_TENANT_ALLOWLIST
+                  value: cupid_hotel
+                - name: RAG_RETENTION_ENFORCE
+                  value: "1"
+                - name: RAG_KB_HISTORY_RETENTION_DAYS
+                  value: "90"
+                - name: RAG_EVAL_RETENTION_DAYS
+                  value: "180"
+                - name: AI_CONVERSATION_STATE_RETENTION_DAYS
+                  value: "30"
+                - name: RAG_RETENTION_BATCH_SIZE
+                  value: "100"
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 192Mi
+                limits:
+                  cpu: 500m
+                  memory: 768Mi
