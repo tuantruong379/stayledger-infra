@@ -1,5 +1,12 @@
 # Right-size API for single-node stayledger k3s.
-# Live usage ~7m CPU / ~289Mi; base request 1 CPU / 768Mi blocked rollouts and HPA.
+# CPU stays untouched -- node CPU requests are already ~70% allocated (see the
+# scaling patch's own comment); this is memory-only.
+# 2026-09-22: live usage has grown to ~535-545Mi (steady state, well under the 1Gi
+# limit) since the 384Mi request was set against an old ~289Mi baseline -- that gap
+# made the HPA's memory-utilization metric read ~140% permanently, which is just a
+# misleading number (maxReplicas is unaffected, no real OOM risk) but is bad signal
+# hygiene. Bumped request to 600Mi so the percentage reflects real headroom again.
+# Node memory requests have real headroom for this (~47% free at bump time).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,7 +20,7 @@ spec:
           resources:
             requests:
               cpu: "200m"
-              memory: "384Mi"
+              memory: "600Mi"
             limits:
               cpu: "500m"
               memory: "1Gi"
