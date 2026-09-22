@@ -44,6 +44,27 @@ patches:
       kind: Deployment
       name: stayledger-ai-assistant-postgres
 
+# Rebuild 2026-09-22 (release/1.7.22 @ 75d3292) -- all 10 API-image Deployments
+# (api, channel/webhook/kb-* workers, metrics-aggregator, pms-catalog-sync,
+# pms-outbox, rag-eval-worker) rolled to the same image via scoped
+# `kubectl set image`, not `apply -k`.
+# Ships: a real circuit breaker wired into StayLedgerPmsConnector's booking/
+# pricing calls (circuit_breaker_state had a live alert+dashboard panel but no
+# code ever set it); 3 metrics (rag_embedding_reused_total,
+# ai_tool_selection_total, rag_trace_dropped_total) fixed after `make
+# check-fix` caught them recording nothing since they were added (assigned
+# _init()-local, never declared `global`); removal of 2 confirmed-dead metrics
+# (ai_booking_reconciled/ai_conversation_sync_failed, zero production
+# callers); a full `ruff format`/`ruff check --fix` pass verified formatting-
+# only via AST comparison before committing (56/63 files byte-identical AST,
+# remaining 7 are import-reordering/docstring-quote-spacing/one unused
+# import). Full local pytest suite green before build; live-verified post
+# rollout: real webhook chat turn round-tripped correctly, circuit_breaker_
+# state{target="pricing"} appeared from real traffic, and the 3 previously-
+# broken metrics were confirmed incrementing correctly in the running pod.
+# Tag: staging-20260922-75d3292
+# Digest: sha256:d71d0bc98fe94cd28cca3c31c32a52025d4662028b51ed75faea2a1b270dff77
+#
 # Rebuild 2026-09-09 (r47+r48: the fourth seam, and the deferral actually surviving).
 # r46 moved 52 of 114 answers onto RAG (from 18) and vertex correctness 0.6207 ->
 # 0.7069, but three azure cases went from a correct canned answer to an
