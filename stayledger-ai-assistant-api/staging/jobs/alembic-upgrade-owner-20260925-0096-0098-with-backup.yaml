@@ -1,0 +1,94 @@
+# Owner-approved 2026-09-25: apply 0096 (strip tenant LLM routing keys), 0097 (comment only)
+# and stamp 0098 (idempotent; its SQL already ran via metrics-partitions-0098-sql-20260925).
+# 0096 has no downgrade, so every tenant's llm JSON is first copied into
+# tenant_runtime_config_llm_backup_20260925 (credentials_ref holds env-var NAMES only,
+# verified before this job). The upgrade only runs if the backup row count matches.
+# Restore if ever needed:
+#   UPDATE tenant_runtime_config t SET llm = b.llm
+#     FROM tenant_runtime_config_llm_backup_20260925 b WHERE b.tenant_id = t.tenant_id;
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-0096-0098
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: tenant-llm-settings-only
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:643cb0d90d667b315c16384734a3afea13e17daaa5d8d8912c6fbf3ee6caaef9
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              export DATABASE_URL="$HOTEL_OPS_DSN_OWNER"
+              cd /app
+              /venv/bin/python - <<'PY'
+              import asyncio, os, re, asyncpg
+              async def main():
+                  dsn = re.sub(r"^postgresql\+\w+://", "postgresql://", os.environ["HOTEL_OPS_DSN_OWNER"])
+                  c = await asyncpg.connect(dsn)
+                  try:
+                      async with c.transaction():
+                          await c.execute("""CREATE TABLE IF NOT EXISTS tenant_runtime_config_llm_backup_20260925 (
+                              tenant_id text PRIMARY KEY, llm jsonb, backed_up_at timestamptz NOT NULL DEFAULT now())""")
+                          await c.execute("""INSERT INTO tenant_runtime_config_llm_backup_20260925 (tenant_id, llm)
+                              SELECT tenant_id, llm FROM tenant_runtime_config WHERE llm IS NOT NULL
+                              ON CONFLICT (tenant_id) DO NOTHING""")
+                      src = await c.fetchval("SELECT count(*) FROM tenant_runtime_config WHERE llm IS NOT NULL")
+                      bak = await c.fetchval("SELECT count(*) FROM tenant_runtime_config_llm_backup_20260925")
+                      print(f"backup rows={bak} source rows with llm={src}")
+                      if bak < src or bak == 0:
+                          raise SystemExit("backup incomplete -- not upgrading")
+                  finally:
+                      await c.close()
+              asyncio.run(main())
+              PY
+              PYTHONPATH=/app /venv/bin/alembic upgrade head
+              PYTHONPATH=/app /venv/bin/alembic current
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
