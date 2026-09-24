@@ -1,0 +1,94 @@
+# One-off: run ONLY migration 0098's SQL (ensure_metrics_1m_partitions) as the table owner.
+#
+# Why not `alembic upgrade head`: staging is at 0095 and 0096 (strips tenant LLM routing
+# keys from tenant_runtime_config -- a data change awaiting its own go-ahead) and 0097
+# (comment only) are still pending. 0098 is CREATE OR REPLACE + idempotent, so the later
+# full `alembic upgrade head` re-applies it harmlessly and stamps 0098 then.
+#
+# Why now: metrics_1m's last daily partition was 2026-09-20; every aggregator flush has
+# failed since 2026-09-21 ("no partition of relation metrics_1m found for row").
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: metrics-partitions-0098-sql
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    stayledger.io/change: metrics-partition-self-maintenance
+spec:
+  activeDeadlineSeconds: 300
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: sql
+          image: putin111/stayledger-ai-assistant-api@sha256:c7bc5641db428e4b085edb1fdc04a7983538e23e27a9bf4734b54bc8eaf63986
+          imagePullPolicy: IfNotPresent
+          command: ["/venv/bin/python", "-c"]
+          args:
+            - |
+              import asyncio, importlib.util, os, re, sys, types
+              captured = []
+              class _Conn:
+                  def exec_driver_sql(self, sql):
+                      captured.append(sql)
+              class _Op:
+                  def get_bind(self):
+                      return _Conn()
+              fake = types.ModuleType("alembic"); fake.op = _Op(); sys.modules["alembic"] = fake
+              path = "/app/migrations/alembic/versions/0098_metrics_1m_partition_self_maintenance.py"
+              spec = importlib.util.spec_from_file_location("m0098", path)
+              mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod); mod.upgrade()
+              import asyncpg
+              async def main():
+                  dsn = re.sub(r"^postgresql\+\w+://", "postgresql://", os.environ["HOTEL_OPS_DSN_OWNER"])
+                  conn = await asyncpg.connect(dsn)
+                  try:
+                      async with conn.transaction():
+                          for sql in captured:
+                              await conn.execute(sql)
+                      last = await conn.fetchval(
+                          "SELECT max(c.relname) FROM pg_inherits i JOIN pg_class c ON c.oid=i.inhrelid "
+                          "JOIN pg_class p ON p.oid=i.inhparent WHERE p.relname='metrics_1m'")
+                      print(f"statements={len(captured)} last_partition={last}")
+                  finally:
+                      await conn.close()
+              asyncio.run(main())
+          envFrom:
+            - secretRef:
+                name: stayledger-ai-assistant-migration-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

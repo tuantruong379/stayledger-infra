@@ -1729,7 +1729,12 @@ patches:
 #     mất tiền không") no longer enter the cancel flow, booking funnel, realtime path or
 #     broken-equipment handoff ("phong roi" contained "hong roi"); saturated eval
 #     slices no longer block reranker graduation. Verified live; 10 Deployments.
+#   2026-09-25 (later) — release/1.7.22 @ 92f580d: metrics aggregator keeps metrics_1m's
+#     partition horizon itself (migration 0098's ensure_metrics_1m_partitions, run once
+#     via jobs/metrics-partitions-0098-sql-20260925.yaml because staging's alembic is at
+#     0095 with 0096/0097 still pending). Flushes had failed since 2026-09-21 (last
+#     partition 2026-09-20); backfilled 2026-09-20..25 from usage_events (752 events).
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:fe0d934ce663b4147835d678a968377c1781fad5dc6f5ff87a8a6f2a15c5ba72
+    digest: sha256:2d8fc85bce7a79be5cd9109adcac7aaa7b519a1cd90d2d79152e6efa76294b8b
