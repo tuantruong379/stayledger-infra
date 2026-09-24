@@ -1741,7 +1741,11 @@ patches:
 #     a7ad69d: the LLM rerank now runs via asyncio.to_thread in the async retrieval paths.
 #     Inline, the canary's synchronous rerank call froze the event loop; under 8
 #     concurrent matrix turns /livez timed out and the kubelet restarted the api pod.
+#   2026-09-25 (late) — release/1.7.22 @ c8d09b3: /kb/import-file no longer opens an
+#     empty candidate generation from upsert_kb (persist_chunks=False). The 0-chunk
+#     "building" shell held the tenant's candidate slot, so the approve outbox event
+#     that should build the real candidate retried candidate_slot_busy until it ran out.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:643cb0d90d667b315c16384734a3afea13e17daaa5d8d8912c6fbf3ee6caaef9
+    digest: sha256:4b633339f42a6a38474ba060dd72ab05afedca5e8445021a14f80fb1684c5d03
