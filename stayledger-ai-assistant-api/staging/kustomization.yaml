@@ -1736,7 +1736,12 @@ patches:
 #     partition 2026-09-20); backfilled 2026-09-20..25 from usage_events (752 events).
 #   2026-09-25 (evening) — release/1.7.22 @ 62bb0db: /metrics/prom publishes
 #     metrics_pipeline_newest_row_age_seconds for the MetricsAggregatorNotWriting alert.
+#   2026-09-25 (night) — release/1.7.22 @ eac1384 (sha256:25388856...: "hủy booking ... đi" /
+#     "hủy giúp mình đơn" recognised as cancel commands; matrix oracles calibrated), then
+#     a7ad69d: the LLM rerank now runs via asyncio.to_thread in the async retrieval paths.
+#     Inline, the canary's synchronous rerank call froze the event loop; under 8
+#     concurrent matrix turns /livez timed out and the kubelet restarted the api pod.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:4423cb3e7f73590ef04177754e0b2fd8083b7cfd14da07a6ed53c55920737c1a
+    digest: sha256:643cb0d90d667b315c16384734a3afea13e17daaa5d8d8912c6fbf3ee6caaef9
