@@ -47,3 +47,22 @@ spec:
           annotations:
             summary: "Metrics aggregator is restarting repeatedly"
             description: "Check NATS connectivity, HOTEL_OPS_DSN/DATABASE_URL, and metrics_1m migration status."
+
+        # The aggregator can be Running with 0 restarts and still write nothing: from
+        # 2026-09-21 to 2026-09-25 every flush failed (metrics_1m out of partitions) and
+        # none of the alerts above fired. The api publishes freshness at scrape time
+        # (metrics_pipeline_newest_row_age_seconds). Fire only while chat turns are still
+        # arriving, so a quiet environment does not page.
+        - alert: MetricsAggregatorNotWriting
+          expr: |
+            max(metrics_pipeline_newest_row_age_seconds{table="metrics_1m"}) > 1800
+            and
+            max(metrics_pipeline_newest_row_age_seconds{table="usage_events_chat_turn"}) < 900
+          for: 15m
+          labels:
+            severity: p2
+            component: metrics-aggregator
+            category: metrics-pipeline
+          annotations:
+            summary: "Chat turns are arriving but metrics_1m has not been written for 30+ minutes"
+            description: "Check metrics-aggregator logs for metrics_flush_failed (partitions: SELECT ensure_metrics_1m_partitions(60); RLS/DSN errors)."
