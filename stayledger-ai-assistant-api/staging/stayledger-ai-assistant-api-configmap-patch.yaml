@@ -202,11 +202,9 @@ data:
   RAG_PGVECTOR_MIN_SIMILARITY: "0.35"
   RAG_HYBRID_SCORE_FLOOR: "0.25"
   FEATURE_RERANKER_ENABLED: "1"
-  # LLM rerank on scoped-hybrid: canary PREPARED for cupid_hotel, NOT live yet
-  # (2026-09-25; the live ConfigMap patch was held for the owner to apply).
-  # To start it: set RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED to "1" (the allowlist and
-  # floor below are already correct), apply, restart the 10 app Deployments, and
-  # apply observability/alerts/rag-rerank-canary-alerts.yaml.
+  # LLM rerank on scoped-hybrid: CANARY LIVE for cupid_hotel since 2026-09-25 (owner-approved;
+  # ConfigMap applied, 10 app Deployments restarted, canary alerts applied). First probe:
+  # 8 LLM reranks ok, 1 skipped by the 0.65 floor, 0 timeouts; azure recorded as "skip".
   # Experiment C2 (2026-09-16) found "no benefit", but run_rag_eval then never
   # applied the guest path's rerank at all (fixed api 7289b7c), so C2 measured
   # nothing. Re-measured 2026-09-24/25 (cupid/hcm_q1, 26 golden cases, 2 runs/arm):
@@ -217,7 +215,7 @@ data:
   # text-embedding-3-small: best top-1 cosine seen 0.77) skips ~15-20% of turns and
   # keeps ~83% of the gain (MRR 0.867). Guarded by
   # observability/alerts/rag-rerank-canary-alerts.yaml. Roll back: set this to "0".
-  RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED: "0"
+  RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED: "1"
   RAG_RERANK_TENANT_ALLOWLIST: "cupid_hotel"
   RAG_RERANK_SKIP_VECTOR_SCORE: "0.65"
   AI_CANONICAL_TURN_ENABLED: "1"
