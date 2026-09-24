@@ -1706,7 +1706,17 @@ patches:
 #     applied via kubectl set image without updating this file. r1 superseded
 #     it; it was built from the same release/1.7.22 branch at a later commit,
 #     so nothing from it is lost.
+#   2026-09-23 (out-of-band, recorded 09-24) — two scoped `kubectl set image`
+#     rollouts to all 10 app Deployments, never written here:
+#     4a55272 sha256:03956d3140718e86b91fa54a5fbb5f8493d12942a7b74eec9983e95af70b44c3
+#     (CAT2000 G4_518/G7_359/G1_333 fixes + tool-catalog wording), then
+#     b66c44a sha256:ddd3a787ebb0722c8a8f03b28c001c754554a6c2a8d32ac59dbf4d441566f530
+#     (G2_188 demonstrative-pronoun branch label).
+#   2026-09-24 — release/1.7.22 @ 1c9000b: requires_realtime_check needs a room
+#     subject for bare "còn ... không" (G4_446 went 0/10 -> 10/10 routed to RAG
+#     live), dead openai/gemini/bedrock adapters removed, scripts/http_json.py.
+#     Scoped `set image` on the same 10 Deployments; all converged, 0 restarts.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:e8415bf61426ce8094a386ece66a4d4a190bef59a48c55b5f7558f98589b2056
+    digest: sha256:f95f8e06c163ea69f62e3a98007e28e8d888279d2ebb3b7244048760b87823e4
