@@ -1724,7 +1724,12 @@ patches:
 #     reach the KB instead of the ops handoff (core 5.1), "đã hủy rồi, khi nào hoàn
 #     cọc?" no longer enters the cancel flow (core 5.6). Verified live on all 4
 #     branches; 5.3/5.4 still hand off. 10 Deployments, 0 restarts.
+#   2026-09-25 — release/1.7.22 @ 4ad9aee: cancellation-terms questions ("có thể hủy
+#     ... miễn phí không?", "hủy trong bao lâu trước khi đến?", "đặt phòng rồi huỷ có
+#     mất tiền không") no longer enter the cancel flow, booking funnel, realtime path or
+#     broken-equipment handoff ("phong roi" contained "hong roi"); saturated eval
+#     slices no longer block reranker graduation. Verified live; 10 Deployments.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:437d88996040929abccf9e70d17c4ed769ea78c16aba79e0b894fa137efe99db
+    digest: sha256:fe0d934ce663b4147835d678a968377c1781fad5dc6f5ff87a8a6f2a15c5ba72

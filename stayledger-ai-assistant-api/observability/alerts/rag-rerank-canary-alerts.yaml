@@ -1,0 +1,48 @@
+# LLM rerank canary guard (staging, cupid_hotel only — RAG_RERANK_TENANT_ALLOWLIST).
+#
+# The rerank adds one LLM call per RAG turn whose top vector score is under
+# RAG_RERANK_SKIP_VECTOR_SCORE (measured 2026-09-24: +845 ms p50 / +1.37 s p95,
+# capped by RAG_RERANK_TIMEOUT_S=1.8, after which it falls back to heuristic order).
+# These two alerts are the exit criteria for the canary: slow turns, or a reranker
+# that mostly times out / fails to parse and so only adds latency.
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: hotel-ai-rerank-canary
+  namespace: observability
+spec:
+  groups:
+    - name: hotel-ai.rerank-canary
+      rules:
+        - alert: HotelAIRerankCanaryTurnLatencyHigh
+          expr: |
+            histogram_quantile(
+              0.95,
+              sum by (le) (rate(chat_turn_duration_seconds_bucket{tenant_id="cupid_hotel"}[15m]))
+            ) > 8
+            and
+            sum(increase(rag_rerank_total{result="llm"}[15m])) > 0
+          for: 15m
+          labels:
+            severity: p3
+            service: hotel-ai-assistant
+            slo: latency
+          annotations:
+            summary: "cupid_hotel turn p95 above 8s while the LLM rerank canary is active"
+            description: "Roll back by setting RAG_SCOPED_HYBRID_LLM_RERANK_ENABLED=0 in the staging ConfigMap."
+
+        - alert: HotelAIRerankCanaryFallbackRateHigh
+          expr: |
+            sum(increase(rag_rerank_total{result="heuristic"}[30m]))
+            /
+            clamp_min(sum(increase(rag_rerank_total{result=~"llm|heuristic"}[30m])), 1)
+            > 0.2
+            and
+            sum(increase(rag_rerank_total{result=~"llm|heuristic"}[30m])) >= 10
+          for: 30m
+          labels:
+            severity: p3
+            service: hotel-ai-assistant
+          annotations:
+            summary: "Over 20% of LLM reranks fell back to heuristic order (timeout or parse error)"
+            description: "The canary is paying rerank latency without the rerank. Check rag_llm_rerank_fallback logs (reason=timeout|parse_or_error)."
