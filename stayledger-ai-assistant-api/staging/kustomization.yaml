@@ -1720,7 +1720,11 @@ patches:
 #     now counted in llm_requests_total (Luna fallback, safety, reformulation were
 #     cost-only before; confirmed live in Prometheus), run_rag_eval reranks like
 #     the guest path. Same scoped set image on the 10 Deployments, 0 restarts.
+#   2026-09-24 (evening) — release/1.7.22 @ 3a49238: deposit-policy yes/no questions
+#     reach the KB instead of the ops handoff (core 5.1), "đã hủy rồi, khi nào hoàn
+#     cọc?" no longer enters the cancel flow (core 5.6). Verified live on all 4
+#     branches; 5.3/5.4 still hand off. 10 Deployments, 0 restarts.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:00f7fd1d508da83e49633ab3a6f79fe69ed1e024dbeef10e2301c8999932fccc
+    digest: sha256:437d88996040929abccf9e70d17c4ed769ea78c16aba79e0b894fa137efe99db
