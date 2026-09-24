@@ -1716,7 +1716,11 @@ patches:
 #     subject for bare "còn ... không" (G4_446 went 0/10 -> 10/10 routed to RAG
 #     live), dead openai/gemini/bedrock adapters removed, scripts/http_json.py.
 #     Scoped `set image` on the same 10 Deployments; all converged, 0 restarts.
+#   2026-09-24 (later) — release/1.7.22 @ f700263: complete_raw/complete_with_tools
+#     now counted in llm_requests_total (Luna fallback, safety, reformulation were
+#     cost-only before; confirmed live in Prometheus), run_rag_eval reranks like
+#     the guest path. Same scoped set image on the 10 Deployments, 0 restarts.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:f95f8e06c163ea69f62e3a98007e28e8d888279d2ebb3b7244048760b87823e4
+    digest: sha256:00f7fd1d508da83e49633ab3a6f79fe69ed1e024dbeef10e2301c8999932fccc
