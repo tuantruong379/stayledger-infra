@@ -63,4 +63,6 @@ images:
     # Tag: ffe9529 (2026-09-26) -- toast text for the api's new 409
     # canonical_revision_drops_faq_questions (approve refused because the normalized
     # revision lost FAQ questions); also carries c1c10b1 and 3849b18.
-    digest: sha256:18c74f74682611f836793de730fd1bc430576338ab998285f165daf1f6345e4b
+    # Tag: 7582a09 (2026-09-26) -- publish-history panel with Restore to a previously live
+    # generation (needs api c9b18ae for GET /kb/generations).
+    digest: sha256:1b7f40c5e9e5af0e2538119171ad78fc101de19b562a2d0d49f94521e656313c

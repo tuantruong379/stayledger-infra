@@ -1750,7 +1750,13 @@ patches:
 #     canonical_revision_drops_faq_questions; allow_question_loss=true to override), and
 #     an advisory eval failure with a ready publish gate now shows Publish instead of
 #     "AI revision". An AI revision had approved vertex with 6 of 18 questions left.
+#   2026-09-26 (later) — release/1.7.22 @ c9b18ae: AI revisions edit the approved canonical
+#     revision (explicit scope) instead of the accumulated kb_documents blob; GET
+#     /kb/generations for the publish-history panel; rollback refuses an empty generation.
+#   2026-09-26 (later) — release/1.7.22 @ 4bfe750: c9b18ae picked "latest APPROVED", which on
+#     staging was vertex's rolled-back lossy revision; revision base and the question-guard
+#     baseline are now the revisions the live generation's chunks point at.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d7f7674674a2c1e9cab16419157853ffe7ffcd23b2a084cd2e82002203b09109
+    digest: sha256:d8312940df4a84e1f3f1422a265fcfdd01c3a03c303d56b81f9f0b7b93335d27
