@@ -1745,7 +1745,12 @@ patches:
 #     empty candidate generation from upsert_kb (persist_chunks=False). The 0-chunk
 #     "building" shell held the tenant's candidate slot, so the approve outbox event
 #     that should build the real candidate retried candidate_slot_busy until it ran out.
+#   2026-09-26 — release/1.7.22 @ 90f361e: approve refuses a canonical revision that drops
+#     FAQ questions the previous APPROVED revision of the same scope answered (409
+#     canonical_revision_drops_faq_questions; allow_question_loss=true to override), and
+#     an advisory eval failure with a ready publish gate now shows Publish instead of
+#     "AI revision". An AI revision had approved vertex with 6 of 18 questions left.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:4b633339f42a6a38474ba060dd72ab05afedca5e8445021a14f80fb1684c5d03
+    digest: sha256:d7f7674674a2c1e9cab16419157853ffe7ffcd23b2a084cd2e82002203b09109
