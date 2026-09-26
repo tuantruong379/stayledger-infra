@@ -60,4 +60,7 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    digest: sha256:009df15f2ba25e2c3f4d6fb68a482aa7ae6723f60465f166ad4fc33490348184
+    # Tag: ffe9529 (2026-09-26) -- toast text for the api's new 409
+    # canonical_revision_drops_faq_questions (approve refused because the normalized
+    # revision lost FAQ questions); also carries c1c10b1 and 3849b18.
+    digest: sha256:18c74f74682611f836793de730fd1bc430576338ab998285f165daf1f6345e4b
