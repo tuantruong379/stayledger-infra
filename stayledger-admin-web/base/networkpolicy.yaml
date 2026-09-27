@@ -68,7 +68,19 @@ spec:
       ports:
         - protocol: TCP
           port: 3001
-    # HTTPS egress (assistant channel-status via public staging URL)
+    # AI assistant api, in-cluster (channel-status server-side fetch of /health/integrations).
+    # The AI api refuses that path when it arrives through Cloudflare/ingress (2026-09-27).
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: stayledger-ai-assistant
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-api
+      ports:
+        - protocol: TCP
+          port: 8000
+    # HTTPS egress (other external calls)
     - ports:
         - protocol: TCP
           port: 443

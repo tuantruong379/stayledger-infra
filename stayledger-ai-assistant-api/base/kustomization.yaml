@@ -29,6 +29,7 @@ resources:
   #   kubectl apply -f infra/stayledger-ai-assistant-api/base/datastores/postgres-bootstrap-job.yaml
   # DO NOT include here — Kubernetes Jobs are immutable after creation.
   - datastores/postgres-backup-cronjob.yaml
+  - datastores/postgres-backup-offnode-cronjob.yaml
   # postgres-service-nodeport.yaml is applied separately for direct DB access (DBeaver, psql):
   #   kubectl apply -f infra/stayledger-ai-assistant-api/base/datastores/postgres-service-nodeport.yaml
   - datastores/pgbouncer-deployment.yaml

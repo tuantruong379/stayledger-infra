@@ -25,6 +25,7 @@ resources:
 - allow-pgbouncer-egress.yaml
 - allow-pgbouncer-ingress.yaml
 - allow-postgres-backup-egress.yaml
+- allow-postgres-backup-offnode-egress.yaml
 - allow-postgres-ingress.yaml
 - allow-redis-ingress-from-api.yaml
 - allow-redis-ingress-from-channel-worker.yaml

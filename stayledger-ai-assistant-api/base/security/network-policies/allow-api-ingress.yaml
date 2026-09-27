@@ -57,3 +57,17 @@ spec:
     ports:
     - protocol: TCP
       port: 8000
+  # PMS admin-web server-side channel-status fetch of /health/integrations, in-cluster since
+  # 2026-09-27 (the api refuses that path when it arrives through Cloudflare/ingress).
+  - from:
+    - namespaceSelector:
+        matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values: [stayledger-staging, stayledger]
+      podSelector:
+        matchLabels:
+          app: stayledger-admin-web
+    ports:
+    - protocol: TCP
+      port: 8000

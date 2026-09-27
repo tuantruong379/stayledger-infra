@@ -17,6 +17,7 @@ resources:
   - kb-retention-cronjob.yaml
 
 patches:
+  - path: postgres-backup-offnode-prefix-patch.yaml
   - path: stayledger-ai-assistant-api-configmap-patch.yaml
   - path: stayledger-ai-assistant-metrics-aggregator-configmap-patch.yaml
   - path: stayledger-ai-assistant-channel-worker-resources-patch.yaml
@@ -1762,7 +1763,9 @@ patches:
 #     (vulture + repo-wide reference check); no behaviour change, 7277 tests pass.
 #   2026-09-27 — release/1.7.22 @ a805c2d: pypdf added to requirements-prod (PDF KB import had
 #     never worked in the image), aiohttp 3.14.1 -> 3.14.3.
+#   2026-09-27 — release/1.7.22 @ 08b8663: /metrics/prom and /health/integrations return 404 to
+#     callers on the public path (Cloudflare/proxy headers); in-cluster scrapes unaffected.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:296a8a4583cc752060a151b3ff32f3eefa72c04e229975fe9d35ede8b59d5248
+    digest: sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
