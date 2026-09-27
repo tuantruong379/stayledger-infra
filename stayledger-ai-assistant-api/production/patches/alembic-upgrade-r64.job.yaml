@@ -1,0 +1,151 @@
+# Production one-off: alembic 0095 -> head (0098) for the r64 promotion
+# (release/1.7.22 @ dcebc4c, prepared 2026-09-27; the same image and migrations ran
+# on staging 2026-09-25 via stayledger-ai-assistant-api/staging/jobs/
+# alembic-upgrade-owner-20260925-0096-0098-with-backup.yaml).
+#
+#   0096 strips tenant LLM routing keys from tenant_runtime_config.llm (no downgrade;
+#        billing_model / fallback_language / provider are kept).
+#   0097 comment-only fix on kb_chunks.property_id.
+#   0098 metrics_1m partition self-maintenance.
+#
+# Because 0096 cannot be downgraded, every non-null llm value is first copied into
+# tenant_runtime_config_llm_backup_20260927 and the upgrade refuses to run unless the
+# copy is complete. Restore if ever needed:
+#   UPDATE tenant_runtime_config t SET llm = b.llm
+#     FROM tenant_runtime_config_llm_backup_20260927 b WHERE b.tenant_id = t.tenant_id;
+#
+# Same owner-role DSN and direct-postgres egress as r63 (needs
+# allow-alembic-egress-direct-postgres, present on 2026-09-27).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alembic-upgrade-r64
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/name: alembic-upgrade
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    app.kubernetes.io/component: database
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 900
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: alembic-upgrade
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+        app.kubernetes.io/component: database
+    spec:
+      restartPolicy: Never
+      serviceAccountName: api-sa
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: alembic
+          image: putin111/stayledger-ai-assistant-api@sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              cd /app
+              export STAYLEDGER_AI_DSN="$(python - <<'PY'
+              import os, urllib.parse as u
+              print(f"postgresql://{u.quote(os.environ['PGOWNER_USER'], safe='')}:{u.quote(os.environ['PGOWNER_PASSWORD'], safe='')}@postgres:5432/{os.environ['PGOWNER_DB']}")
+              PY
+              )"
+              export PYTHONPATH=/app
+              python - <<'PY'
+              import glob, os, re, subprocess, sys
+              import psycopg
+
+              DSN = os.environ["STAYLEDGER_AI_DSN"]
+
+              def alembic(*args):
+                  print(f"[alembic] $ alembic {' '.join(args)}", flush=True)
+                  subprocess.run(["alembic", *args], check=True)
+
+              def current():
+                  with psycopg.connect(DSN) as c:
+                      return c.execute("SELECT version_num FROM alembic_version").fetchone()[0]
+
+              # --- preflight: owner role, expected starting stamp -----------------------
+              with psycopg.connect(DSN) as c:
+                  u, o, v = c.execute(
+                      "SELECT current_user, (SELECT tableowner FROM pg_tables WHERE tablename='alembic_version'),"
+                      " (SELECT version_num FROM alembic_version)"
+                  ).fetchone()
+              print(f"[alembic] role={u} schema_owner={o} current={v}", flush=True)
+              if u != o:
+                  sys.exit(f"refusing: role {u} is not the schema owner {o}; new objects would miss the default ACLs")
+              if v != "0095":
+                  sys.exit(f"refusing: expected alembic_version 0095, found {v}")
+
+              # --- backup of the column 0096 rewrites (0096 has no downgrade) ----------
+              with psycopg.connect(DSN) as c:
+                  c.execute("""CREATE TABLE IF NOT EXISTS tenant_runtime_config_llm_backup_20260927 (
+                      tenant_id text PRIMARY KEY, llm jsonb, backed_up_at timestamptz NOT NULL DEFAULT now())""")
+                  c.execute("""INSERT INTO tenant_runtime_config_llm_backup_20260927 (tenant_id, llm)
+                      SELECT tenant_id, llm FROM tenant_runtime_config WHERE llm IS NOT NULL
+                      ON CONFLICT (tenant_id) DO NOTHING""")
+                  src_n = c.execute("SELECT count(*) FROM tenant_runtime_config WHERE llm IS NOT NULL").fetchone()[0]
+                  bak_n = c.execute("SELECT count(*) FROM tenant_runtime_config_llm_backup_20260927").fetchone()[0]
+                  c.commit()
+              print(f"[alembic] llm backup rows={bak_n} source rows={src_n}", flush=True)
+              if bak_n == 0 or bak_n < src_n:
+                  sys.exit("refusing: llm backup incomplete")
+
+              # --- the real upgrade ------------------------------------------------------
+              alembic("upgrade", "head")
+              v = current()
+              print(f"[alembic] after: {v}", flush=True)
+              if v != "0098":
+                  sys.exit(f"expected 0098, found {v}")
+              PY
+          env:
+            - name: PGOWNER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_USER
+            - name: PGOWNER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: PGOWNER_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_DB
+          envFrom:
+            - configMapRef:
+                name: stayledger-ai-assistant-api-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
+              ephemeral-storage: 64Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi

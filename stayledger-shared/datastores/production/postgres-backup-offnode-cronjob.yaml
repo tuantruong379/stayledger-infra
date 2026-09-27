@@ -10,7 +10,7 @@
 #   4. kubectl apply -f postgres-backup-offnode-cronjob.yaml
 #
 # IMPORTANT (AWS S3): S3_ENDPOINT must be https://s3.ap-southeast-1.amazonaws.com
-# (generic regional) with mc --path on. Do not use bucket vhost URLs.
+# (generic regional); the script uses path-style addressing. Do not use bucket vhost URLs.
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -72,12 +72,23 @@ data:
     echo "[offnode] uploading ${NAME} to ${S3_BUCKET}/${S3_PREFIX} at ${STARTED_AT}"
     SUM=$(md5sum "${LATEST}")
     echo "${SUM%% *}" > "/tmp/${NAME}.md5"
-    mc alias set offnode "${S3_ENDPOINT}" "${S3_ACCESS_KEY_ID}" "${S3_SECRET_ACCESS_KEY}" --path on
-    mc cp --quiet "${LATEST}" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}"
-    mc cp --quiet "/tmp/${NAME}.md5" "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}.md5"
-    mc stat "offnode/${S3_BUCKET}/${S3_PREFIX}${NAME}" >/dev/null
+    # aws-cli, not mc: docker.io/minio/mc was withdrawn (~2026-09-11) and quay.io/minio/mc
+    # has answered 401 to anonymous pulls since ~2026-09-25.
+    REGION=$(echo "${S3_ENDPOINT}" | sed -n 's#.*s3[.-]\([a-z0-9-]*\)\.amazonaws\.com.*#\1#p')
+    export AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${S3_SECRET_ACCESS_KEY}"
+    export AWS_DEFAULT_REGION="${REGION:-ap-southeast-1}"
+    aws configure set default.s3.addressing_style path
+    S3="aws --endpoint-url ${S3_ENDPOINT}"
+    ${S3} s3 cp --only-show-errors "${LATEST}" "s3://${S3_BUCKET}/${S3_PREFIX}${NAME}"
+    ${S3} s3 cp --only-show-errors "/tmp/${NAME}.md5" "s3://${S3_BUCKET}/${S3_PREFIX}${NAME}.md5"
+    ${S3} s3api head-object --bucket "${S3_BUCKET}" --key "${S3_PREFIX}${NAME}" >/dev/null
     echo "[offnode] verified remote ${S3_PREFIX}${NAME}"
-    mc find "offnode/${S3_BUCKET}/${S3_PREFIX}" --name "stayledger_*.dump" --older-than "${RETENTION_DAYS}d" --exec "mc rm {}" || true
+    CUTOFF=$(date -u -d "@$(( $(date +%s) - RETENTION_DAYS * 86400 ))" +%Y-%m-%dT%H:%M:%S)
+    ${S3} s3api list-objects-v2 --bucket "${S3_BUCKET}" --prefix "${S3_PREFIX}stayledger_" \
+      --query "Contents[?LastModified<'${CUTOFF}'].Key" --output text 2>/dev/null \
+      | tr '\t' '\n' | grep -E '\.dump(\.md5)?$' | while read -r KEY; do
+          ${S3} s3 rm --only-show-errors "s3://${S3_BUCKET}/${KEY}" || true
+        done || true
     echo "[offnode] done at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ---
 apiVersion: batch/v1
@@ -93,8 +104,8 @@ spec:
   schedule: "0 23 * * *"
   timeZone: Asia/Ho_Chi_Minh
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 2
-  failedJobsHistoryLimit: 2
+  successfulJobsHistoryLimit: 1  # matches live (was changed on-cluster, never in git)
+  failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       backoffLimit: 2
@@ -115,8 +126,8 @@ spec:
               type: RuntimeDefault
           containers:
             - name: offnode-copy
-              image: minio/mc:latest
-              command: ["/bin/sh", "/scripts/offnode.sh"]
+              image: amazon/aws-cli:2.27.50@sha256:48c3d4212e2f5b0e24bdc6af7708f9412ce65425a79575e0f78b8f8c0dcd70ab  # aws-cli: minio/mc is no longer pullable anonymously (docker.io withdrawn, quay.io 401)
+              command: ["/bin/sh", "/scripts/offnode.sh"]  # image entrypoint is `aws`
               env:
                 - name: HOME
                   value: /tmp

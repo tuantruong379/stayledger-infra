@@ -40,6 +40,23 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-27 (r64): release/1.7.22 @ dcebc4c -- the image running on staging
+# since 2026-09-27 (tag staging-20260927-dcebc4c), not a fresh build. Steps, in order:
+#   1. patches/alembic-upgrade-r64.job.yaml: backs up tenant_runtime_config.llm, then
+#      0095 -> 0098 as the owner role (0096 has no downgrade).
+#   2. scoped `kubectl set image` on the five Deployments and the rag-eval /
+#      kb-retention CronJobs -- NOT `apply -k`: this overlay's postgres PV path
+#      (/mnt/data/stayledger/ai-assistant/stayledger-ai-assistant-postgres) differs from
+#      the live, immutable one (/mnt/data/stayledger/ai-assistant/postgres); the server
+#      rejects the diff outright.
+# Ships 75d3292..dcebc4c (41 commits): cancel-command and deposit/cancellation routing
+# fixes, rerank off the event loop, metrics-pipeline freshness gauge, metrics_1m
+# partition self-maintenance, KB approve guard against dropped FAQ questions, AI
+# revisions from the live canonical revision, generation list + safe rollback, eval
+# case property precedence. Production KB content is unchanged (no canonical KB
+# workers run here).
+# Digest: sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+#
 # Promotion 2026-09-22: release/1.7.22 @ 75d3292 -- same image already verified
 # live on staging same day, not a fresh build. Rolled with scoped
 # `kubectl set image` on the five Deployments (api, channel-worker,
@@ -97,4 +114,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:fe489a457e7186617aa2c3728d350d1562b6a052eec67d974318882199309156
+    digest: sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
