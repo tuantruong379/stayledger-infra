@@ -1758,7 +1758,9 @@ patches:
 #     baseline are now the revisions the live generation's chunks point at.
 #   2026-09-27 — release/1.7.22 @ dcebc4c: run_rag_eval.py lets a golden case's own property_id
 #     win over --property (a manual --property run had skipped vertex's Liễu Giai spa case).
+#   2026-09-27 (go-live cleanup) — release/1.7.22 @ 12a5703: 18 unreferenced definitions removed
+#     (vulture + repo-wide reference check); no behaviour change, 7277 tests pass.
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+    digest: sha256:0d7930a7e668ddce55867594fca6809e38596c09eb98266d84126e4350e89034

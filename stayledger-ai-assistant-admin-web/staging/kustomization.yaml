@@ -65,4 +65,6 @@ images:
     # revision lost FAQ questions); also carries c1c10b1 and 3849b18.
     # Tag: 7582a09 (2026-09-26) -- publish-history panel with Restore to a previously live
     # generation (needs api c9b18ae for GET /kb/generations).
-    digest: sha256:1b7f40c5e9e5af0e2538119171ad78fc101de19b562a2d0d49f94521e656313c
+    # Tag: 6599c51 (2026-09-27) -- next 16.3.6 (GHSA-2xp9-vwfh-vxw4 RCE), 138 unused i18n keys
+    # dropped, package-lock.json resynced (the Dockerfile uses npm ci).
+    digest: sha256:ae86ae1681211ca9c02b815b4191eeb9346ebee2bd75c5e319aeaa3f1ad2f1e5
