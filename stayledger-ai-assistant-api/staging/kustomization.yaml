@@ -1756,7 +1756,9 @@ patches:
 #   2026-09-26 (later) — release/1.7.22 @ 4bfe750: c9b18ae picked "latest APPROVED", which on
 #     staging was vertex's rolled-back lossy revision; revision base and the question-guard
 #     baseline are now the revisions the live generation's chunks point at.
+#   2026-09-27 — release/1.7.22 @ dcebc4c: run_rag_eval.py lets a golden case's own property_id
+#     win over --property (a manual --property run had skipped vertex's Liễu Giai spa case).
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:d8312940df4a84e1f3f1422a265fcfdd01c3a03c303d56b81f9f0b7b93335d27
+    digest: sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
