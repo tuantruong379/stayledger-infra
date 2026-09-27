@@ -48,7 +48,7 @@ spec:
             - name: kb-retention
               # Digest tracks the same scoped `kubectl set image` promotions as the API
               # Deployment -- see production/kustomization.yaml's promotion notes.
-              image: putin111/stayledger-ai-assistant-api@sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+              image: putin111/stayledger-ai-assistant-api@sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
               imagePullPolicy: IfNotPresent
               command: ["/venv/bin/python", "scripts/kb_retention_purge.py"]
               envFrom:

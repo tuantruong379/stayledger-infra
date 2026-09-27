@@ -1,0 +1,108 @@
+# PRODUCTION Alertmanager routing (cluster context `stayledger`), added 2026-09-27 for go-live.
+# Until this existed production's Alertmanager had only the `null` receiver: every alert,
+# including KubeJobFailed (rag-eval) and NodeClockNotSynchronising, was dropped unseen.
+# Same SES email receivers as staging (stayledger-shared/observability/alerting/alertmanager-config.yaml),
+# plus one extra route for infrastructure alerts that matter on a single-node cluster.
+#
+# Apply with stayledger-shared/production/apply-alertmanager-config.sh, which requires
+# Secret observability/alertmanager-smtp (key smtp-password) and substitutes the SES SMTP
+# username from Secret stayledger/stayledger-secrets (key smtp-user) at apply time, so the
+# username is never committed.
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: stayledger-alertmanager-production
+  namespace: observability
+  labels:
+    release: kps
+    app: stayledger
+spec:
+  route:
+    # Reasoning: blackhole by default so KubePodNotReady / CPUThrottling do not flood platform@.
+    receiver: "null"
+    # Reasoning: group by env (Prometheus alertRelabelings) so staging/prod never share a group.
+    groupBy: [alertname, severity, env]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    routes:
+      # Product / StayLedger-named alerts (any severity) → email
+      - receiver: email-platform
+        matchers:
+          - name: alertname
+            value: "^StayLedger.*"
+            matchType: "=~"
+        continue: true
+      - receiver: email-platform
+        matchers:
+          - name: alertname
+            value: "^(BackupJobFailed|DocumentBackup|AiWorker|AiOps|PmsAi|GuestChat).*"
+            matchType: "=~"
+        continue: true
+      # Infrastructure alerts that mean data loss or an outage on a single-node cluster,
+      # at warning level too (kube-prometheus-stack defaults them to warning).
+      - receiver: email-platform-critical
+        matchers:
+          - name: alertname
+            value: "^(KubeJobFailed|KubePodCrashLooping|KubeDeploymentReplicasMismatch|KubeStatefulSetReplicasMismatch|KubePersistentVolumeFillingUp|NodeFilesystemAlmostOutOfSpace|NodeFilesystemSpaceFillingUp|NodeClockNotSynchronising|NodeClockSkewDetected|KubeNodeNotReady|TargetDown|CertManagerCertExpirySoon)$"
+            matchType: "=~"
+        continue: false
+      # All remaining criticals (incl. StayLedger critical) → critical template
+      - receiver: email-platform-critical
+        matchers:
+          - name: severity
+            value: critical
+            matchType: "="
+        continue: false
+
+  receivers:
+    - name: "null"
+    - name: email-platform
+      emailConfigs:
+        - to: platform@stayledger.io
+          from: noreply@stayledger.io
+          smarthost: email-smtp.ap-southeast-1.amazonaws.com:587
+          hello: stayledger.io
+          requireTLS: true
+          authUsername: "__SES_SMTP_USERNAME__"
+          authPassword:
+            name: alertmanager-smtp
+            key: smtp-password
+          sendResolved: true
+          # Reasoning: Subject shows env so inbox triage does not depend on body open.
+          headers:
+            - key: Subject
+              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }} {{ .CommonLabels.severity }}'
+          html: |
+            <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
+            {{ range .Alerts }}
+            <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }}) — env={{ .Labels.env }}</p>
+            <p>{{ .Annotations.summary }}</p>
+            <p>{{ .Annotations.description }}</p>
+            {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
+            {{ if .Annotations.dashboard_url }}<p>Dashboard: {{ .Annotations.dashboard_url }}</p>{{ end }}
+            {{ end }}
+
+    - name: email-platform-critical
+      emailConfigs:
+        - to: platform@stayledger.io
+          from: noreply@stayledger.io
+          smarthost: email-smtp.ap-southeast-1.amazonaws.com:587
+          hello: stayledger.io
+          requireTLS: true
+          authUsername: "__SES_SMTP_USERNAME__"
+          authPassword:
+            name: alertmanager-smtp
+            key: smtp-password
+          sendResolved: true
+          headers:
+            - key: Subject
+              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] CRITICAL {{ .CommonLabels.alertname }}'
+          html: |
+            <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
+            {{ range .Alerts }}
+            <p><b>CRITICAL: {{ .Labels.alertname }}</b> — env={{ .Labels.env }}</p>
+            <p>{{ .Annotations.summary }}</p>
+            <p>{{ .Annotations.description }}</p>
+            {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
+            {{ end }}

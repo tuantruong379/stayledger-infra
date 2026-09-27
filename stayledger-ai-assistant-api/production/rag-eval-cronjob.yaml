@@ -61,7 +61,7 @@ spec:
             - name: rag-eval
               # Digest tracks the same scoped `kubectl set image` promotions as the API
               # Deployment -- see production/kustomization.yaml's promotion notes.
-              image: putin111/stayledger-ai-assistant-api@sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+              image: putin111/stayledger-ai-assistant-api@sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
               imagePullPolicy: IfNotPresent
               command: ["/venv/bin/python", "scripts/run_rag_eval.py"]
               args:
@@ -77,6 +77,10 @@ spec:
                 - secretRef:
                     name: stayledger-ai-assistant-api-secrets
               env:
+                # Without it every run blocked on leakage_dataset_missing (2026-08-17 .. 2026-09-27).
+                # The file's .meta.json expires 2026-10-10 -- renew it before then or runs block again.
+                - name: RAG_QUALITY_DATASET_PATH
+                  value: /app/tests/evals/rag_leakage/staging.v1.jsonl
                 - name: RAG_EVAL_JUDGE_MODEL
                   value: azure/gpt-5.4-mini
                 - name: RAG_EVAL_REQUIRE_REVIEWED

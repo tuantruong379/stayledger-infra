@@ -18,7 +18,8 @@ data:
   NEXT_PUBLIC_BOOKING_WEB_URL: "https://app.stayledger.io"
   INTERNAL_API_URL: "http://stayledger-api/api"
   # Public assistant API — used by PMS admin AI surfaces (Traefik ingress on stayledger cluster).
-  AI_ASSISTANT_INTERNAL_API_URL: "https://api-assistant.stayledger.io"
+  # In-cluster since 2026-09-27: /health/integrations is refused on the public path.
+  AI_ASSISTANT_INTERNAL_API_URL: "http://stayledger-ai-assistant-api.stayledger-ai-assistant.svc.cluster.local:8000"
   # NEXT_PUBLIC_AI_* flags removed from ConfigMap 2026-08-22 — client bundles bake them at
   # Docker build (defaults true in ai-dev-flags.ts). ConfigMap values were never sed-patched
   # and were not mounted on the main container, so changing them here had no effect.

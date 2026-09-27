@@ -85,6 +85,12 @@ prometheus:
 
 alertmanager:
   alertmanagerSpec:
+    # Same as staging: AlertmanagerConfig lives in observability, application alerts carry
+    # namespace=stayledger / stayledger-ai-assistant. The default (OnNamespace) would only
+    # route alerts from observability itself. Added 2026-09-27 with the production
+    # AlertmanagerConfig (stayledger-shared/production/alertmanager-config.yaml).
+    alertmanagerConfigMatcherStrategy:
+      type: None
     resources:
       requests: { cpu: 50m, memory: 64Mi }
       limits:   { cpu: 200m, memory: 256Mi }

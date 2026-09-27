@@ -1,0 +1,1 @@
+[{"op":"add","path":"/spec/ingress/-","value":{"from":[{"namespaceSelector":{"matchExpressions":[{"key":"kubernetes.io/metadata.name","operator":"In","values":["stayledger"]}]},"podSelector":{"matchLabels":{"app":"stayledger-admin-web"}}}],"ports":[{"port":8000,"protocol":"TCP"}]}}]

@@ -1,0 +1,16 @@
+# S3 prefix for the AI-assistant off-node dumps in production (see base/datastores/postgres-backup-offnode-cronjob.yaml).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup-offnode
+  namespace: stayledger-ai-assistant
+spec:
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: offnode-copy
+              env:
+                - name: S3_PREFIX
+                  value: stayledger-ai-assistant/production/postgres/

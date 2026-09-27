@@ -18,7 +18,8 @@ labels:
 # Promote admin-web — tag 131c3c4 (release/1.4.14).
 images:
   - name: putin111/stayledger-admin-web
-    digest: sha256:5c80217893d26e7615aa167c360e83e183dee1eceef40f4d873f9a2f3ab3c38c
+    # c0d3a34 (2026-09-27): next 16.3.6 -- GHSA-2xp9-vwfh-vxw4 unauthenticated RCE via /_next/image.
+    digest: sha256:a740a5a87f33d224c2313ccf8b00c98c00d82435bd09e4adaf25c9e1557bb9b0
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

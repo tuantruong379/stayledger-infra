@@ -40,6 +40,15 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-27 (r65): release/1.7.22 @ 08b8663 by scoped `set image` (same 5 Deployments +
+# rag-eval / kb-retention CronJobs). Ships 12a5703 (dead code), a805c2d (pypdf in image -- PDF KB
+# import had never worked; aiohttp 3.14.3), 08b8663 (/metrics/prom and /health/integrations 404 on
+# the public path). Before it: allow-api-ingress gained a rule for PMS admin-web (live JSON patch,
+# production/patches/allow-api-ingress-pms-admin-web.json) and PMS admin-web moved to the in-cluster
+# URL. Also applied: observability/servicemonitors/*.yaml -- production had never scraped this api.
+# rag-eval CronJob: RAG_QUALITY_DATASET_PATH set (had failed leakage_dataset_missing since 08-17).
+# Digest: sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
+#
 # Promotion 2026-09-27 (r64): release/1.7.22 @ dcebc4c -- the image running on staging
 # since 2026-09-27 (tag staging-20260927-dcebc4c), not a fresh build. Steps, in order:
 #   1. patches/alembic-upgrade-r64.job.yaml: backs up tenant_runtime_config.llm, then
@@ -114,4 +123,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:8d126bfe3f27c9f759bc940731f81bcdea42af4c50abb4feff435863baa75e83
+    digest: sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7

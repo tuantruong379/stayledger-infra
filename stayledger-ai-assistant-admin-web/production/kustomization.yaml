@@ -30,4 +30,10 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-admin-web
     newName: putin111/stayledger-ai-assistant-admin-web
-    newTag: "b7f47aa"
+    # 2026-09-27: live was putin111/ai-hotel-assistant-frontend:b7f47aa (pre-rename repo, untraceable).
+    # Rolled by scoped `set image` on container "frontend" to 6599c51 (next 16.3.6 RCE fix, Publish/
+    # restore UI). Do not `apply -k` this overlay as-is: it would add a second Ingress for the host
+    # the live hotel-assistant-frontend Ingress already serves. Same day the live ConfigMap
+    # NEXT_PUBLIC_API_BASE_URL was reset to this repo's value -- it pointed at the deleted
+    # hotel-assistant-api Service and every admin login returned 500.
+    digest: sha256:ae86ae1681211ca9c02b815b4191eeb9346ebee2bd75c5e319aeaa3f1ad2f1e5
