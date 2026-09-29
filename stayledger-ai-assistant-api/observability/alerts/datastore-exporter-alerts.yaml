@@ -12,15 +12,20 @@ spec:
     - name: stayledger-ai-assistant.datastore-exporters
       rules:
         - alert: PostgresExporterDown
-          expr: up{namespace="stayledger-ai-assistant", job="postgres-exporter"} == 0
+          # pg_up == 0: the exporter answers scrapes but cannot log in to Postgres (staging ran like
+          # this unnoticed until 2026-09-29 after a password drift), so `up` alone never fires.
+          expr: |
+            up{namespace="stayledger-ai-assistant", job="postgres-exporter"} == 0
+            or
+            pg_up{namespace="stayledger-ai-assistant", job="postgres-exporter"} == 0
           for: 3m
           labels:
             severity: p2
             component: stayledger-ai-assistant-postgres
             category: datastore
           annotations:
-            summary: "Postgres exporter is down"
-            description: "Prometheus cannot scrape stayledger-ai-assistant-postgres-exporter. Database internals are not observable."
+            summary: "Postgres exporter is down or cannot reach Postgres"
+            description: "Prometheus cannot scrape stayledger-ai-assistant-postgres-exporter, or the exporter cannot connect to Postgres (check its credentials against postgres-secret). Database internals are not observable."
 
         - alert: PostgresHighConnectionUtilization
           expr: |
