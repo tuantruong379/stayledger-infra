@@ -1765,7 +1765,9 @@ patches:
 #     never worked in the image), aiohttp 3.14.1 -> 3.14.3.
 #   2026-09-27 — release/1.7.22 @ 08b8663: /metrics/prom and /health/integrations return 404 to
 #     callers on the public path (Cloudflare/proxy headers); in-cluster scrapes unaffected.
+#   2026-09-29 — release/1.7.22 @ e9b69cc: pms-web /session returns the stored conversation id
+#     (a re-bootstrapped session got a fresh uuid with no row: billing-window FK failures).
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
+    digest: sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
