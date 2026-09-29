@@ -201,15 +201,18 @@ spec:
             timeoutSeconds: 3
             failureThreshold: 3
           volumeMounts:
-            - name: uploads
+            # Avatars and guest ID scans. Was an emptyDir: every deploy/restart deleted them while
+            # guest records kept the URLs (2026-09-29). Now the uploads/ subdirectory of the
+            # guest-documents PVC, so the nightly encrypted document-backup-offnode job copies it
+            # to S3 as well. The directory must exist (created by the app user) before first mount.
+            - name: guest-documents
               mountPath: /app/uploads
+              subPath: uploads
             - name: guest-documents
               mountPath: /var/lib/stayledger/guest-documents
             - name: tmp
               mountPath: /tmp
       volumes:
-        - name: uploads
-          emptyDir: {}
         - name: guest-documents
           persistentVolumeClaim:
             claimName: stayledger-guest-documents

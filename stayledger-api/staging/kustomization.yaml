@@ -27,12 +27,12 @@ labels:
     includeSelectors: false
 
 # Pin digest (not floating tag) so migrate + API + ai-worker stay on one image.
-# Tag: 444b90c (release/1.5.0)
+# Tag: c9d0e47 (release/1.5.0)
 images:
   - name: putin111/stayledger-api
-    # 444b90c (2026-09-29): guest-chat BFF no longer aborts assistant turns after 5s;
-    # multer/nodemailer/adm-zip patched.
-    digest: sha256:c8c495f4517b5c4010102b7305713ebba488fbcb87c19f821f573224fe682707
+    # c9d0e47 (2026-09-29): new guests need only a first name (storefront bookings without a
+    # last name failed); includes 444b90c (BFF 5s abort fix, multer/nodemailer/adm-zip patches).
+    digest: sha256:7baebf81d1b15303b40f7200a2caf74a7c4df00181dd951ee2ce37a3c979677f
 
 patches:
   - path: patches/deployment-staging.yaml

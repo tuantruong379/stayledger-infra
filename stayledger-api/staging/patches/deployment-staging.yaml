@@ -9,8 +9,8 @@ spec:
   template:
     metadata:
       labels:
-        # Match kustomization images pin (tag 444b90c / release/1.5.0).
-        version: "444b90c"
+        # Match kustomization images pin (tag c9d0e47 / release/1.5.0).
+        version: "c9d0e47"
     spec:
       containers:
         - name: api
