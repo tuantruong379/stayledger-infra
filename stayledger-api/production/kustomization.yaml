@@ -16,10 +16,12 @@ labels:
       environment: production
     includeSelectors: false
 
-# Promote API — tag 192294f (release/1.4.9).
+# Promote API — tag c9d0e47 (release/1.5.0), 2026-09-29.
 images:
   - name: putin111/stayledger-api
-    digest: sha256:f8145be443663ceb07073dac3f285c02b298231f4888ab9a0e3f49bfd0b73a7d
+    # c9d0e47: new guests need only a first name; multer/nodemailer/adm-zip patched; guest-chat
+    # BFF 5s abort fix (feature dormant here). Live had been 83140d7 (set image; git said 192294f).
+    digest: sha256:7baebf81d1b15303b40f7200a2caf74a7c4df00181dd951ee2ce37a3c979677f
 
 patches:
   # Production uses ClusterIP + Traefik Ingress only (no NodePort).

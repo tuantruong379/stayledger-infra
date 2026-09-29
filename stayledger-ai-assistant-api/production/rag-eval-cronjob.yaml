@@ -61,7 +61,7 @@ spec:
             - name: rag-eval
               # Digest tracks the same scoped `kubectl set image` promotions as the API
               # Deployment -- see production/kustomization.yaml's promotion notes.
-              image: putin111/stayledger-ai-assistant-api@sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
+              image: putin111/stayledger-ai-assistant-api@sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
               imagePullPolicy: IfNotPresent
               command: ["/venv/bin/python", "scripts/run_rag_eval.py"]
               args:

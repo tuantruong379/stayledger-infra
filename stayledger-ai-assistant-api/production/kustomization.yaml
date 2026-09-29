@@ -40,6 +40,11 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-29 (r66): release/1.7.22 @ e9b69cc by scoped `set image` (5 Deployments +
+# rag-eval / kb-retention). pms-web /session returns the stored conversation id (re-bootstrapped
+# sessions got a fresh uuid with no row: billing-window FK failures, /history 404).
+# Digest: sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
+#
 # Promotion 2026-09-27 (r65): release/1.7.22 @ 08b8663 by scoped `set image` (same 5 Deployments +
 # rag-eval / kb-retention CronJobs). Ships 12a5703 (dead code), a805c2d (pypdf in image -- PDF KB
 # import had never worked; aiohttp 3.14.3), 08b8663 (/metrics/prom and /health/integrations 404 on
@@ -123,4 +128,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:3e3431c4476a0ad3ba1320da3261395c6279f617e1b677fe3ec157470c040ed7
+    digest: sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d

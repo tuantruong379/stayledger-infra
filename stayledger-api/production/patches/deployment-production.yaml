@@ -17,12 +17,12 @@ spec:
   template:
     metadata:
       labels:
-        # Match kustomization images pin (tag 192294f / release/1.4.9).
-        version: "192294f"
+        # Match kustomization images pin (tag c9d0e47 / release/1.5.0).
+        version: "c9d0e47"
       annotations:
-        stayledger.io/git-sha: "192294f"
-        stayledger.io/branch: "release/1.4.9"
-        kubernetes.io/change-cause: "Infra cleanup — CORS/FRONTEND_URL via ConfigMap; version sync 192294f"
+        stayledger.io/git-sha: "c9d0e47"
+        stayledger.io/branch: "release/1.5.0"
+        kubernetes.io/change-cause: "Promote API c9d0e47: optional guest last name, dependency CVE patches, uploads on PVC"
     spec:
       containers:
         - name: api
