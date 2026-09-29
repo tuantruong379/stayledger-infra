@@ -19,7 +19,8 @@ images:
   - name: putin111/stayledger-admin-web
     # c0d3a34 (2026-09-27): next 16.3.6 -- GHSA-2xp9-vwfh-vxw4 unauthenticated RCE via /_next/image.
     # 53f5ddb (2026-09-29): availability tab title h1 -> h2 (one h1 per page).
-    digest: sha256:ef011856004ff92fcfd89f2ab30daee4a92dd13f9d672955990deb703bed703e
+    # 64f256b (2026-09-29): prod CSP drops dev storage host; tab h1s -> h2; sharp 0.35.5.
+    digest: sha256:496a7744e43b13038081552b95ea90dd7b8bb790e5c7c361d9c16f8f3cd8e74c
 
 patches:
   - path: patches/deployment-staging.yaml
