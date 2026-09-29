@@ -1,0 +1,261 @@
+# Canonical KB pipeline workers for PRODUCTION (added 2026-09-29).
+#
+# Production defaults to rollout mode CANONICAL_REQUIRED, so a KB upload (/kb/import-file) only
+# becomes live chunks after kb-raw-processing-worker and kb-canonical-chunk-worker process it.
+# Production never ran them, so imports queued forever. Same image digest, ConfigMap, Secret and
+# ServiceAccount as the other production workers.
+#
+# NOT in kustomization.yaml resources and NOT rendered from base: production's datastores still
+# carry the pre-rename labels (pgbouncer pod is app.kubernetes.io/name=pgbouncer), and base's
+# allow-pgbouncer-ingress would re-point pgbouncer's policy at a label no pod has. Access to
+# pgbouncer is therefore granted by an ADDITIVE policy below, like
+# allow-pgbouncer-ingress-from-kb-retention. Apply with:
+#   kubectl --context stayledger apply -f stayledger-ai-assistant-api/production/kb-canonical-workers.yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    environment: production
+  name: stayledger-ai-assistant-kb-raw-processing-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /venv/bin/python
+        - -m
+        - app.workers.kb_raw_processing_worker
+        env:
+        - name: LLM_DEFAULT_TRAFFIC_CLASS
+          value: system
+        - name: RAG_KB_PROCESSING_WORKER_POLL_SECONDS
+          value: '5'
+        - name: RAG_KB_PROCESSING_STUCK_TIMEOUT_SECONDS
+          value: '900'
+        - name: RAG_QUALITY_DATASET_PATH
+          value: /app/tests/evals/rag_leakage/staging.v1.jsonl
+        envFrom:
+        - configMapRef:
+            name: stayledger-ai-assistant-api-config
+        - secretRef:
+            name: stayledger-ai-assistant-api-secrets
+        image: putin111/stayledger-ai-assistant-api@sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -d /proc/1
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 20
+          timeoutSeconds: 2
+        name: kb-raw-processing-worker
+        resources:
+          limits:
+            cpu: '1'
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -d /proc/1
+          failureThreshold: 30
+          periodSeconds: 2
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: api-sa
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+    environment: production
+  name: stayledger-ai-assistant-kb-canonical-chunk-worker
+  namespace: stayledger-ai-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+        app.kubernetes.io/part-of: stayledger-ai-assistant
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - command:
+        - /venv/bin/python
+        - -m
+        - app.workers.kb_canonical_chunk_worker
+        env:
+        - name: LLM_DEFAULT_TRAFFIC_CLASS
+          value: system
+        - name: RAG_CANONICAL_CHUNK_WORKER_POLL_SECONDS
+          value: '5'
+        envFrom:
+        - configMapRef:
+            name: stayledger-ai-assistant-api-config
+        - secretRef:
+            name: stayledger-ai-assistant-api-secrets
+        image: putin111/stayledger-ai-assistant-api@sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -d /proc/1
+          failureThreshold: 3
+          initialDelaySeconds: 20
+          periodSeconds: 20
+          timeoutSeconds: 2
+        name: kb-canonical-chunk-worker
+        resources:
+          limits:
+            cpu: '1'
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          readOnlyRootFilesystem: true
+        startupProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - test -d /proc/1
+          failureThreshold: 30
+          periodSeconds: 2
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 10001
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      serviceAccountName: api-sa
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kb-raw-processing-worker-egress
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: pgbouncer
+  - ports:
+    - port: 443
+      protocol: TCP
+    to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - 10.0.0.0/8
+        - 172.16.0.0/12
+        - 192.168.0.0/16
+        - 169.254.0.0/16
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-kb-canonical-chunk-worker-egress
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+  policyTypes:
+  - Egress
+  egress:
+  - ports:
+    - port: 5432
+      protocol: TCP
+    to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: pgbouncer
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-pgbouncer-ingress-from-kb-canonical-workers
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: pgbouncer
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: stayledger-ai-assistant-kb-raw-processing-worker
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: stayledger-ai-assistant-kb-canonical-chunk-worker
+    ports:
+    - port: 5432
+      protocol: TCP
