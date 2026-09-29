@@ -1,0 +1,128 @@
+# Isolated off-node restore drill (both databases, both environments) — 2026-09-29.
+#
+# Downloads the newest off-node dump from S3, verifies its .md5, starts a throwaway Postgres
+# INSIDE this pod (data in an emptyDir, unix socket only, no network listener), restores into
+# it, prints table/row counts and the time each phase took, then exits. It never connects to
+# a live database. Rendered and run by scripts/restore-drill.sh; do not apply by hand.
+#
+# Placeholders: __NAME__ __NAMESPACE__ __LABEL_NAME__ __SECRET__ __PREFIX__ __PATTERN__ __TABLES__
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: __NAME__
+  namespace: __NAMESPACE__
+  labels:
+    app.kubernetes.io/name: __LABEL_NAME__
+    stayledger.io/purpose: isolated-restore-drill
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 86400
+  activeDeadlineSeconds: 3600
+  template:
+    metadata:
+      labels:
+        # __LABEL_NAME__ reuses the off-node backup job's egress NetworkPolicy (HTTPS to S3 only)
+        # where the namespace is default-deny.
+        app.kubernetes.io/name: __LABEL_NAME__
+        stayledger.io/purpose: isolated-restore-drill
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: fetch-s3
+          image: amazon/aws-cli:2.27.50@sha256:48c3d4212e2f5b0e24bdc6af7708f9412ce65425a79575e0f78b8f8c0dcd70ab
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              T0=$(date +%s)
+              REGION=$(echo "${S3_ENDPOINT}" | sed -n 's#.*s3[.-]\([a-z0-9-]*\)\.amazonaws\.com.*#\1#p')
+              export AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY_ID}" AWS_SECRET_ACCESS_KEY="${S3_SECRET_ACCESS_KEY}"
+              export AWS_DEFAULT_REGION="${REGION:-ap-southeast-1}"
+              aws configure set default.s3.addressing_style path
+              S3="aws --endpoint-url ${S3_ENDPOINT}"
+              KEY=$(${S3} s3api list-objects-v2 --bucket "${S3_BUCKET}" --prefix "${DRILL_PREFIX}${DRILL_PATTERN}" \
+                --query "sort_by(Contents[?ends_with(Key, '.dump')], &LastModified)[-1].Key" --output text)
+              test -n "${KEY}" && test "${KEY}" != "None"
+              echo "[drill] newest off-node dump: ${KEY}"
+              ${S3} s3 cp --only-show-errors "s3://${S3_BUCKET}/${KEY}" /restore/db.dump
+              ${S3} s3 cp --only-show-errors "s3://${S3_BUCKET}/${KEY}.md5" /restore/db.dump.md5
+              EXPECTED=$(tr -d ' \t\r\n' < /restore/db.dump.md5 | cut -c1-32)
+              ACTUAL=$(md5sum /restore/db.dump | cut -d' ' -f1)
+              test "${EXPECTED}" = "${ACTUAL}"
+              echo "[drill] md5 OK ${ACTUAL} size=$(du -h /restore/db.dump | cut -f1)"
+              echo "${KEY}" > /restore/key
+              echo "[drill] download_s=$(( $(date +%s) - T0 ))"
+          env:
+            - name: HOME
+              value: /tmp
+            - name: DRILL_PREFIX
+              value: "__PREFIX__"
+            - name: DRILL_PATTERN
+              value: "__PATTERN__"
+          envFrom:
+            - secretRef:
+                name: __SECRET__
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          volumeMounts:
+            - { name: restore, mountPath: /restore }
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: restore
+          image: pgvector/pgvector:pg16
+          command: ["/bin/bash", "-ec"]
+          args:
+            - |
+              export PGDATA=/restore/pgdata PGHOST=/restore/sock PGUSER=postgres
+              mkdir -p "${PGHOST}"
+              T0=$(date +%s)
+              initdb -U postgres --auth=trust -D "${PGDATA}" >/dev/null
+              pg_ctl -D "${PGDATA}" -o "-c listen_addresses='' -k ${PGHOST} -c fsync=off -c maintenance_work_mem=256MB" -w start >/dev/null
+              createdb drill
+              T1=$(date +%s)
+              set +e
+              pg_restore -d drill --no-owner --no-acl -j 2 /restore/db.dump 2> /restore/restore.err
+              RC=$?
+              set -e
+              T2=$(date +%s)
+              echo "[drill] dump=$(cat /restore/key)"
+              echo "[drill] pg_restore_exit=${RC} (1 = warnings only)"
+              grep -v "^pg_restore: warning" /restore/restore.err | head -5 || true
+              [ "${RC}" -le 1 ]
+              echo "[drill] public_tables=$(psql -d drill -Atc "select count(*) from information_schema.tables where table_schema='public'")"
+              for t in __TABLES__; do
+                echo "[drill] rows ${t}=$(psql -d drill -Atc "select count(*) from ${t}" 2>/dev/null || echo NA)"
+              done
+              echo "[drill] db_size=$(psql -d drill -Atc "select pg_size_pretty(pg_database_size('drill'))")"
+              echo "[drill] timing_s start_db=$((T1-T0)) restore=$((T2-T1)) total_in_pod=$(( $(date +%s) - T0 ))"
+              pg_ctl -D "${PGDATA}" -m fast stop >/dev/null
+              echo "[drill] RESTORE_DRILL_PASS"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { cpu: "2", memory: 2Gi }
+          volumeMounts:
+            - { name: restore, mountPath: /restore }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: restore
+          emptyDir:
+            sizeLimit: 8Gi
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
