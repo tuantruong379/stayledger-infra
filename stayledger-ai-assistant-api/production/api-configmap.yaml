@@ -6,7 +6,8 @@
 # is the live production ConfigMap, synced with staging for the AI/RAG/KB feature flags
 # ("group C"). Environment-specific keys (URLs, APP_ENV, OTEL, NATS) stay production values;
 # staging-only test knobs (sink outbound, debug slots, 100% trace sampling) are NOT copied;
-# security (group D), PMS integration (E) and capacity (F) are separate phases.
+# Security (group D) synced in phase 2 the same day; PMS integration (E) and capacity (F) are
+# separate phases.
 #
 #   kubectl --context stayledger apply -f stayledger-ai-assistant-api/production/api-configmap.yaml
 #   then restart api + workers (envFrom is read at start).
@@ -43,6 +44,7 @@ data:
   BILLING_USD_PER_1K_TOKENS_COMPLETION: '0.0006'
   BILLING_USD_PER_1K_TOKENS_PROMPT: '0.00015'
   BOOKING_STATE_TTL_S: '900'
+  CHANNEL_BINDING_ENFORCEMENT: enforce
   CHANNEL_QUEUE_FAIL_CLOSED: '1'
   CHAT_TURN_BUDGET_S: '55'
   CONVERSATION_MEMORY_TTL_S: '1800'
@@ -54,6 +56,8 @@ data:
   FEATURE_RAG_PGVECTOR: '1'
   FEATURE_RERANKER_ENABLED: '1'
   FEEDBACK_AUTO_COLLECT: '1'
+  INJECTION_LLM_CLASSIFIER_ENABLED: '1'
+  INJECTION_LLM_CLASSIFIER_TIMEOUT_S: '2.5'
   INTENT_LLM_FALLBACK_ENABLED: '1'
   INTENT_LLM_FALLBACK_TENANT_ALLOWLIST: cupid_hotel
   INTENT_LLM_FALLBACK_TIMEOUT_S: '2.2'
@@ -136,6 +140,7 @@ data:
   RAG_SCOPED_RETRIEVAL_MAX_CONCURRENCY: '0'
   READY_REQUIRES_POSTGRES: '1'
   REDIS_SOCKET_TIMEOUT_S: '5'
+  REQUIRE_RESOLVED_PROPERTY: '1'
   ROUTER_SHADOW_VALIDATE: '0'
   TENANT_DAILY_CHAT_TURN_LIMIT: '0'
   UVICORN_WORKERS: '2'
@@ -143,7 +148,7 @@ data:
   WEBHOOK_RATE_LIMIT_FAIL_CLOSED: '1'
   WEBHOOK_RATE_LIMIT_PER_MINUTE: '600'
   WEBHOOK_RATE_LIMIT_WINDOW_S: '60'
-  WEBHOOK_REQUIRE_TENANT_API_KEY: '0'
+  WEBHOOK_REQUIRE_TENANT_API_KEY: '1'
   WEBHOOK_TRUST_X_FORWARDED_FOR: '1'
-  ZALO_WEBHOOK_REQUIRE_MAC: '0'
+  ZALO_WEBHOOK_REQUIRE_MAC: '1'
   ZALO_WEBHOOK_SKIP_MAC_VERIFY: '0'
