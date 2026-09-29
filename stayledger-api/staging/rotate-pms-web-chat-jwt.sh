@@ -13,9 +13,12 @@ set -euo pipefail
 CTX=HK-HUB-Cluster
 NS=stayledger-staging
 KID="pms-web-staging-$(date +%Y%m%d)-regen"
-TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
+TMP_POSIX=$(mktemp -d); trap 'rm -rf "$TMP_POSIX"' EXIT
+# Git Bash on Windows ships a native (mingw) openssl/python that cannot open /tmp/... paths
+# when MSYS_NO_PATHCONV is set; hand them the Windows form. No-op on Linux/macOS.
+TMP=$(cygpath -m "$TMP_POSIX" 2>/dev/null || echo "$TMP_POSIX")
 
-openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$TMP/priv.pem" 2>/dev/null
+openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$TMP/priv.pem"
 openssl pkey -in "$TMP/priv.pem" -pubout -out "$TMP/pub.pem"
 openssl pkey -in "$TMP/priv.pem" -noout -check >/dev/null   # PKCS8, parses
 

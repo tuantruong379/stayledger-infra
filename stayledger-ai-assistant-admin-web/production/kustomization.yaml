@@ -36,4 +36,6 @@ images:
     # the live hotel-assistant-frontend Ingress already serves. Same day the live ConfigMap
     # NEXT_PUBLIC_API_BASE_URL was reset to this repo's value -- it pointed at the deleted
     # hotel-assistant-api Service and every admin login returned 500.
-    digest: sha256:ae86ae1681211ca9c02b815b4191eeb9346ebee2bd75c5e319aeaa3f1ad2f1e5
+    # 2026-09-28: fd4ed63 (security headers: HSTS, X-Frame-Options, nosniff, referrer,
+    # permissions, CSP frame-ancestors), set image on container "frontend".
+    digest: sha256:4e460cc96736383d601f0e443ed4f8cfaddc00a59deffebadf4d9a8ff354b19f
