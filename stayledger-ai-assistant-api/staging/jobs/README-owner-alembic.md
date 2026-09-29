@@ -22,3 +22,6 @@ role `stayledger_ai_app` must never gain DDL.
 - If `HOTEL_OPS_DSN_OWNER` is unset, the Job exits 2.
 - Do not stamp `alembic_version` without applying DDL.
 - Do not grant app role table ownership to “make Job work”.
+
+One-off Job manifests are deleted after they have run (2026-09-29 cleanup removed 24 of them);
+`git log -- stayledger-ai-assistant-api/staging/jobs/` has every past Job if you need one again.

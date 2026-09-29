@@ -194,7 +194,7 @@ prometheus:
       # helm-upgraded.
 
       # AI Assistant postgres/redis exporters live in stayledger-ai-assistant and are
-      # scraped via ServiceMonitor hotel-assistant-datastore-exporters (not static jobs).
+      # scraped via ServiceMonitor stayledger-ai-assistant-datastore-exporters (not static jobs).
       # Legacy observability-namespace exporter Deployments can be removed after helm upgrade.
 
       # P1A: enabled. Requires pgbouncer-exporter-secret (exporter password), the

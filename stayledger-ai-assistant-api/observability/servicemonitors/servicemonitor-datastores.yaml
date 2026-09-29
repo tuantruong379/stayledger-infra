@@ -1,4 +1,8 @@
 # Scrape database/cache exporters deployed in the stayledger-ai-assistant namespace.
+# Staging names its exporter Services stayledger-ai-assistant-{postgres,redis}-exporter, production
+# still uses the pre-rename {postgres,redis}-exporter; select both and normalise `job` to the short
+# name so one set of alert rules works in both environments. (Until 2026-09-29 each cluster's
+# selector matched only the other cluster's names, so neither scraped these exporters.)
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
@@ -19,6 +23,8 @@ spec:
         values:
           - stayledger-ai-assistant-postgres-exporter
           - stayledger-ai-assistant-redis-exporter
+          - postgres-exporter
+          - redis-exporter
   jobLabel: app.kubernetes.io/name
   endpoints:
     - port: metrics
@@ -26,3 +32,8 @@ spec:
       interval: 30s
       scrapeTimeout: 10s
       honorLabels: false
+      relabelings:
+        - sourceLabels: [job]
+          regex: (?:stayledger-ai-assistant-)?(postgres|redis)-exporter
+          targetLabel: job
+          replacement: $1-exporter
