@@ -6,8 +6,9 @@
 # is the live production ConfigMap, synced with staging for the AI/RAG/KB feature flags
 # ("group C"). Environment-specific keys (URLs, APP_ENV, OTEL, NATS) stay production values;
 # staging-only test knobs (sink outbound, debug slots, 100% trace sampling) are NOT copied;
-# Security (group D) synced in phase 2 the same day; PMS integration (E) and capacity (F) are
-# separate phases.
+# Security (group D) synced in phase 2 the same day; PMS worker flags (E) on 2026-09-30 together
+# with production/pms-workers.yaml. Capacity (F: pools, UVICORN_WORKERS, redis offload) and
+# PMS_PROVIDER_DEFAULT still differ deliberately.
 #
 #   kubectl --context stayledger apply -f stayledger-ai-assistant-api/production/api-configmap.yaml
 #   then restart api + workers (envFrom is read at start).
@@ -89,14 +90,19 @@ data:
   OTEL_RESOURCE_ATTRIBUTES: deployment.environment=onprem
   OTEL_SERVICE_NAME: hotel-assistant-api
   PG_POOL_MAX_SIZE: '15'
+  PMS_CATALOG_SYNC_DRY_RUN: '0'
+  PMS_CATALOG_SYNC_ENABLED: '1'
   PMS_CONNECTOR_ENABLED: '1'
   PMS_CONVERSATION_SYNC_ENABLED: '1'
   PMS_DRAFT_BOOKING_ENABLED: '1'
+  PMS_HTTP_MAX_RETRIES: '1'
+  PMS_HTTP_TIMEOUT_S: '12'
   PMS_OUTBOX_WORKER_ENABLED: '1'
   PMS_OUTBOX_WORKER_POLL_SECONDS: '15'
   PMS_PROVIDER_DEFAULT: local
   PMS_READ_FALLBACK_MODE: fail_closed
   PMS_STAYLEDGER_ENABLED: '1'
+  PMS_WORKERS_IN_API: '0'
   PRICING_CACHE_TTL_S: '420'
   PRICING_REJECT_PAST_DATES: '1'
   PRICING_RESOLVE_TOTAL_BUDGET_S: '15'
