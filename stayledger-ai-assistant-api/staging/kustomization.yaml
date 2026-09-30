@@ -1770,4 +1770,6 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
+    # 6124a6b (2026-09-30): single-branch webhook auto-binds its branch; configured hotline
+    # counts as evidence for the hallucination guard.
+    digest: sha256:e4c226c818e49179010b69e5123453f80645fc3fcd07d9109b5d5f6c12e128b3

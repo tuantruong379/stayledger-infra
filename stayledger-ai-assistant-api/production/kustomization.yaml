@@ -40,6 +40,14 @@ patches:
   - path: patches/redis-pv-production.yaml
   - path: patches/postgres-backup-pv-production.yaml
 
+# Promotion 2026-09-30 (r67): release/1.7.22 @ 6124a6b by scoped `set image` (8 Deployments incl.
+# kb-raw/kb-canonical/rag-eval workers + rag-eval / kb-retention CronJobs). A single-branch
+# tenant's webhook binds its only branch (azure no longer answers "please choose a branch"); the
+# tenant's configured hotline counts as evidence for the hallucination guard (vertex "Lieu Giai
+# theo gio?" had its correct RAG answer blocked and a contradicting canned hedge restored).
+# Staging full eval with this image: vertex/azure/cupid 0 critical, vertex fail -> pass.
+# Digest: sha256:e4c226c818e49179010b69e5123453f80645fc3fcd07d9109b5d5f6c12e128b3
+#
 # Promotion 2026-09-29 (r66): release/1.7.22 @ e9b69cc by scoped `set image` (5 Deployments +
 # rag-eval / kb-retention). pms-web /session returns the stored conversation id (re-bootstrapped
 # sessions got a fresh uuid with no row: billing-window FK failures, /history 404).
@@ -128,4 +136,4 @@ patches:
 images:
   - name: putin111/stayledger-ai-assistant-api
     newName: putin111/stayledger-ai-assistant-api
-    digest: sha256:242bf63a1f6c747587fb072cdc1f6ec903acc1d8556c997a7844ce0e022c126d
+    digest: sha256:e4c226c818e49179010b69e5123453f80645fc3fcd07d9109b5d5f6c12e128b3
