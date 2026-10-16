@@ -11,9 +11,8 @@
 # Deployment is still the intended direction, or this CronJob superseded it, is unclear
 # from git history alone -- flagging the overlap rather than guessing.
 #
-# Also known and already tracked (docs/reviews, P2): status.lastSuccessfulTime as of this
-# capture is 2026-08-17 -- every run since (daily, `0 20 * * *`) has failed on a stale
-# leakage-dataset version. Fixing that failure is a separate, already-scoped follow-up.
+# The image-baked leakage metadata is time bounded. Production shadows that metadata
+# with rag-leakage-meta.yaml so expiry can be renewed without rebuilding the image.
 #
 # --tenant/--property/--top-k bind this to cupid_hotel only, matching the same-tenant
 # scoping already found on the RAG allowlists and kb-retention.
@@ -102,8 +101,15 @@ spec:
               volumeMounts:
                 - name: tmp
                   mountPath: /tmp
+                - name: rag-leakage-meta
+                  mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
+                  subPath: staging.v1.jsonl.meta.json
+                  readOnly: true
           volumes:
             - name: tmp
               emptyDir:
                 medium: Memory
                 sizeLimit: 64Mi
+            - name: rag-leakage-meta
+              configMap:
+                name: stayledger-ai-assistant-rag-leakage-meta

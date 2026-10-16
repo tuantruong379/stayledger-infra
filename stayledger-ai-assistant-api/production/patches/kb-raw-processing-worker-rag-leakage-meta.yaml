@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stayledger-ai-assistant-kb-raw-processing-worker
+  namespace: stayledger-ai-assistant
+spec:
+  template:
+    spec:
+      containers:
+        - name: kb-raw-processing-worker
+          volumeMounts:
+            - name: rag-leakage-meta
+              mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
+              subPath: staging.v1.jsonl.meta.json
+              readOnly: true
+      volumes:
+        - name: rag-leakage-meta
+          configMap:
+            name: stayledger-ai-assistant-rag-leakage-meta

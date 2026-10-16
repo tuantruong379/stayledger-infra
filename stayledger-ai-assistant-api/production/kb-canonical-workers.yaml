@@ -68,6 +68,11 @@ spec:
           periodSeconds: 20
           timeoutSeconds: 2
         name: kb-raw-processing-worker
+        volumeMounts:
+        - mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
+          name: rag-leakage-meta
+          readOnly: true
+          subPath: staging.v1.jsonl.meta.json
         resources:
           limits:
             cpu: '1'
@@ -98,6 +103,10 @@ spec:
           type: RuntimeDefault
       serviceAccountName: api-sa
       terminationGracePeriodSeconds: 30
+      volumes:
+      - configMap:
+          name: stayledger-ai-assistant-rag-leakage-meta
+        name: rag-leakage-meta
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -251,6 +260,11 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
+        volumeMounts:
+        - mountPath: /app/tests/evals/rag_leakage/staging.v1.jsonl.meta.json
+          name: rag-leakage-meta
+          readOnly: true
+          subPath: staging.v1.jsonl.meta.json
       securityContext:
         fsGroup: 10001
         runAsGroup: 10001
@@ -259,6 +273,10 @@ spec:
         seccompProfile:
           type: RuntimeDefault
       serviceAccountName: api-sa
+      volumes:
+      - configMap:
+          name: stayledger-ai-assistant-rag-leakage-meta
+        name: rag-leakage-meta
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy

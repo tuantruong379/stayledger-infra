@@ -14,6 +14,7 @@ resources:
   - ../base
   - ingress.yaml
   - rag-eval-cronjob.yaml
+  - rag-leakage-meta.yaml
   - kb-retention-cronjob.yaml
 
 labels:
@@ -28,6 +29,8 @@ patches:
   - path: patches/stayledger-ai-assistant-api-resources.yaml
   - path: patches/postgres-resources.yaml
   - path: patches/kb-embed-worker-resources.yaml
+  - path: patches/kb-raw-processing-worker-rag-leakage-meta.yaml
+  - path: patches/rag-eval-worker-rag-leakage-meta.yaml
   - path: patches/redis-resources.yaml
   - path: patches/stayledger-ai-assistant-webhook-worker-resources.yaml
   - path: patches/stayledger-ai-assistant-channel-worker-resources.yaml
