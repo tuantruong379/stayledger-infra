@@ -102,11 +102,11 @@ spec:
     - name: stayledger.readiness.backup
       interval: 1m
       rules:
-        # OBS-01: production CronJobs live in namespace=stayledger. Staging selectors caused
-        # absent()/stale false criticals while production Jobs were Complete.
+        # OBS-01: PMS CronJobs live in namespace=stayledger in production and
+        # namespace=stayledger-staging on HK-HUB staging. The clusters are separate.
         - alert: BackupJobFailed
           expr: |
-            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-[0-9]+"} > 0
+            kube_job_status_failed{namespace=~"stayledger(-staging)?",job_name=~"stayledger-postgres-backup-[0-9]+"} > 0
           for: 5m
           labels:
             severity: critical
@@ -120,9 +120,9 @@ spec:
           # Fires if no successful backup in >26h, OR if the cronjob has never succeeded
           # (last_successful_time series absent) — e.g. node backup dir not provisioned (BK-3).
           expr: |
-            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) > 93600)
+            (time() - max(kube_cronjob_status_last_successful_time{namespace=~"stayledger(-staging)?",cronjob="stayledger-postgres-backup"}) > 93600)
             or
-            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup"}) == 1)
+            (absent(kube_cronjob_status_last_successful_time{namespace=~"stayledger(-staging)?",cronjob="stayledger-postgres-backup"}) == 1)
           for: 30m
           labels:
             severity: critical
@@ -133,11 +133,11 @@ spec:
             runbook_url: "docs/operations/stayledger-dr-runbook.md"
 
         - alert: BackupOffNodeCopyMissing
-          # BK-4: off-node copy CronJob stayledger-postgres-backup-offnode in production.
+          # BK-4: off-node copy CronJob in the PMS namespace for each cluster.
           expr: |
-            (time() - max(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
+            (time() - max(kube_cronjob_status_last_successful_time{namespace=~"stayledger(-staging)?",cronjob="stayledger-postgres-backup-offnode"}) > 93600)
             or
-            (absent(kube_cronjob_status_last_successful_time{namespace="stayledger",cronjob="stayledger-postgres-backup-offnode"}) == 1)
+            (absent(kube_cronjob_status_last_successful_time{namespace=~"stayledger(-staging)?",cronjob="stayledger-postgres-backup-offnode"}) == 1)
           for: 30m
           labels:
             severity: critical
@@ -149,7 +149,7 @@ spec:
 
         - alert: BackupOffNodeJobFailed
           expr: |
-            kube_job_status_failed{namespace="stayledger",job_name=~"stayledger-postgres-backup-offnode-.*"} > 0
+            kube_job_status_failed{namespace=~"stayledger(-staging)?",job_name=~"stayledger-postgres-backup-offnode-.*"} > 0
           for: 5m
           labels:
             severity: critical

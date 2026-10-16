@@ -72,15 +72,23 @@ spec:
           # Reasoning: Subject shows env so inbox triage does not depend on body open.
           headers:
             - key: Subject
-              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }} {{ .CommonLabels.severity }}'
+              value: '{{ if eq .Status "firing" }}[FIRING:{{ .Alerts.Firing | len }}] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }} {{ .CommonLabels.severity }}{{ else }}[RESOLVED] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }}{{ end }}'
           html: |
             <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
+            {{ if eq .Status "firing" }}
             {{ range .Alerts }}
             <p><b>{{ .Labels.alertname }}</b> ({{ .Labels.severity }}) — env={{ .Labels.env }}</p>
             <p>{{ .Annotations.summary }}</p>
             <p>{{ .Annotations.description }}</p>
             {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
             {{ if .Annotations.dashboard_url }}<p>Dashboard: {{ .Annotations.dashboard_url }}</p>{{ end }}
+            {{ end }}
+            {{ else }}
+            {{ range .Alerts }}
+            <p><b>RESOLVED: {{ .Labels.alertname }}</b> — env={{ .Labels.env }}</p>
+            <p>This alert is no longer firing. Recovery has been confirmed by monitoring.</p>
+            <p><b>Previous condition:</b> {{ .Annotations.summary }}</p>
+            {{ end }}
             {{ end }}
 
     - name: email-platform-critical
@@ -97,12 +105,20 @@ spec:
           sendResolved: true
           headers:
             - key: Subject
-              value: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] [env={{ .CommonLabels.env }}] CRITICAL {{ .CommonLabels.alertname }}'
+              value: '{{ if eq .Status "firing" }}[FIRING:{{ .Alerts.Firing | len }}] [env={{ .CommonLabels.env }}] CRITICAL {{ .CommonLabels.alertname }}{{ else }}[RESOLVED] [env={{ .CommonLabels.env }}] {{ .CommonLabels.alertname }}{{ end }}'
           html: |
             <p><b>env:</b> {{ .CommonLabels.env }}{{ if .CommonLabels.cluster }} ({{ .CommonLabels.cluster }}){{ end }}</p>
+            {{ if eq .Status "firing" }}
             {{ range .Alerts }}
             <p><b>CRITICAL: {{ .Labels.alertname }}</b> — env={{ .Labels.env }}</p>
             <p>{{ .Annotations.summary }}</p>
             <p>{{ .Annotations.description }}</p>
             {{ if .Annotations.runbook }}<p>Runbook: {{ .Annotations.runbook }}</p>{{ end }}
+            {{ end }}
+            {{ else }}
+            {{ range .Alerts }}
+            <p><b>RESOLVED: {{ .Labels.alertname }}</b> — env={{ .Labels.env }}</p>
+            <p>This alert is no longer firing. Recovery has been confirmed by monitoring.</p>
+            <p><b>Previous condition:</b> {{ .Annotations.summary }}</p>
+            {{ end }}
             {{ end }}
