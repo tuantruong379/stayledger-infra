@@ -1,0 +1,33 @@
+# metrics-aggregator -> postgres for PRODUCTION (added 2026-10-16).
+#
+# The aggregator writes metrics_1m over HOTEL_OPS_DSN_DIRECT (host `postgres`). Production's live
+# allow-postgres-ingress still lists only the pre-rename pod label
+# (app.kubernetes.io/name=hotel-assistant-metrics-aggregator), so the renamed pod would be dropped
+# by default-deny. Additive policy, same pattern as allow-pgbouncer-ingress-from-*: it adds the
+# post-rename label and changes nothing else. The production postgres pod keeps its pre-rename
+# label (app.kubernetes.io/name=postgres).
+#
+# The aggregator had been scaled to 0 since 2026-08-01 (patches/...optional-workers-scale.yaml,
+# no reason recorded); metrics_1m on production stopped at 2026-07-12. Apply with:
+#   kubectl --context stayledger apply -f stayledger-ai-assistant-api/production/metrics-aggregator-netpol.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-postgres-ingress-from-metrics-aggregator
+  namespace: stayledger-ai-assistant
+  labels:
+    app.kubernetes.io/part-of: stayledger-ai-assistant
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: stayledger-ai-assistant-metrics-aggregator
+      ports:
+        - port: 5432
+          protocol: TCP

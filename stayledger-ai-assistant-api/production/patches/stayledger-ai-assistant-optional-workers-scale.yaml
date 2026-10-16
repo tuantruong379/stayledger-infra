@@ -9,10 +9,13 @@ spec:
   replicas: 1
 
 ---
+# 2026-10-16: 0 -> 1, same as staging. At 0 nothing consumed metrics.chat.turn, so production's
+# metrics_1m (admin dashboards, metrics-pipeline alerts) had been empty since 2026-07-12.
+# Needs production/metrics-aggregator-netpol.yaml (postgres ingress for the renamed pod label).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: stayledger-ai-assistant-metrics-aggregator
   namespace: stayledger-ai-assistant
 spec:
-  replicas: 0
+  replicas: 1
