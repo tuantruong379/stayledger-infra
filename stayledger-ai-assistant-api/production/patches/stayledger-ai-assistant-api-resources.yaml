@@ -7,6 +7,10 @@
 # misleading number (maxReplicas is unaffected, no real OOM risk) but is bad signal
 # hygiene. Bumped request to 600Mi so the percentage reflects real headroom again.
 # Node memory requests have real headroom for this (~47% free at bump time).
+# 2026-10-16: the 600Mi bump above was never applied (live request was still 384Mi, HPA memory
+# 147%/80% so the API sat at maxReplicas=2). Usage is now ~555-575Mi, so 600Mi would still read
+# ~95%; set 768Mi (~75%). Node memory 53% used. This overlay is not `apply -k`'d on production --
+# apply with `kubectl patch deploy stayledger-ai-assistant-api --patch-file <this file>`.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,7 +24,7 @@ spec:
           resources:
             requests:
               cpu: "200m"
-              memory: "600Mi"
+              memory: "768Mi"
             limits:
               cpu: "500m"
               memory: "1Gi"
