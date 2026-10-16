@@ -7,8 +7,10 @@
 # ("group C"). Environment-specific keys (URLs, APP_ENV, OTEL, NATS) stay production values;
 # staging-only test knobs (sink outbound, debug slots, 100% trace sampling) are NOT copied;
 # Security (group D) synced in phase 2 the same day; PMS worker flags (E) on 2026-09-30 together
-# with production/pms-workers.yaml. Capacity (F: pools, UVICORN_WORKERS, redis offload) and
-# PMS_PROVIDER_DEFAULT still differ deliberately.
+# with production/pms-workers.yaml. Capacity (F: pools, UVICORN_WORKERS, redis offload) still
+# differs deliberately. PMS_PROVIDER_DEFAULT -> stayledger on 2026-10-16 (parity only: it is read
+# by _default_local, which deployed envs never reach without ALLOW_LOCAL_DEFAULT_TENANT_RESOLUTION;
+# a tenant with no pms_connection already fails closed).
 #
 #   kubectl --context stayledger apply -f stayledger-ai-assistant-api/production/api-configmap.yaml
 #   then restart api + workers (envFrom is read at start).
@@ -99,7 +101,7 @@ data:
   PMS_HTTP_TIMEOUT_S: '12'
   PMS_OUTBOX_WORKER_ENABLED: '1'
   PMS_OUTBOX_WORKER_POLL_SECONDS: '15'
-  PMS_PROVIDER_DEFAULT: local
+  PMS_PROVIDER_DEFAULT: stayledger
   PMS_READ_FALLBACK_MODE: fail_closed
   PMS_STAYLEDGER_ENABLED: '1'
   PMS_WORKERS_IN_API: '0'
